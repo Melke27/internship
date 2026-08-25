@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import django_heroku
 from dotenv import load_dotenv
 from datetime import timedelta
 
@@ -22,9 +23,10 @@ MIDDLEWARE = ["corsheaders.middleware.CorsMiddleware", "django.middleware.securi
 ROOT_URLCONF = "config.urls"
 TEMPLATES = [{"BACKEND":"django.template.backends.django.DjangoTemplates","DIRS":[],"APP_DIRS":True,"OPTIONS":{"context_processors":["django.template.context_processors.request","django.contrib.auth.context_processors.auth","django.contrib.messages.context_processors.messages"]}}]
 WSGI_APPLICATION = "config.wsgi.application"
-DATABASES = {"default": {"ENGINE":"django.db.backends.postgresql","NAME":"cbe_support","USER":"cbe_user","PASSWORD":"cbe_password","HOST":"localhost","PORT":"5432"}}
+DATABASES = {"default": dj_database_url.config(conn_require_ssl=False)}
 if os.getenv("DATABASE_URL", "").startswith("sqlite") or DEBUG and os.getenv("USE_SQLITE", "true").lower() == "true":
     DATABASES = {"default": {"ENGINE":"django.db.backends.sqlite3","NAME":BASE_DIR / "db.sqlite3"}}
+django_heroku.settings(locals())
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validators.UserAttributeSimilarValidator"},
     {"NAME": "django.contrib.auth.password_validators.MinimumLengthValidator"},

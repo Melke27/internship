@@ -23,7 +23,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [{"BACKEND":"django.template.backends.django.DjangoTemplates","DIRS":[],"APP_DIRS":True,"OPTIONS":{"context_processors":["django.template.context_processors.request","django.contrib.auth.context_processors.auth","django.contrib.messages.context_processors.messages"]}}]
 WSGI_APPLICATION = "config.wsgi.application"
 import dj_database_url
-DATABASES = {"default": dj_database_url.config(conn_require_ssl=False)}
+DATABASES = {"default": dj_database_url.config()}
 if os.getenv("DATABASE_URL", "").startswith("sqlite") or DEBUG and os.getenv("USE_SQLITE", "true").lower() == "true":
     DATABASES = {"default": {"ENGINE":"django.db.backends.sqlite3","NAME":BASE_DIR / "db.sqlite3"}}
 AUTH_PASSWORD_VALIDATORS = [

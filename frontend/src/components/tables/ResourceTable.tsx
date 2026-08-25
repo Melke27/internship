@@ -1,0 +1,3 @@
+import type {ReactNode} from 'react'; import {EmptyState} from '../feedback/StateView';
+export type Column<T>={key:string;label:string;render?:(row:T)=>ReactNode};
+export function ResourceTable<T extends {id:number}>({rows,columns,empty='No records found.'}:{rows:T[];columns:Column<T>[];empty?:string}){if(!rows.length)return <EmptyState title={empty}/>;return <div className="table-wrap"><table><thead><tr>{columns.map(c=><th key={c.key}>{c.label}</th>)}</tr></thead><tbody>{rows.map(row=><tr key={row.id}>{columns.map(c=><td key={c.key}>{c.render?c.render(row):(row as Record<string,ReactNode>)[c.key]}</td>)}</tr>)}</tbody></table></div>}

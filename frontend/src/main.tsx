@@ -25,6 +25,10 @@ import { AccessDeniedPage, NotFoundPage } from './pages/ErrorPages';
 
 import './atm-ops.css';
 import './enhancements.css';
+import './branding.css';
+import './photo-overrides.css';
+import './logo-image.css';
+import './password-toggle.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {

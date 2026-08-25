@@ -1,0 +1,6 @@
+service:
+  name: cbe-backend
+  env: python
+  plan: free
+  buildCommand: pip install -r requirements/base.txt
+  startCommand: python manage.py runserver 0.0.0.0:$PORT

@@ -29,6 +29,27 @@ export function formatDuration(minutes?: number | null) {
   return rest ? `${hours}h ${rest}m` : `${hours}h`;
 }
 
+export function incidentDurationMinutes(value: {
+  created_at: string;
+  resolved_at?: string | null;
+  closed_at?: string | null;
+}) {
+  const start = new Date(value.created_at).getTime();
+  if (!Number.isFinite(start)) return null;
+  const end = value.resolved_at || value.closed_at;
+  if (end && !Number.isFinite(new Date(end).getTime())) return null;
+  const endMs = end ? new Date(end).getTime() : Date.now();
+  return Math.max(0, Math.round((endMs - start) / 60000));
+}
+
+export function formatIncidentDuration(value: {
+  created_at: string;
+  resolved_at?: string | null;
+  closed_at?: string | null;
+}) {
+  return formatDuration(incidentDurationMinutes(value));
+}
+
 export function mediaUrl(path?: string | null) {
   if (!path) return null;
   if (path.startsWith('http') || path.startsWith('/')) return path;

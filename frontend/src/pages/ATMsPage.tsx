@@ -149,6 +149,7 @@ export default function ATMsPage() {
                       <DualStatus active={atm.is_active !== false} technical={atm.status} />
                     </td>
                     <td>
+                      <span className={`live-dot tone-${atm.health.toLowerCase()}`} style={{ marginRight: 7, verticalAlign: 'middle' }} />
                       <StatusBadge value={atm.health} />
                     </td>
                     <td>

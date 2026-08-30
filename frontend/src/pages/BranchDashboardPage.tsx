@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, CircleAlert, ClipboardList, Landmark, Wifi } from 'lucide-react';
+import { AlertTriangle, CircleAlert, ClipboardList, Landmark, PlusCircle, Wifi } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import { listResource } from '../lib/utils';
+import { useNow } from '../lib/useNow';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { DualStatus, PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
 import { MetricCard } from '../components/ui/MetricCard';
@@ -13,9 +14,9 @@ import { Panel } from '../components/ui/Panel';
 import { ChartLegend, DonutChart, Sparkline, statusColor, TrendChart } from '../components/ui/Charts';
 import type { ATM, BranchReport, DashboardSummary, Incident } from '../types/api';
 
-function relativeTime(iso?: string) {
+function relativeTime(iso?: string, now = Date.now()) {
   if (!iso) return 'unknown';
-  const diff = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+  const diff = Math.max(0, Math.round((now - new Date(iso).getTime()) / 1000));
   if (diff < 10) return 'just now';
   if (diff < 60) return `${diff}s ago`;
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
@@ -24,6 +25,7 @@ function relativeTime(iso?: string) {
 
 export default function BranchDashboardPage() {
   const { currentUser } = useAuth();
+  const now = useNow(30_000);
   const summary = useQuery({
     queryKey: ['dashboard-summary', 'branch'],
     queryFn: () => api.get<DashboardSummary>('/reports/dashboard/').then((r) => r.data),
@@ -91,7 +93,7 @@ export default function BranchDashboardPage() {
           <p className="page-copy">View your branch ATMs, report faults, and track incident resolution in real time.</p>
           <span className="live-updated">
             <span className="live-dot" />
-            {fleet.length} ATM{fleet.length === 1 ? '' : 's'} · updated {relativeTime(summary.data.last_updated)}
+            {fleet.length} ATM{fleet.length === 1 ? '' : 's'} · updated {relativeTime(summary.data.last_updated, now)}
           </span>
         </div>
         <div className="page-actions">
@@ -102,6 +104,24 @@ export default function BranchDashboardPage() {
             <AlertTriangle size={16} /> Report ATM Problem
           </Link>
         </div>
+      </div>
+
+      {/* Quick actions */}
+      <div className="quick-actions" aria-label="Quick actions">
+        <Link className="quick-action" to="/branch/report">
+          <AlertTriangle size={14} /> Report Problem
+        </Link>
+        <Link className="quick-action" to="/branch/atms">
+          <Wifi size={14} /> My ATMs
+        </Link>
+        <Link className="quick-action" to="/branch/reports">
+          <ClipboardList size={14} /> My Reports
+        </Link>
+        {faults > 0 && (
+          <Link className="quick-action" to="/branch/atms">
+            <CircleAlert size={14} /> {faults} ATM{faults > 1 ? 's' : ''} need attention
+          </Link>
+        )}
       </div>
 
       <div className="kpi-grid branch-kpi-grid" aria-label="Branch ATM summary">
@@ -185,7 +205,7 @@ export default function BranchDashboardPage() {
           ) : (
             <div className="monitor-grid">
               {fleet.slice(0, 8).map((atm) => (
-                <div className="monitor-card" key={atm.id}>
+                <Link className="monitor-card" key={atm.id} to={`/branch/atms/${atm.id}`}>
                   <div className="monitor-card-head">
                     <strong>{atm.reference}</strong>
                     <DualStatus active={atm.is_active !== false} technical={atm.status} />
@@ -197,10 +217,16 @@ export default function BranchDashboardPage() {
                       : 'No active incident'}
                   </small>
                   <div className="row-actions">
-                    <Link className="button secondary small" to={`/branch/atms/${atm.id}`}>View Status</Link>
-                    <Link className="button primary small" to={`/branch/report?atm=${atm.id}`}>Report Problem</Link>
+                    <span className="button secondary small">View Status</span>
+                    <Link
+                      className="button primary small"
+                      to={`/branch/report?atm=${atm.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <PlusCircle size={11} /> Report
+                    </Link>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}

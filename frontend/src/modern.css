@@ -681,7 +681,6 @@ a.metric-card:hover {
 .status-badge.status-satisfactory { color: var(--success); background: var(--success-soft); }
 
 .status-badge.status-warning,
-.status-badge.status-degraded,
 .status-badge.status-submitted,
 .status-badge.status-received,
 .status-badge.status-reviewing,
@@ -691,12 +690,18 @@ a.metric-card:hover {
 .status-badge.status-partial,
 .status-badge.status-scheduled { color: var(--warning); background: var(--warning-soft); }
 
+.status-badge.status-degraded { color: #c2410c; background: #fdeae2; }
+
 .status-badge.status-fault,
 .status-badge.status-critical,
 .status-badge.status-escalated,
 .status-badge.status-failed,
 .status-badge.status-error,
+.status-badge.status-problem_found,
 .status-badge.status-communication_problem { color: var(--danger); background: var(--danger-soft); }
+
+.status-badge.status-unable_to_test { color: #64748b; background: #eef2f7; }
+.status-badge.status-converted_to_incident { color: #047857; background: #ecfdf5; }
 
 .status-badge.status-in_progress,
 .status-badge.status-under_repair,
@@ -708,6 +713,7 @@ a.metric-card:hover {
 .status-badge.status-approved,
 .status-badge.status-started,
 .status-badge.status-requested,
+.status-badge.status-maintenance,
 .status-badge.status-reported { color: var(--info); background: var(--info-soft); }
 
 .status-badge.status-inactive,
@@ -716,7 +722,6 @@ a.metric-card:hover {
 .status-badge.status-unknown,
 .status-badge.status-cancelled,
 .status-badge.status-dismissed,
-.status-badge.status-maintenance,
 .status-badge.status-unassigned { color: var(--text-3); background: var(--gray-soft); }
 
 .status-badge.status-done { color: var(--success); background: var(--success-soft); }
@@ -1716,3 +1721,229 @@ a.monitor-card:hover { border-color: #c3cbf5; box-shadow: var(--shadow); transfo
 .button.danger-outline { background: transparent; border-color: var(--danger-soft); color: var(--danger); }
 .button.danger-outline:hover:not(:disabled) { background: var(--danger-soft); color: var(--danger); }
 input.check-field { width: auto; }
+
+/* ═══════════════════════════════════════════════════════
+   ATM Details Page — Hero, Quick Actions, Signal Grid
+   ═══════════════════════════════════════════════════════ */
+
+/* Hero banner */
+.atm-detail-hero {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 148px;
+  margin-bottom: 18px;
+  padding: 28px 32px;
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(80% 120% at 90% -20%, rgba(59, 79, 216, .55), transparent 55%),
+    radial-gradient(50% 110% at 0% 110%, rgba(217, 154, 43, .18), transparent 50%),
+    linear-gradient(120deg, #0c1733 0%, #17244d 60%, #1d2f63 100%);
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+.atm-detail-hero::after {
+  content: '';
+  position: absolute;
+  inset: -60px -60px auto auto;
+  width: 240px;
+  height: 240px;
+  opacity: .08;
+  background: url('/logo.jpg') center/contain no-repeat;
+  filter: grayscale(1) brightness(3);
+  pointer-events: none;
+}
+.atm-detail-hero > * { position: relative; z-index: 1; }
+.atm-detail-hero .page-kicker {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #93a4ff;
+}
+.atm-detail-hero h1 {
+  margin: 0 0 6px;
+  font-size: clamp(22px, 3vw, 32px);
+  font-weight: 800;
+  letter-spacing: -.02em;
+  color: #fff;
+}
+.atm-detail-hero .page-copy {
+  color: #b8c3dd;
+  font-size: 13.5px;
+  margin: 0 0 12px;
+}
+.atm-hero-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* KPI strip — right side of hero */
+.atm-hero-kpis {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.atm-hero-kpi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 90px;
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(255, 255, 255, .1);
+  text-align: center;
+}
+.atm-hero-kpi svg { color: #93a4ff; flex-shrink: 0; }
+.atm-hero-kpi.ok svg { color: #4ade80; }
+.atm-hero-kpi.danger svg { color: #fb7185; }
+.atm-hero-kpi strong {
+  display: block;
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -.02em;
+  line-height: 1;
+}
+.atm-hero-kpi.ok strong { color: #4ade80; }
+.atm-hero-kpi.danger strong { color: #fb7185; }
+.atm-hero-kpi span {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #8fa0c6;
+  margin-top: 2px;
+}
+
+/* Quick actions bar */
+.atm-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.atm-qaction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 13px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(11, 21, 48, .04);
+  transition: border-color .14s, box-shadow .14s, color .14s, transform .14s;
+  text-decoration: none;
+  cursor: pointer;
+}
+.atm-qaction:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+  box-shadow: 0 4px 12px -6px rgba(59, 79, 216, .3);
+  transform: translateY(-1px);
+}
+.atm-qaction.primary {
+  background: linear-gradient(180deg, #4256de, var(--brand));
+  border-color: var(--brand);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(59, 79, 216, .28);
+}
+.atm-qaction.primary:hover {
+  box-shadow: 0 5px 14px rgba(59, 79, 216, .38);
+  transform: translateY(-1px);
+}
+.atm-qaction:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Signal grid — technical status cards */
+.signal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.signal-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 13px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  border: 1px solid var(--line-soft);
+  transition: border-color .14s, box-shadow .14s;
+}
+.signal-card:hover { border-color: var(--line); box-shadow: var(--shadow-xs); }
+.signal-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--brand-soft);
+  color: var(--brand);
+  transition: background .14s, color .14s;
+}
+.signal-body { min-width: 0; }
+.signal-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 4px;
+}
+.signal-value { display: flex; align-items: center; }
+
+/* Section sub-label within a panel */
+.signal-section-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin: 0 0 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Status history transition row */
+.timeline-transition {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+/* Responsive overrides */
+@media (max-width: 1024px) {
+  .atm-detail-hero { flex-direction: column; align-items: flex-start; }
+  .atm-hero-kpis { width: 100%; }
+  .atm-hero-kpi { flex: 1; }
+}
+@media (max-width: 640px) {
+  .signal-grid { grid-template-columns: repeat(2, 1fr); }
+  .atm-detail-hero { padding: 22px 20px; min-height: 0; }
+  .atm-hero-kpis { gap: 8px; }
+  .atm-hero-kpi { min-width: 0; padding: 10px 12px; }
+  .atm-hero-kpi strong { font-size: 17px; }
+}

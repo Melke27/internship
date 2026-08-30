@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
@@ -6,6 +6,7 @@ import { api } from '../lib/api';
 import { hasPermission, useAuth } from '../context/AuthContext';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { StatusBadge, PriorityBadge } from '../components/ui/StatusBadge';
+import ATMDialog from '../components/atms/ATMDialog';
 import type { ATM, Incident, Maintenance } from '../types/api';
 
 function list<T>(path: string) {
@@ -17,6 +18,7 @@ type StatusHistory = { id: number; old_status: string; new_status: string; chang
 export default function ATMDetailsPage() {
   const { id } = useParams();
   const { currentUser } = useAuth();
+  const [editOpen, setEditOpen] = useState(false);
   const atm = useQuery({
     queryKey: ['atm', id],
     queryFn: () => api.get<ATM>(`/atms/${id}/`).then((response) => response.data),
@@ -54,6 +56,11 @@ export default function ATMDetailsPage() {
         <div className="badge-group">
           <StatusBadge value={record.status} />
           <StatusBadge value={record.health} />
+          {hasPermission(currentUser, 'atm.update') ? (
+            <button className="button secondary" onClick={() => setEditOpen(true)}>
+              Edit ATM
+            </button>
+          ) : null}
           {hasPermission(currentUser, 'incident.create') ? (
             <Link className="button primary" to={`/incidents?atm=${record.id}&new=1`}>Create Incident</Link>
           ) : null}
@@ -235,6 +242,8 @@ export default function ATMDetailsPage() {
           ) : null}
         </article>
       </div>
+
+      {editOpen && atm.data ? <ATMDialog atm={atm.data} onClose={() => setEditOpen(false)} /> : null}
     </section>
   );
 }

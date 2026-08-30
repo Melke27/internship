@@ -38,6 +38,7 @@ export default function UsersPage() {
   const queryClient = useQueryClient();
   const { currentUser } = useAuth();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<UserRow | null>(null);
   const [error, setError] = useState('');
 
   const users = useQuery({
@@ -126,6 +127,11 @@ export default function UsersPage() {
                   </td>
                   <td>
                     {canEdit && currentUser?.id !== user.id ? (
+                      <button className="button secondary small" onClick={() => setEditing(user)}>
+                        Edit
+                      </button>
+                    ) : null}
+                    {canEdit && currentUser?.id !== user.id ? (
                       <button
                         className="button secondary small"
                         disabled={toggleActive.isPending}
@@ -143,6 +149,7 @@ export default function UsersPage() {
       )}
 
       {open ? <CreateUserDialog onClose={() => setOpen(false)} /> : null}
+      {editing ? <EditUserDialog user={editing} onClose={() => setEditing(null)} /> : null}
     </section>
   );
 }
@@ -256,6 +263,115 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
           </button>
           <button className="button primary" disabled={create.isPending}>
             {create.isPending ? 'Creating…' : 'Create User'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function EditUserDialog({ user, onClose }: { user: UserRow; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [error, setError] = useState('');
+  const [role, setRole] = useState(user.role);
+  const branches = useQuery({
+    queryKey: ['branches', 'user-form'],
+    queryFn: () => listResource<BranchRow>('/branches/?ordering=name'),
+  });
+  const update = useMutation({
+    mutationFn: (payload: Record<string, unknown>) => api.patch(`/users/${user.id}/`, payload),
+    onSuccess: async () => {
+      showToast('User updated');
+      await queryClient.invalidateQueries({ queryKey: ['users'] });
+      onClose();
+    },
+    onError: (err) => setError(extractError(err, 'Action could not be completed.')),
+  });
+
+  const needsBranch = ['BRANCH_USER', 'BRANCH_MANAGER'].includes(role);
+
+  return (
+    <div className="dialog-backdrop" onClick={onClose}>
+      <form
+        className="dialog-panel"
+        onClick={(event) => event.stopPropagation()}
+        onSubmit={(event: FormEvent<HTMLFormElement>) => {
+          event.preventDefault();
+          const form = event.currentTarget;
+          const value = (name: string) =>
+            (form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | null)?.value ?? '';
+          const payload: Record<string, unknown> = {
+            full_name: value('full_name'),
+            email: value('email'),
+            phone: value('phone'),
+            role: value('role'),
+            branch: needsBranch ? (value('branch') ? Number(value('branch')) : null) : null,
+            is_active: user.is_active,
+          };
+          if (value('password')) payload.password = value('password');
+          update.mutate(payload);
+        }}
+      >
+        <div className="dialog-header">
+          <h2>Edit {user.full_name || user.username}</h2>
+          <button type="button" className="icon-button" onClick={onClose}>
+            ×
+          </button>
+        </div>
+        <p className="helper-text">Update profile details. Username is fixed; leave password blank to keep it unchanged. District is fixed: {FIXED_DISTRICT_NAME}</p>
+
+        <label>
+          Full Name *
+          <input name="full_name" required defaultValue={user.full_name || ''} />
+        </label>
+        <div className="form-grid">
+          <label>
+            Email *
+            <input name="email" type="email" required defaultValue={user.email || ''} />
+          </label>
+          <label>
+            Phone
+            <input name="phone" defaultValue={user.phone || ''} />
+          </label>
+        </div>
+        <label>
+          Role *
+          <select name="role" value={role} onChange={(event) => setRole(event.target.value)} required>
+            {ROLES.map((value) => (
+              <option key={value} value={value}>
+                {roleLabel(value)}
+              </option>
+            ))}
+          </select>
+        </label>
+        {needsBranch ? (
+          <label>
+            Branch *
+            <select name="branch" defaultValue={user.branch || ''} required>
+              <option value="">Select branch</option>
+              {(branches.data || []).map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name} ({branch.code})
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+        <label>
+          New Password (optional)
+          <input name="password" type="password" minLength={8} autoComplete="new-password" />
+        </label>
+        {error ? (
+          <div className="error-banner">
+            <strong>{error}</strong>
+          </div>
+        ) : null}
+        <div className="dialog-actions">
+          <button type="button" className="button secondary" onClick={onClose}>
+            Cancel
+          </button>
+          <button className="button primary" disabled={update.isPending}>
+            {update.isPending ? 'Saving…' : 'Save Changes'}
           </button>
         </div>
       </form>

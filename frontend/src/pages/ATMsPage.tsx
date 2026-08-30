@@ -3,8 +3,10 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
 import { api } from '../lib/api';
+import { hasPermission, useAuth } from '../context/AuthContext';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { DualStatus, StatusBadge } from '../components/ui/StatusBadge';
+import ATMDialog from '../components/atms/ATMDialog';
 import type { ATM } from '../types/api';
 
 function list<T>(path: string) {
@@ -27,9 +29,11 @@ const FILTERS = [
 ];
 
 export default function ATMsPage() {
+  const { currentUser } = useAuth();
   const [params, setParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [chip, setChip] = useState('');
+  const [registerOpen, setRegisterOpen] = useState(false);
 
   useEffect(() => {
     if (params.get('active') === '1') setChip('active:1');
@@ -68,6 +72,11 @@ export default function ATMsPage() {
           <button className="button secondary" onClick={() => atms.refetch()}>
             Refresh
           </button>
+          {hasPermission(currentUser, 'atm.create') ? (
+            <button className="button primary" onClick={() => setRegisterOpen(true)}>
+              + Register ATM
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -162,6 +171,7 @@ export default function ATMsPage() {
           </div>
         ) : null}
       </div>
+      {registerOpen ? <ATMDialog onClose={() => setRegisterOpen(false)} /> : null}
     </section>
   );
 }

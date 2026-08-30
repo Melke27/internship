@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
 import { api } from '../lib/api';
+import { hasPermission, useAuth } from '../context/AuthContext';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { StatusBadge, PriorityBadge } from '../components/ui/StatusBadge';
 import type { ATM, Incident, Maintenance } from '../types/api';
@@ -15,6 +16,7 @@ type StatusHistory = { id: number; old_status: string; new_status: string; chang
 
 export default function ATMDetailsPage() {
   const { id } = useParams();
+  const { currentUser } = useAuth();
   const atm = useQuery({
     queryKey: ['atm', id],
     queryFn: () => api.get<ATM>(`/atms/${id}/`).then((response) => response.data),
@@ -52,13 +54,22 @@ export default function ATMDetailsPage() {
         <div className="badge-group">
           <StatusBadge value={record.status} />
           <StatusBadge value={record.health} />
-          <Link className="button secondary" to={`/incidents?atm=${record.id}&new=1`}>Create Incident</Link>
+          {hasPermission(currentUser, 'incident.create') ? (
+            <Link className="button primary" to={`/incidents?atm=${record.id}&new=1`}>Create Incident</Link>
+          ) : null}
         </div>
+      </div>
+
+      <div className="atm-summary-bar" aria-label="ATM service summary">
+        <div><span>BRANCH</span><strong>{record.branch_name || 'Not assigned'}</strong></div>
+        <div><span>AVAILABILITY</span><strong>{record.is_active === false ? 'Inactive' : 'Active'}</strong></div>
+        <div><span>ASSIGNED TECHNICIAN</span><strong>{record.assigned_technician_name || 'Unassigned'}</strong></div>
+        <div><span>ACTIVE INCIDENT</span><strong>{record.active_incident ? <Link className="text-link" to={`/incidents/${record.active_incident.id}`}>{record.active_incident.incident_number}</Link> : 'None'}</strong></div>
       </div>
 
       <div className="details-grid">
         <article className="panel">
-          <h2>ATM Information</h2>
+          <div className="section-heading"><div><h2>ATM Information</h2><p>Asset identity, location and installation data.</p></div></div>
           <dl className="detail-grid">
             <Field label="ATM ID" value={String(record.id)} />
             <Field label="ATM Reference" value={record.reference} />
@@ -76,7 +87,7 @@ export default function ATMDetailsPage() {
         </article>
 
         <article className="panel">
-          <h2>Technical Status</h2>
+          <div className="section-heading"><div><h2>Technical Status</h2><p>Live technical checks and current service ownership.</p></div></div>
           <dl className="detail-grid">
             <Field label="Overall Status" value={<StatusBadge value={record.status} />} />
             <Field label="Health" value={<StatusBadge value={record.health} />} />
@@ -96,7 +107,7 @@ export default function ATMDetailsPage() {
 
       <div className="content-grid">
         <article className="panel">
-          <h2>Component Health</h2>
+          <div className="section-heading"><div><h2>Component Health</h2><p>Recorded condition of installed ATM components.</p></div></div>
           {!record.components || record.components.length === 0 ? (
             <EmptyState title="No component records available" description="Component health will appear here when it exists in the backend." />
           ) : (
@@ -126,7 +137,7 @@ export default function ATMDetailsPage() {
         </article>
 
         <article className="panel">
-          <h2>Status History</h2>
+          <div className="section-heading"><div><h2>Status History</h2><p>Changes to the ATM operational status.</p></div></div>
           {history.isLoading ? <LoadingState label="Loading ATM status history..." /> : null}
           {history.isError ? <ErrorState message="Unable to load status history." /> : null}
           {!history.isLoading && !history.isError && (history.data || []).length === 0 ? (
@@ -151,7 +162,7 @@ export default function ATMDetailsPage() {
 
       <div className="content-grid">
         <article className="panel">
-          <h2>Incident History</h2>
+          <div className="section-heading"><div><h2>Incident History</h2><p>Faults and service incidents for this ATM.</p></div></div>
           {incidents.isLoading ? <LoadingState label="Loading ATM incidents..." /> : null}
           {incidents.isError ? <ErrorState message="Unable to load ATM incidents." /> : null}
           {!incidents.isLoading && !incidents.isError && (incidents.data || []).length === 0 ? (
@@ -190,7 +201,7 @@ export default function ATMDetailsPage() {
         </article>
 
         <article className="panel">
-          <h2>Maintenance</h2>
+          <div className="section-heading"><div><h2>Maintenance</h2><p>Scheduled and completed maintenance work.</p></div></div>
           {maintenance.isLoading ? <LoadingState label="Loading maintenance..." /> : null}
           {maintenance.isError ? <ErrorState message="Unable to load maintenance history." /> : null}
           {!maintenance.isLoading && !maintenance.isError && (maintenance.data || []).length === 0 ? (
@@ -229,10 +240,11 @@ export default function ATMDetailsPage() {
 }
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
+  const missing = value === null || value === undefined || value === '' || value === '—';
   return (
     <div className="detail-item">
       <dt>{label}</dt>
-      <dd>{value}</dd>
+      <dd>{missing ? <span className="field-unavailable">Not recorded</span> : value}</dd>
     </div>
   );
 }

@@ -1,10 +1,15 @@
-import { FormEvent, useState } from 'react';
+import type { FormEvent, RefObject } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isAxiosError } from 'axios';
+import { ArrowRight, BellRing, Cpu, LogIn, ShieldCheck, Zap } from 'lucide-react';
 
-import { useAuth } from '../context/AuthContext';
+import { portalHome, useAuth } from '../context/AuthContext';
 import CBELogo from '../components/branding/CBELogo';
 import HeadOfficeVisual from '../components/branding/HeadOfficeVisual';
+
+const DEMO_ACCOUNTS = ['district.admin', 'maintenance.tech', 'branch.user'];
+const DEMO_PASSWORD = 'DemoPass123!';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -12,21 +17,23 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showDemo, setShowDemo] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const passwordRef: RefObject<HTMLInputElement> = useRef(null);
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
+  async function submit(event?: FormEvent) {
+    event?.preventDefault();
     setLoading(true);
     setError('');
     try {
-      await login(username, password);
-      navigate('/dashboard');
+      const user = await login(username, password);
+      navigate(portalHome(user));
     } catch (err) {
       setError(
         isAxiosError(err)
           ? err.response?.status === 401
-            ? 'Invalid username or password.'
+            ? 'Invalid username or password. Please try again.'
             : 'Sign-in was rejected by the server. Please check your connection and try again.'
           : 'Support API is unavailable. Start the backend and try again.',
       );
@@ -35,35 +42,54 @@ export default function LoginPage() {
     }
   }
 
+  function pickAccount(account: string) {
+    setUsername(account);
+    setPassword(DEMO_PASSWORD);
+    passwordRef.current?.focus();
+  }
+
   return (
     <main className="auth-page">
       <section className="auth-visual">
         <HeadOfficeVisual />
       </section>
+
       <section className="auth-card">
-        <CBELogo />
-        <div className="auth-rule" />
-        <p className="eyebrow accent">SECURE INTERNAL ACCESS</p>
-        <h1>Sign in to ATM support</h1>
-        <p className="muted">Monitor ATM health, incidents and technical operations for your district.</p>
-        <form onSubmit={submit}>
-          <label>
-            Username
-            <input
-              autoComplete="username"
-              required
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-            />
-          </label>
-          <label>
-            Password
-            <div className="password-field">
+        <div className="auth-card-mobile-brand">
+          <CBELogo />
+        </div>
+        <p className="auth-card-eyebrow">Secure internal access</p>
+        <h1>Welcome back</h1>
+        <p className="auth-card-muted">
+          Sign in to the ATM technical support portal to manage operations for your scope.
+        </p>
+
+        <form className="auth-form" onSubmit={submit}>
+          <label className="auth-field">
+            <span className="auth-field-label">Username</span>
+            <div className="auth-field-box">
+              <i aria-hidden="true"><Cpu size={15} /></i>
               <input
+                autoComplete="username"
+                autoFocus
+                required
+                value={username}
+                placeholder="e.g. district.admin"
+                onChange={(event) => setUsername(event.target.value)}
+              />
+            </div>
+          </label>
+          <label className="auth-field">
+            <span className="auth-field-label">Password</span>
+            <div className="auth-field-box">
+              <i aria-hidden="true"><Zap size={15} /></i>
+              <input
+                ref={passwordRef}
                 autoComplete="current-password"
                 required
                 type={showPassword ? 'text' : 'password'}
                 value={password}
+                placeholder="Enter your password"
                 onChange={(event) => setPassword(event.target.value)}
               />
               <button
@@ -76,12 +102,60 @@ export default function LoginPage() {
               </button>
             </div>
           </label>
-          {error ? <div className="form-error">{error}</div> : null}
-          <button className="button primary auth-submit" disabled={loading}>
+
+          {error ? (
+            <div className="form-error" role="alert">
+              <ShieldCheck size={15} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>{error}</span>
+            </div>
+          ) : null}
+
+          <button className="auth-submit" type="submit" disabled={loading}>
             {loading ? 'Signing in…' : 'Sign in securely'}
+            {!loading ? <ArrowRight size={16} /> : null}
           </button>
         </form>
-        <small className="security-note">Technical-support metadata only. Never enter customer or card data.</small>
+
+        <div className="demo-hint">
+          {showDemo ? (
+            <div className="demo-list">
+              <span className="demo-list-label">One-click local demo sign-in</span>
+              <div className="demo-quick">
+                {DEMO_ACCOUNTS.map((account) => (
+                  <button
+                    type="button"
+                    key={account}
+                    className={username === account ? 'active' : ''}
+                    onClick={() => pickAccount(account)}
+                  >
+                    <LogIn size={12} />
+                    {account}
+                  </button>
+                ))}
+              </div>
+              {username ? (
+                <p className="demo-quick-auth">
+                  Selected <code>{username}</code> · password pre-filled. Press{' '}
+                  <button type="button" onClick={() => void submit()}>Sign in securely</button> or switch portal above.
+                </p>
+              ) : (
+                <p className="demo-quick-hint">Pick a portal to pre-fill its account and the local demo password.</p>
+              )}
+            </div>
+          ) : (
+            <button type="button" onClick={() => setShowDemo(true)}>
+              Show local demo sign-in
+            </button>
+          )}
+        </div>
+
+        <div className="auth-rule" />
+
+        <p className="auth-help">Need access? Contact your district administrator.</p>
+        <small className="security-note">
+          <BellRing size={14} style={{ flexShrink: 0 }} />
+          Technical-support metadata only. Never enter customer or card data.
+        </small>
       </section>
     </main>
   );

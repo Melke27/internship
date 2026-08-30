@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.audit.models import AuditLog
-from apps.common.permissions import CanManageUsers, is_supervisor, user_permissions
+from apps.common.permissions import CanManageUsers, is_supervisor, portal_for_role, user_permissions
 from .models import User
 from .serializers import UserSerializer
 
@@ -48,6 +48,8 @@ class MeView(APIView):
     def get(self, request):
         data = UserSerializer(request.user).data
         data["permissions"] = user_permissions(request.user)
+        data["portal"] = portal_for_role(getattr(request.user, "normalized_role", request.user.role))
+        data["normalized_role"] = getattr(request.user, "normalized_role", request.user.role)
         return Response(data)
 
 

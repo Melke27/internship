@@ -14,11 +14,11 @@ Internal enterprise system for managing CBE organizational hierarchy (districts 
 
 ## 3–6. Roles, responsibilities, permissions, scope
 
-Roles on `User.role`: `SUPER_ADMIN`, `HEAD_OFFICE`, `DISTRICT`, `TECHNICIAN`, `BRANCH_MANAGER`, `AUDITOR`, `REPORT_VIEWER`. The spec's twelve roles map onto these plus scope (see FULL_STACK_INTEGRATION_PLAN.md §7).
+Roles on `User.role`: `DISTRICT_ADMIN`, `OPERATIONS_OFFICER`, `MAINTENANCE_SUPERVISOR`, `TECHNICIAN`, `BRANCH_MANAGER`, `BRANCH_USER`, and `AUDITOR`. Legacy `ADMINISTRATOR`, `SUPERVISOR`, and `MONITORING_OFFICER` accounts are normalized at runtime so previously created users remain usable.
 
 Enforcement layers:
 1. **Authentication** — all endpoints require a valid JWT.
-2. **Role permissions** — `apps/common/permissions.py`: supervisors (`SUPER_ADMIN`/`HEAD_OFFICE`/`DISTRICT`) may acknowledge, assign, verify and close; technicians additionally troubleshoot, escalate and resolve; organization CRUD is limited to head-office roles; user management to super admins.
+2. **Role permissions** — `apps/common/permissions.py`: district administrators manage users and organization records; maintenance supervisors assign, verify and close; technicians additionally troubleshoot, escalate and resolve; branch users are limited to their branch's ATM status and fault reports.
 3. **Organizational scope** — `ScopedQuerysetMixin.scope_queryset` on every resource viewset: staff/head office see everything, district users see their district, branch users their branch. Out-of-scope updates return 403; deletes are always forbidden (deactivate instead).
 4. **Frontend gating** — sidebar items, routes (`PermissionRoute`) and buttons are driven by the `permissions[]` list returned by `GET /api/auth/me/`. This is UX only; the backend independently enforces everything.
 
@@ -48,7 +48,7 @@ Central `AuthProvider` exposes currentUser (with permissions), isAuthenticated, 
 
 ## 22. Testing
 
-Backend pytest suite (13 tests, all passing):
+Backend pytest suite covers authentication, scope, workflow, branch reports, and portal-account provisioning.
 - auth: invalid login rejected; `/me` returns permissions for supervisor vs technician.
 - scope: district-A manager sees only district-A ATMs/incidents; cross-district access 404; branch manager cannot create districts (403); head office can.
 - lifecycle: full REPORTED→…→CLOSED flow including failed verification path, permission denials (technician cannot acknowledge/verify), audit rows for every step, notifications at each stage.
@@ -62,12 +62,12 @@ JWT-only API, blacklist on logout, role+scope enforced server-side on every muta
 
 ## 24. Deployment
 
-Set `DJANGO_DEBUG=false`, `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, `DATABASE_URL` (PostgreSQL), `USE_SQLITE=false`, `CORS_ALLOWED_ORIGINS`; run `makemigrations`/`migrate`; serve via gunicorn behind TLS. Frontend: set `VITE_API_BASE_URL` to the production API and run `npm run build`.
+Set `DJANGO_DEBUG=false`, `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, `DATABASE_URL` (PostgreSQL), `USE_SQLITE=false`, and `CORS_ALLOWED_ORIGINS`. The Render blueprint installs dependencies, runs migrations before deploy, and serves Django through Gunicorn. Frontend: set `VITE_API_BASE_URL` to the production API and run `npm run build`.
 
 ## 25. Known issues
 
 - Global DRF pagination is not enabled; list endpoints currently return full arrays (filtering is server-side). Enable `PAGE_SIZE` before datasets grow large.
-- Role choices remain the original seven; finer-grained roles (e.g. separate district supervisor vs district admin) would need new choices + migration.
+- Reports and dashboards are API-backed; export/download jobs still need to be added if operational teams require CSV or PDF files.
 - No automated E2E browser tests yet; the end-to-end workflow is covered by the backend integration test and manual UI passes.
 - User creation UI manages activation/roles but not password provisioning flows (invitations/reset).
 

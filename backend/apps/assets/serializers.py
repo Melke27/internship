@@ -18,10 +18,12 @@ class ATMStatusHistorySerializer(serializers.ModelSerializer):
 
 
 class MaintenanceSerializer(serializers.ModelSerializer):
+    maintenance_id = serializers.ReadOnlyField()
     atm_reference = serializers.CharField(source="atm.reference", read_only=True)
     branch_name = serializers.CharField(source="atm.branch.name", read_only=True)
     district_name = serializers.CharField(source="atm.branch.district.name", read_only=True)
     technician_name = serializers.CharField(source="technician.full_name", read_only=True, default=None)
+    requested_by_name = serializers.CharField(source="requested_by.full_name", read_only=True, default=None)
 
     class Meta:
         model = Maintenance
@@ -34,6 +36,7 @@ class ATMSerializer(serializers.ModelSerializer):
     assigned_technician_name = serializers.CharField(
         source="assigned_technician.full_name", read_only=True, default=None
     )
+    operational_state = serializers.ReadOnlyField()
     active_incident = serializers.SerializerMethodField()
     components = ATMComponentSerializer(many=True, read_only=True)
 
@@ -53,4 +56,3 @@ class ATMSerializer(serializers.ModelSerializer):
             "category": active.category,
             "title": active.title,
         }
-

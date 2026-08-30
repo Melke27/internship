@@ -56,6 +56,11 @@ export default function NotificationsPage() {
           <button className="button secondary" onClick={() => markAll.mutate()}>Mark all read</button>
         ) : null}
       </div>
+      <div className="kpi-grid compact">
+        <article className="metric-card"><span>Total Alerts</span><strong>{notifications.isLoading ? '…' : rows.length}</strong></article>
+        <article className="metric-card warning"><span>Unread</span><strong>{rows.filter((notification) => !notification.is_read).length}</strong></article>
+        <article className="metric-card success"><span>Read</span><strong>{rows.filter((notification) => notification.is_read).length}</strong></article>
+      </div>
       <div className="panel">
         {notifications.isLoading ? <LoadingState label="Loading notifications..." /> : null}
         {notifications.isError ? <ErrorState message="Unable to load notifications." /> : null}
@@ -68,7 +73,7 @@ export default function NotificationsPage() {
         {rows.length > 0 ? (
           <div className="list-stack">
             {rows.map((notification) => (
-              <div key={notification.id} className={`list-card ${notification.is_read ? '' : 'unread'}`} style={notification.is_read ? undefined : { background: '#eff6ff' }}>
+              <div key={notification.id} className={`list-card ${notification.is_read ? '' : 'unread'}`}>
                 <div>
                   <strong>{notification.title}</strong>
                   <small>{notification.body}</small>

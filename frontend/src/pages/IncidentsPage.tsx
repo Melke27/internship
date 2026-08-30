@@ -103,6 +103,7 @@ function CreateIncidentDialog({ initialAtmId, onClose }: { initialAtmId?: string
         <div className="readonly-card">
           <span>Current ATM Status</span>
           <div>{selectedATM ? <StatusBadge value={selectedATM.status} /> : 'Select an ATM to view status'}</div>
+          {selectedATM ? <small>Network: {selectedATM.network_status.replaceAll('_', ' ')} · Hardware: {selectedATM.hardware_status.replaceAll('_', ' ')}</small> : null}
         </div>
         <label>
           Incident title *
@@ -163,6 +164,10 @@ export default function IncidentsPage() {
     },
   });
 
+  const rows = useMemo(() => incidents.data || [], [incidents.data]);
+  const openRows = rows.filter((incident) => incident.status !== 'CLOSED');
+  const closedRows = rows.filter((incident) => ['RESOLVED', 'VERIFIED', 'CLOSED'].includes(incident.status));
+
   return (
     <section className="page-content">
       <div className="page-header">
@@ -189,7 +194,20 @@ export default function IncidentsPage() {
           ) : null}
         </div>
       </div>
+      <div className="kpi-grid compact">
+        <article className="metric-card"><span>Open Incidents</span><strong>{openRows.length}</strong></article>
+        <article className="metric-card danger"><span>Critical Open</span><strong>{openRows.filter((incident) => incident.priority === 'CRITICAL').length}</strong></article>
+        <article className="metric-card warning"><span>High Open</span><strong>{openRows.filter((incident) => incident.priority === 'HIGH').length}</strong></article>
+        <article className="metric-card"><span>Unassigned</span><strong>{openRows.filter((incident) => !incident.assigned_to_name).length}</strong></article>
+        <article className="metric-card success"><span>Resolved / Closed</span><strong>{closedRows.length}</strong></article>
+      </div>
       <div className="panel">
+        <div className="panel-header">
+          <div>
+            <h2>Incident Register</h2>
+            <p>Showing {rows.length} incidents — {openRows.length} still open.</p>
+          </div>
+        </div>
         {incidents.isLoading ? <LoadingState label="Loading incidents..." /> : null}
         {incidents.isError ? <ErrorState message="Unable to load incident data. Please try again." /> : null}
         {!incidents.isLoading && !incidents.isError && (incidents.data || []).length === 0 ? (
@@ -216,7 +234,7 @@ export default function IncidentsPage() {
                       <Link to={`/incidents/${incident.id}`}><strong>{incident.incident_id}</strong></Link>
                       <small>{incident.title}</small>
                     </td>
-                    <td>{incident.atm_reference}</td>
+                    <td><Link className="text-link" to={`/atms/${incident.atm}`}>{incident.atm_reference}</Link></td>
                     <td>{incident.branch_name}</td>
                     <td><PriorityBadge value={incident.priority} /></td>
                     <td><StatusBadge value={incident.status} /></td>

@@ -27,13 +27,15 @@ DATABASES = {"default": dj_database_url.config()}
 if os.getenv("DATABASE_URL", "").startswith("sqlite") or DEBUG and os.getenv("USE_SQLITE", "true").lower() == "true":
     DATABASES = {"default": {"ENGINE":"django.db.backends.sqlite3","NAME":BASE_DIR / "db.sqlite3"}}
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validators.UserAttributeSimilarValidator"},
-    {"NAME": "django.contrib.auth.password_validators.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validators.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validators.NumericPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 LANGUAGE_CODE = "en-us"; TIME_ZONE = "Africa/Addis_Ababa"; USE_I18N = True; USE_TZ = True
 STATIC_URL = "static/"; DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 AUTH_USER_MODEL = "accounts.User"
 CORS_ALLOWED_ORIGINS = [x for x in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173").split(",") if x]
 REST_FRAMEWORK = {"DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",), "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",), "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend", "rest_framework.filters.SearchFilter", "rest_framework.filters.OrderingFilter"), "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination", "PAGE_SIZE": int(os.getenv("API_PAGE_SIZE", "50")), "DEFAULT_SCHEMA_CLASS":"drf_spectacular.openapi.AutoSchema"}

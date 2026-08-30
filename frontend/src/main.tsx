@@ -3,8 +3,8 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { AuthProvider } from './context/AuthContext';
-import { ProtectedRoute, PermissionRoute } from './components/routes/RouteGuards';
+import { AuthProvider, portalHome, useAuth } from './context/AuthContext';
+import { PortalRoute, ProtectedRoute, PermissionRoute } from './components/routes/RouteGuards';
 import AppLayout from './layouts/AppLayout';
 import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
@@ -14,21 +14,24 @@ import IncidentsPage from './pages/IncidentsPage';
 import IncidentDetailPage from './pages/IncidentDetailPage';
 import TroubleshootingPage from './pages/TroubleshootingPage';
 import EscalationsPage from './pages/EscalationsPage';
-import MaintenancePage from './pages/MaintenancePage';
+import MaintenancePage, { MaintenanceOpsPage } from './pages/MaintenancePage';
 import MonitoringPage from './pages/MonitoringPage';
 import ReportsPage from './pages/ReportsPage';
 import AuditPage from './pages/AuditPage';
 import NotificationsPage from './pages/NotificationsPage';
 import SettingsPage from './pages/SettingsPage';
+import BranchesPage, { BranchDetailPage } from './pages/BranchesPage';
 import UsersPage from './pages/UsersPage';
+import ActiveFaultsPage from './pages/ActiveFaultsPage';
+import BranchReportsPage, { DistrictBranchReportDetailPage } from './pages/BranchReportsPage';
+import BranchDashboardPage from './pages/BranchDashboardPage';
+import BranchReportFormPage, { BranchReportsListPage } from './pages/BranchReportFormPage';
+import BranchReportDetailPage from './pages/BranchReportDetailPage';
+import StatusHistoryPage, { BranchATMDetailPage, BranchATMsPage } from './pages/BranchATMsPage';
 import { AccessDeniedPage, NotFoundPage } from './pages/ErrorPages';
 
-import './atm-ops.css';
-import './enhancements.css';
-import './branding.css';
+import './modern.css';
 import './photo-overrides.css';
-import './logo-image.css';
-import './password-toggle.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +41,11 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function HomeRedirect() {
+  const { currentUser } = useAuth();
+  return <Navigate to={portalHome(currentUser)} replace />;
+}
 
 function App() {
   return (
@@ -50,21 +58,34 @@ function App() {
           <ProtectedRoute>
             <AppLayout>
               <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/atms" element={<PermissionRoute permission="atm.view"><ATMsPage /></PermissionRoute>} />
-                <Route path="/atms/:id" element={<PermissionRoute permission="atm.view"><ATMDetailsPage /></PermissionRoute>} />
-                <Route path="/incidents" element={<PermissionRoute permission="incident.view"><IncidentsPage /></PermissionRoute>} />
-                <Route path="/incidents/:id" element={<PermissionRoute permission="incident.view"><IncidentDetailPage /></PermissionRoute>} />
-                <Route path="/troubleshooting" element={<PermissionRoute permission="troubleshooting.view"><TroubleshootingPage /></PermissionRoute>} />
-                <Route path="/escalations" element={<PermissionRoute permission="incident.view"><EscalationsPage /></PermissionRoute>} />
-                <Route path="/maintenance" element={<PermissionRoute permission="maintenance.view"><MaintenancePage /></PermissionRoute>} />
-                <Route path="/monitoring" element={<PermissionRoute permission="atm.view"><MonitoringPage /></PermissionRoute>} />
-                <Route path="/reports" element={<PermissionRoute permission="report.view"><ReportsPage /></PermissionRoute>} />
+                <Route path="/" element={<HomeRedirect />} />
+                <Route path="/dashboard" element={<PortalRoute portal="district"><DashboardPage /></PortalRoute>} />
+                <Route path="/maintenance-ops" element={<PortalRoute portal="maintenance"><PermissionRoute permission="maintenance.view"><MaintenanceOpsPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/branch" element={<PortalRoute portal="branch"><BranchDashboardPage /></PortalRoute>} />
+                <Route path="/branch/atms" element={<PortalRoute portal="branch"><PermissionRoute permission="atm.view"><BranchATMsPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/branch/atms/:id" element={<PortalRoute portal="branch"><PermissionRoute permission="atm.view"><BranchATMDetailPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/branch/report" element={<PortalRoute portal="branch"><PermissionRoute permission="branch_report.create"><BranchReportFormPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/branch/reports" element={<PortalRoute portal="branch"><PermissionRoute permission="branch_report.view"><BranchReportsListPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/branch/reports/:id" element={<PortalRoute portal="branch"><PermissionRoute permission="branch_report.view"><BranchReportDetailPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/atms" element={<PortalRoute portal="district"><PermissionRoute permission="atm.view"><ATMsPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/atms/:id" element={<PortalRoute portal="district"><PermissionRoute permission="atm.view"><ATMDetailsPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/active-faults" element={<PortalRoute portal="district"><PermissionRoute permission="atm.view"><ActiveFaultsPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/incidents" element={<PortalRoute portal="district"><PermissionRoute permission="incident.view"><IncidentsPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/incidents/:id" element={<PortalRoute portal="district"><PermissionRoute permission="incident.view"><IncidentDetailPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/branch-reports" element={<PortalRoute portal="district"><PermissionRoute permission="branch_report.view"><BranchReportsPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/branch-reports/:id" element={<PortalRoute portal="district"><PermissionRoute permission="branch_report.view"><DistrictBranchReportDetailPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/troubleshooting" element={<PortalRoute portal="maintenance"><PermissionRoute permission="troubleshooting.view"><TroubleshootingPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/escalations" element={<PortalRoute portal="maintenance"><PermissionRoute permission="incident.view"><EscalationsPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/maintenance" element={<PortalRoute portal="maintenance"><PermissionRoute permission="maintenance.view"><MaintenancePage /></PermissionRoute></PortalRoute>} />
+                <Route path="/monitoring" element={<PortalRoute portal="district"><PermissionRoute permission="atm.view"><MonitoringPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/status-history" element={<PortalRoute portal="district"><PermissionRoute permission="atm.view"><StatusHistoryPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/branches" element={<PortalRoute portal="district"><PermissionRoute permission="branch.view"><BranchesPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/branches/:id" element={<PortalRoute portal="district"><PermissionRoute permission="branch.view"><BranchDetailPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/reports" element={<PortalRoute portal={['district', 'maintenance']}><PermissionRoute permission="report.view"><ReportsPage /></PermissionRoute></PortalRoute>} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/users" element={<PermissionRoute permission="user.view"><UsersPage /></PermissionRoute>} />
-                <Route path="/audit-logs" element={<PermissionRoute permission="audit.view"><AuditPage /></PermissionRoute>} />
+                <Route path="/users" element={<PortalRoute portal="district"><PermissionRoute permission="user.view"><UsersPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/audit-logs" element={<PortalRoute portal="district"><PermissionRoute permission="audit.view"><AuditPage /></PermissionRoute></PortalRoute>} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </AppLayout>

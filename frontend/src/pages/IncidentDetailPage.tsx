@@ -7,7 +7,7 @@ import { isAxiosError } from 'axios';
 import { api } from '../lib/api';
 import { hasPermission, useAuth } from '../context/AuthContext';
 import { showToast } from '../lib/toast';
-import { ErrorState, LoadingState } from '../components/feedback/StateView';
+import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
 import type { Incident, User } from '../types/api';
 
@@ -318,6 +318,10 @@ export default function IncidentDetailPage() {
             ) : null}
           </div>
           {error ? <div className="error-banner"><strong>{error}</strong></div> : null}
+          {!error && (incident.actions || []).length === 0 ? (
+            <EmptyState title="No technical actions yet" description="Technician actions will appear here as the incident is worked on." />
+          ) : null}
+          {(incident.actions || []).length > 0 ? (
           <div className="timeline">
             {(incident.actions || []).map((action) => (
               <div className="timeline-item" key={action.id}>
@@ -330,6 +334,7 @@ export default function IncidentDetailPage() {
               </div>
             ))}
           </div>
+          ) : null}
         </article>
       </div>
 
@@ -338,6 +343,11 @@ export default function IncidentDetailPage() {
           <h2>Incident Timeline</h2>
           {timeline.isLoading ? <LoadingState label="Loading incident timeline..." /> : null}
           {timeline.isError ? <ErrorState message="Unable to load incident timeline." /> : null}
+          {!timeline.isLoading && !timeline.isError && (timeline.data || []).length === 0 ? (
+            <EmptyState title="No timeline events" description="Workflow events will appear here as the incident progresses." />
+          ) : null}
+          {!timeline.isLoading && !timeline.isError && (timeline.data || []).length > 0 ? (
+          <div className="timeline">
           {(timeline.data || []).map((item, index) => (
             <div className="timeline-item" key={`${item.time}-${index}`}>
               <div className="timeline-dot" />
@@ -348,6 +358,8 @@ export default function IncidentDetailPage() {
               </div>
             </div>
           ))}
+          </div>
+          ) : null}
         </article>
 
         <article className="panel">

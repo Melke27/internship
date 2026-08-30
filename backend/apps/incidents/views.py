@@ -23,7 +23,11 @@ def district_supervisors(incident):
     from django.db.models import Q
     district_id = incident.atm.branch.district_id
     return User.objects.filter(is_active=True).filter(
-        Q(district_id=district_id, role="SUPERVISOR") | Q(role="ADMINISTRATOR")
+        Q(
+            district_id=district_id,
+            role__in=["SUPERVISOR", "MAINTENANCE_SUPERVISOR", "OPERATIONS_OFFICER", "MONITORING_OFFICER"],
+        )
+        | Q(role__in=["ADMINISTRATOR", "DISTRICT_ADMIN"])
     )
 
 
@@ -31,6 +35,7 @@ class IncidentViewSet(ScopedQuerysetMixin, viewsets.ModelViewSet):
     queryset=Incident.objects.select_related("atm","atm__branch","atm__branch__district").prefetch_related("actions","escalations").order_by("-created_at"); serializer_class=IncidentSerializer; search_fields=["title","description","error_message","atm__reference"]; filterset_fields=["status","priority","category","atm","assigned_to","atm__branch__district"]; ordering_fields=["created_at","priority","status"]
     def scope_queryset(self,qs):
         u=self.request.user
+        if not u.is_authenticated:return qs.none()
         if u.is_staff or not u.district_id:return qs
         return qs.filter(atm__branch__district_id=u.district_id, **({"atm__branch_id":u.branch_id} if u.branch_id else {}))
     def _audit(self, action_name, incident, new_value=None):
@@ -54,15 +59,19 @@ class IncidentViewSet(ScopedQuerysetMixin, viewsets.ModelViewSet):
     def status(self,request,pk=None):
         incident=self.get_object(); next_status=request.data.get("status")
         allowed={
-            Incident.Status.REPORTED:[Incident.Status.ACKNOWLEDGED],
-            Incident.Status.ACKNOWLEDGED:[Incident.Status.ASSIGNED,Incident.Status.INVESTIGATING],
-            Incident.Status.ASSIGNED:[Incident.Status.INVESTIGATING],
-            Incident.Status.INVESTIGATING:[Incident.Status.TROUBLESHOOTING,Incident.Status.WAITING,Incident.Status.ESCALATED],
-            Incident.Status.TROUBLESHOOTING:[Incident.Status.WAITING,Incident.Status.ESCALATED],
-            Incident.Status.WAITING:[Incident.Status.INVESTIGATING,Incident.Status.TROUBLESHOOTING,Incident.Status.ESCALATED],
-            Incident.Status.ESCALATED:[Incident.Status.INVESTIGATING,Incident.Status.TROUBLESHOOTING],
-            Incident.Status.RESOLVED:[Incident.Status.VERIFIED],
-            Incident.Status.VERIFIED:[Incident.Status.CLOSED,Incident.Status.TROUBLESHOOTING],
+            Incident.Status.REPORTED: [Incident.Status.ACKNOWLEDGED],
+            Incident.Status.ACKNOWLEDGED: [Incident.Status.ASSIGNED],
+            Incident.Status.ASSIGNED: [Incident.Status.INVESTIGATING],
+            Incident.Status.INVESTIGATING: [Incident.Status.TROUBLESHOOTING],
+            Incident.Status.TROUBLESHOOTING: [
+                Incident.Status.WAITING,
+                Incident.Status.ESCALATED,
+                Incident.Status.RESOLVED,
+            ],
+            Incident.Status.WAITING: [Incident.Status.TROUBLESHOOTING, Incident.Status.ESCALATED],
+            Incident.Status.ESCALATED: [Incident.Status.TROUBLESHOOTING, Incident.Status.INVESTIGATING],
+            Incident.Status.RESOLVED: [Incident.Status.VERIFIED],
+            Incident.Status.VERIFIED: [Incident.Status.CLOSED],
         }
         if next_status not in allowed.get(incident.status,[]):return Response({"detail":f"Invalid transition from {incident.status} to {next_status}."},status=http_status.HTTP_400_BAD_REQUEST)
         if next_status in SUPERVISOR_STATUSES:
@@ -139,7 +148,10 @@ class IncidentViewSet(ScopedQuerysetMixin, viewsets.ModelViewSet):
         record,_=Verification.objects.update_or_create(resolution=incident.resolution,defaults=defaults)
         if all(defaults[k] for k in ["atm_available","issue_cleared","communication_working","approved_test_completed"]):
             incident.status=Incident.Status.VERIFIED
-            if incident.atm.status in [ATM.Status.OFFLINE, ATM.Status.FAULT, ATM.Status.COMMUNICATION_PROBLEM, ATM.Status.ERROR, ATM.Status.UNAVAILABLE]:
+            if incident.atm.status in [
+                ATM.Status.OFFLINE, ATM.Status.FAULT, ATM.Status.CRITICAL,
+                ATM.Status.DEGRADED, ATM.Status.WARNING, ATM.Status.MAINTENANCE, ATM.Status.UNDER_REPAIR,
+            ]:
                 record_atm_status_change(incident.atm, ATM.Status.OPERATIONAL, request.user, "Incident verification confirmed restored service.")
         else:
             incident.status=Incident.Status.TROUBLESHOOTING

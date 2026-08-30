@@ -32,6 +32,12 @@ export default function EscalationsPage() {
           <p className="page-copy">Incidents escalated by technicians and awaiting supervisory or specialist action.</p>
         </div>
       </div>
+      <div className="kpi-grid compact">
+        <article className="metric-card"><span>Escalated Incidents</span><strong>{rows.length}</strong></article>
+        <article className="metric-card danger"><span>Critical</span><strong>{rows.filter((incident) => incident.priority === 'CRITICAL').length}</strong></article>
+        <article className="metric-card warning"><span>High</span><strong>{rows.filter((incident) => incident.priority === 'HIGH').length}</strong></article>
+        <article className="metric-card"><span>Unassigned</span><strong>{rows.filter((incident) => !incident.assigned_to_name).length}</strong></article>
+      </div>
       <div className="panel">
         {rows.length === 0 ? (
           <EmptyState

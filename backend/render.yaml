@@ -1,6 +1,27 @@
-service:
-  name: cbe-backend
-  env: python
-  plan: free
-  buildCommand: pip install -r requirements/base.txt
-  startCommand: python manage.py runserver 0.0.0.0:$PORT
+services:
+  - type: web
+    name: cbe-backend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements/base.txt
+    preDeployCommand: python manage.py migrate --noinput
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: DJANGO_DEBUG
+        value: "false"
+      - key: USE_SQLITE
+        value: "false"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cbe-postgres
+          property: connectionString
+      - key: DJANGO_ALLOWED_HOSTS
+        value: cbe-backend.onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+
+databases:
+  - name: cbe-postgres
+    plan: free

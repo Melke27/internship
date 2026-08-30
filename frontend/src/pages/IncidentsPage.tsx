@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 
 import { api } from '../lib/api';
+import { useDebounce } from '../lib/useDebounce';
 import { hasPermission, useAuth } from '../context/AuthContext';
 import { showToast } from '../lib/toast';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
@@ -70,6 +71,7 @@ function CreateIncidentDialog({ initialAtmId, onClose }: { initialAtmId?: string
             error_message: value('error_message'),
             description: value('description'),
             service_impact: value('service_impact'),
+            assigned_to: value('assigned_to') ? Number(value('assigned_to')) : undefined,
           });
         }}
       >
@@ -86,24 +88,31 @@ function CreateIncidentDialog({ initialAtmId, onClose }: { initialAtmId?: string
             ))}
           </select>
         </label>
-        <label>
-          Category *
-          <select name="category" required>
-            {['NETWORK / COMMUNICATION', 'POWER', 'HARDWARE', 'DISPLAY', 'CARD READER', 'CASH DISPENSER', 'RECEIPT PRINTER', 'GENERAL ATM ERROR', 'OTHER TECHNICAL ISSUE'].map((value) => (
-              <option key={value} value={value}>{value}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Priority *
-          <select name="priority" required>
-            {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((value) => <option key={value} value={value}>{value}</option>)}
-          </select>
-        </label>
+        <div className="form-grid">
+          <label>
+            Category *
+            <select name="category" required>
+              {['NETWORK / COMMUNICATION', 'POWER', 'HARDWARE', 'DISPLAY', 'CARD READER', 'CASH DISPENSER', 'RECEIPT PRINTER', 'GENERAL ATM ERROR', 'OTHER TECHNICAL ISSUE'].map((value) => (
+                <option key={value} value={value}>{value}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Priority *
+            <select name="priority" required>
+              {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((value) => <option key={value} value={value}>{value}</option>)}
+            </select>
+          </label>
+        </div>
         <div className="readonly-card">
           <span>Current ATM Status</span>
-          <div>{selectedATM ? <StatusBadge value={selectedATM.status} /> : 'Select an ATM to view status'}</div>
-          {selectedATM ? <small>Network: {selectedATM.network_status.replaceAll('_', ' ')} · Hardware: {selectedATM.hardware_status.replaceAll('_', ' ')}</small> : null}
+          <div>{selectedATM ? <StatusBadge value={selectedATM.status} /> : <em className="empty-inline">Select an ATM to view status</em>}</div>
+          {selectedATM ? (
+            <div className="badge-group">
+              <StatusBadge value={selectedATM.network_status} />
+              <StatusBadge value={selectedATM.hardware_status} />
+            </div>
+          ) : null}
         </div>
         <label>
           Incident title *
@@ -121,12 +130,28 @@ function CreateIncidentDialog({ initialAtmId, onClose }: { initialAtmId?: string
           Problem Description *
           <textarea name="description" rows={4} required placeholder="Describe the actual ATM problem" />
         </label>
-        {technicians.data && technicians.data.length > 0 ? (
-          <div className="readonly-card">
-            <span>Assignable Technicians</span>
-            <small>{technicians.data.map((tech) => tech.full_name || tech.username).join(', ')}</small>
-          </div>
-        ) : null}
+{technicians.data && technicians.data.length > 0 ? (
+            <label>
+              Assignable Technicians
+              <small>Optional — pick a technician or auto-assign later.</small>
+              <div className="technician-picker">
+                <label className="tech-option">
+                  <input type="radio" name="assigned_to" value="" defaultChecked />
+                  <span className="tech-avatar">±</span>
+                  <strong>Auto-assign later<small>Leave unassigned for now</small></strong>
+                  <span className="check-mark">✓</span>
+                </label>
+                {technicians.data.map((tech) => (
+                  <label key={tech.id} className="tech-option">
+                    <input type="radio" name="assigned_to" value={tech.id} />
+                    <span className="tech-avatar">{(tech.full_name || tech.username).slice(0, 2).toUpperCase()}</span>
+                    <strong>{tech.full_name || tech.username}<small>{tech.username}</small></strong>
+                    <span className="check-mark">✓</span>
+                  </label>
+                ))}
+              </div>
+            </label>
+          ) : null}
         {duplicate ? (
           <div className="error-banner">
             <strong>{selectedATM?.reference} already has an active incident.</strong>
@@ -147,7 +172,9 @@ function CreateIncidentDialog({ initialAtmId, onClose }: { initialAtmId?: string
 export default function IncidentsPage() {
   const { currentUser } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
+  // Debounce the search so we don't fire a request on every keystroke
+  const search = useDebounce(searchInput, 400);
   const [status, setStatus] = useState(searchParams.get('status') || '');
   const [priority, setPriority] = useState(searchParams.get('priority') || '');
   const openNew = searchParams.get('new') === '1';
@@ -177,7 +204,7 @@ export default function IncidentsPage() {
           <p className="page-copy">Create, assign, investigate, retest, resolve, verify and close ATM incidents from one workflow.</p>
         </div>
         <div className="page-actions">
-          <input className="field-input" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search ATM, incident, error..." />
+          <input className="field-input" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Search ATM, incident, error..." />
           <select className="field-input" value={status} onChange={(event) => setStatus(event.target.value)}>
             <option value="">All statuses</option>
             {['REPORTED', 'ACKNOWLEDGED', 'ASSIGNED', 'INVESTIGATING', 'TROUBLESHOOTING', 'WAITING', 'ESCALATED', 'RESOLVED', 'VERIFIED', 'CLOSED'].map((value) => (

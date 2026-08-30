@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNow } from '../lib/useNow';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -47,9 +48,9 @@ function todayLabel() {
   });
 }
 
-function relativeTime(iso?: string) {
+function relativeTime(iso?: string, now = Date.now()) {
   if (!iso) return 'unknown';
-  const diff = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+  const diff = Math.max(0, Math.round((now - new Date(iso).getTime()) / 1000));
   if (diff < 10) return 'just now';
   if (diff < 60) return `${diff}s ago`;
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
@@ -58,6 +59,7 @@ function relativeTime(iso?: string) {
 
 export default function DashboardPage() {
   const { currentUser } = useAuth();
+  const now = useNow(30_000);
   const [tick, setTick] = useState(0);
   const summary = useQuery({
     queryKey: ['dashboard-summary', tick],
@@ -105,15 +107,16 @@ export default function DashboardPage() {
   }
 
   const data = summary.data;
-  const total = data.total_atms ?? data.atms;
-  const active = data.active_atms ?? total;
-  const inactive = data.inactive_atms ?? 0;
+  // Coerce to number to avoid NaN from paginated-response objects
+  const total = Number(data.total_atms ?? data.atms ?? 0);
+  const active = Number(data.active_atms ?? total);
+  const inactive = Number(data.inactive_atms ?? 0);
   const critical = data.critical_atms ?? data.atm_status.CRITICAL ?? 0;
   const pendingReports = data.pending_branch_reports ?? 0;
   const underRepair = data.under_repair ?? data.atm_status.UNDER_REPAIR ?? 0;
   const fleet = atms.data || [];
   const faults = data.active_faults || [];
-  const availability = total ? Math.round((active / total) * 100) : 0;
+  const availability = total > 0 ? Math.round((active / total) * 100) : 0;
   const incidentTrend = data.trends?.incidents || [];
   const workload = data.technician_workload || [];
   const maintenance = data.maintenance_kpis;
@@ -137,7 +140,7 @@ export default function DashboardPage() {
           </p>
           <span className="live-updated">
             <span className="live-dot" />
-            Updated {relativeTime(data.last_updated)}
+            Updated {relativeTime(data.last_updated, now)}
           </span>
         </div>
         <div className="page-actions">

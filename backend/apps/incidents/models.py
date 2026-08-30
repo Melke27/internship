@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.validators import FileExtensionValidator
 from django.db import models
 
 from apps.organization.models import TimeStamped
@@ -55,7 +56,12 @@ class Incident(TimeStamped):
 
     @property
     def incident_id(self):
-        return f"INC-{self.created_at:%Y}-{self.pk:04d}" if self.pk else "INC-PENDING"
+        if self.pk and self.created_at:
+            return f"INC-{self.created_at:%Y}-{self.pk:04d}"
+        return "INC-PENDING"
+
+    def __str__(self):
+        return f"{self.incident_id} — {self.title}"
 
 
 class BranchReport(TimeStamped):
@@ -117,7 +123,16 @@ class BranchReport(TimeStamped):
     observed_error = models.TextField(blank=True)
     problem_started_at = models.DateTimeField(null=True, blank=True)
     customer_impact = models.CharField(max_length=255, blank=True)
-    evidence = models.FileField(upload_to="branch_reports/%Y/%m/", null=True, blank=True)
+    evidence = models.FileField(
+        upload_to="branch_reports/%Y/%m/",
+        null=True,
+        blank=True,
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=['jpg', 'jpeg', 'png', 'gif', 'pdf', 'mp4', 'mov']
+            )
+        ],
+    )
     status = models.CharField(max_length=40, choices=Status.choices, default=Status.SUBMITTED)
     dismissal_reason = models.TextField(blank=True)
     reviewed_by = models.ForeignKey(

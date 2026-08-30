@@ -45,7 +45,7 @@ STATIC_URL = "static/"; DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 AUTH_USER_MODEL = "accounts.User"
-CORS_ALLOWED_ORIGINS = [x for x in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173").split(",") if x]
+CORS_ALLOWED_ORIGINS = [x.strip().rstrip("/") for x in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173").split(",") if x.strip()]
 CORS_ALLOWED_ORIGIN_REGEXES = []
 if os.getenv("CORS_ALLOW_VERCEL", "true").lower() == "true":
     CORS_ALLOWED_ORIGIN_REGEXES.append(r"^https://.*\.vercel\.app$")

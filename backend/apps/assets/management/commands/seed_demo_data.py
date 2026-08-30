@@ -36,7 +36,7 @@ class Command(BaseCommand):
             defaults={"name": branch_name, "status": "ACTIVE"},
         )
 
-        admin, tech, branch_user = self._ensure_accounts(User, district, branch, password, reset_passwords)
+        (admin, tech, branch_user, _superadmin) = self._ensure_accounts(User, district, branch, password, reset_passwords)
         self._make_atms(branch, now)
         atms = ATM.objects.order_by("reference").all()
         self._make_incidents(atms, admin, tech, branch_user, now)

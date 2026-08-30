@@ -47,15 +47,19 @@ class Command(BaseCommand):
 
     def _ensure_accounts(self, User, district, branch, password, reset_passwords):
         accounts = (
-            ("district.admin", "district.admin@example.test", "District Administrator", User.Role.DISTRICT_ADMIN, None),
-            ("maintenance.tech", "maintenance.tech@example.test", "Maintenance Technician", User.Role.TECHNICIAN, None),
-            ("branch.user", "branch.user@example.test", "Branch User", User.Role.BRANCH_USER, branch),
+            ("district.admin", "district.admin@example.test", "District Administrator", User.Role.DISTRICT_ADMIN, None, False),
+            ("maintenance.tech", "maintenance.tech@example.test", "Maintenance Technician", User.Role.TECHNICIAN, None, False),
+            ("branch.user", "branch.user@example.test", "Branch User", User.Role.BRANCH_USER, branch, False),
+            ("admin", "admin@example.test", "System Administrator", User.Role.DISTRICT_ADMIN, None, True),
         )
         users = []
-        for username, email, full_name, role, assigned_branch in accounts:
+        for username, email, full_name, role, assigned_branch, is_superuser in accounts:
             user, created = User.objects.get_or_create(
                 username=username,
-                defaults=dict(email=email, full_name=full_name, role=role, district=district, branch=assigned_branch),
+                defaults=dict(
+                    email=email, full_name=full_name, role=role, district=district,
+                    branch=assigned_branch, is_staff=is_superuser, is_superuser=is_superuser,
+                ),
             )
             user.district = district
             user.email = email
@@ -64,11 +68,14 @@ class Command(BaseCommand):
             if assigned_branch:
                 user.branch = assigned_branch
             user.is_active = True
+            if is_superuser:
+                user.is_staff = True
+                user.is_superuser = True
             if created or reset_passwords:
                 user.set_password(password)
             user.save()
             users.append(user)
-            self.stdout.write(self.style.SUCCESS(f"{'Created' if created else 'Ensured'} account {username} ({role})"))
+            self.stdout.write(self.style.SUCCESS(f"{'Created' if created else 'Ensured'} account {username} ({'SUPERUSER/admin' if is_superuser else role})"))
         return users
 
     def _make_atms(self, branch, now):

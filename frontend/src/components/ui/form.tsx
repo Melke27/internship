@@ -1,11 +1,12 @@
-import type {
-  ButtonHTMLAttributes,
-  FormEvent,
-  HTMLAttributes,
-  InputHTMLAttributes,
-  ReactNode,
-  SelectHTMLAttributes,
-  TextareaHTMLAttributes,
+import {
+  useEffect,
+  type ButtonHTMLAttributes,
+  type FormEvent,
+  type HTMLAttributes,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
 } from 'react';
 
 export function cx(...parts: Array<string | false | null | undefined>) {
@@ -104,6 +105,14 @@ export function Dialog({
   wide,
   className,
 }: DialogProps) {
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') onClose();
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const panelClass = cx('dialog-panel', wide && 'dialog-wide', className);
   const content = (
     <>

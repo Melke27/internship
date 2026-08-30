@@ -26,6 +26,7 @@ import { formatIncidentDuration } from '../lib/utils';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { StatusBadge, PriorityBadge } from '../components/ui/StatusBadge';
 import ATMDialog from '../components/atms/ATMDialog';
+import SetATMStatusDialog from '../components/atms/SetATMStatusDialog';
 import type { ATM, Incident, Maintenance } from '../types/api';
 
 function list<T>(path: string) {
@@ -84,6 +85,7 @@ export default function ATMDetailsPage() {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const atm = useQuery({
@@ -202,6 +204,13 @@ export default function ATMDetailsPage() {
         <Link className="atm-qaction" to="/monitoring">
           <Activity size={14} /> Live Monitoring
         </Link>
+        <button
+          className="atm-qaction"
+          onClick={() => setStatusOpen(true)}
+          style={{ border: 'none', cursor: 'pointer', font: 'inherit' }}
+        >
+          <Activity size={14} /> Update Technical Status
+        </button>
         <button
           className="atm-qaction"
           onClick={refreshAll}
@@ -550,6 +559,9 @@ export default function ATMDetailsPage() {
 
       {editOpen && atm.data ? (
         <ATMDialog atm={atm.data} onClose={() => setEditOpen(false)} />
+      ) : null}
+      {statusOpen && atm.data ? (
+        <SetATMStatusDialog atm={atm.data} onClose={() => setStatusOpen(false)} />
       ) : null}
     </section>
   );

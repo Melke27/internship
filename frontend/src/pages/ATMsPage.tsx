@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
+import { useDebounce } from '../lib/useDebounce';
 import { api } from '../lib/api';
 import { hasPermission, useAuth } from '../context/AuthContext';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
@@ -32,6 +33,7 @@ export default function ATMsPage() {
   const { currentUser } = useAuth();
   const [params, setParams] = useSearchParams();
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [chip, setChip] = useState('');
   const [registerOpen, setRegisterOpen] = useState(false);
 
@@ -42,10 +44,10 @@ export default function ATMsPage() {
   }, [params]);
 
   const atms = useQuery({
-    queryKey: ['atms', search, chip],
+    queryKey: ['atms', debouncedSearch, chip],
     queryFn: () => {
       const query = new URLSearchParams();
-      if (search) query.set('search', search);
+      if (debouncedSearch) query.set('search', debouncedSearch);
       if (chip === 'active:1') query.set('is_active', 'true');
       else if (chip === 'active:0') query.set('is_active', 'false');
       else if (chip) query.set('status', chip);
@@ -161,9 +163,16 @@ export default function ATMsPage() {
                     </td>
                     <td>{atm.last_checked ? new Date(atm.last_checked).toLocaleString() : '—'}</td>
                     <td>
-                      <Link className="button secondary small" to={`/atms/${atm.id}`}>
-                        View
-                      </Link>
+                      <div className="table-actions" style={{ display: 'flex', gap: 6 }}>
+                        <Link className="button secondary small" to={`/atms/${atm.id}`}>
+                          View
+                        </Link>
+                        {hasPermission(currentUser, 'incident.create') && (
+                          <Link className="button ghost small" to={`/incidents?atm=${atm.id}&new=1`}>
+                            + Incident
+                          </Link>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

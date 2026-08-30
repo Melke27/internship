@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -9,6 +9,7 @@ import { api } from '../lib/api';
 import { showToast } from '../lib/toast';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { StatusBadge } from '../components/ui/StatusBadge';
+import { Dialog, Field, FormGrid, SelectInput, TextArea, TextInput } from '../components/ui/form';
 
 export interface BranchRow {
   id: number;
@@ -130,77 +131,67 @@ function CreateBranchDialog({ onClose }: { onClose: () => void }) {
   });
 
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
-      <form
-        className="dialog-panel"
-        onClick={(event) => event.stopPropagation()}
-        onSubmit={(event: FormEvent<HTMLFormElement>) => {
-          event.preventDefault();
-          const form = event.currentTarget;
-          const value = (name: string) =>
-            (form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement)?.value;
-          create.mutate({
-            name: value('name'),
-            code: value('code'),
-            address: value('address'),
-            phone: value('phone'),
-            email: value('email'),
-            status: value('status'),
-          });
-        }}
-      >
-        <div className="dialog-header">
-          <h2>Create Branch</h2>
-          <button type="button" className="icon-button" onClick={onClose}>
-            ×
-          </button>
-        </div>
-        <p className="helper-text">District is fixed: {FIXED_DISTRICT_NAME}</p>
-        <label>
-          Branch Name *
-          <input name="name" required />
-        </label>
-        <label>
-          Branch Code *
-          <input name="code" required />
-        </label>
-        <label>
-          Address
-          <input name="address" />
-        </label>
-        <div className="form-grid">
-          <label>
-            Phone
-            <input name="phone" />
-          </label>
-          <label>
-            Email
-            <input name="email" type="email" />
-          </label>
-        </div>
-        <label>
-          Status
-          <select name="status" defaultValue="ACTIVE">
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="SETUP">SETUP</option>
-            <option value="INACTIVE">INACTIVE</option>
-          </select>
-        </label>
-        {error ? (
-          <div className="error-banner">
-            <strong>{error}</strong>
-          </div>
-        ) : null}
-        <div className="dialog-actions">
+    <Dialog
+      title="Create Branch"
+      description="Create a new branch and configure its contact information."
+      onClose={onClose}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const value = (name: string) =>
+          (form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement)?.value;
+        create.mutate({
+          name: value('name'),
+          code: value('code'),
+          address: value('address'),
+          phone: value('phone'),
+          email: value('email'),
+          status: value('status'),
+        });
+      }}
+      footer={
+        <>
           <button type="button" className="button secondary" onClick={onClose}>
             Cancel
           </button>
           <button className="button primary" disabled={create.isPending}>
             {create.isPending ? 'Creating…' : 'Create Branch'}
           </button>
+        </>
+      }
+    >
+      <FormGrid>
+        <Field label="Branch Name" required hint="Full branch name as shown in the district">
+          <TextInput name="name" required placeholder="e.g. Saris Branch" />
+        </Field>
+        <Field label="Branch Code" required hint="Short unique code, e.g. SRS">
+          <TextInput name="code" required placeholder="e.g. SRS" />
+        </Field>
+      </FormGrid>
+      <Field label="Address">
+        <TextInput name="address" placeholder="Street or building address" />
+      </Field>
+      <FormGrid>
+        <Field label="Phone">
+          <TextInput name="phone" type="tel" placeholder="+251 11 ..." />
+        </Field>
+        <Field label="Email">
+          <TextInput name="email" type="email" placeholder="branch@example.com" />
+        </Field>
+      </FormGrid>
+      <Field label="Status" hint={FIXED_DISTRICT_NAME} required>
+        <SelectInput name="status" defaultValue="ACTIVE">
+          <option value="ACTIVE">Active</option>
+          <option value="SETUP">Setup</option>
+          <option value="INACTIVE">Inactive</option>
+        </SelectInput>
+      </Field>
+      {error ? (
+        <div className="error-banner">
+          <strong>{error}</strong>
         </div>
-      </form>
-    </div>
+      ) : null}
+    </Dialog>
   );
 }
 
@@ -338,39 +329,30 @@ export function BranchDetailPage() {
       ) : null}
 
       {deactivateOpen ? (
-        <div className="dialog-backdrop" onClick={() => setDeactivateOpen(false)}>
-          <form
-            className="dialog-panel"
-            onClick={(event) => event.stopPropagation()}
-            onSubmit={(event: FormEvent<HTMLFormElement>) => {
-              event.preventDefault();
-              const reason = (event.currentTarget.elements.namedItem('reason') as HTMLTextAreaElement).value;
-              deactivate.mutate(reason);
-            }}
-          >
-            <div className="dialog-header">
-              <h2>Deactivate Branch?</h2>
-              <button type="button" className="icon-button" onClick={() => setDeactivateOpen(false)}>
-                ×
-              </button>
-            </div>
-            <p className="helper-text">
-              {stats?.total_atms ?? 0} ATMs remain linked. Historical records will stay available.
-            </p>
-            <label>
-              Reason *
-              <textarea name="reason" rows={3} required />
-            </label>
-            <div className="dialog-actions">
+        <Dialog
+          title="Deactivate Branch?"
+          description={`${stats?.total_atms ?? data.atm_count ?? 0} ATMs remain linked. Historical records will stay available.`}
+          onClose={() => setDeactivateOpen(false)}
+          onSubmit={(event) => {
+            event.preventDefault();
+            const reason = (event.currentTarget.elements.namedItem('reason') as HTMLTextAreaElement).value;
+            deactivate.mutate(reason);
+          }}
+          footer={
+            <>
               <button type="button" className="button secondary" onClick={() => setDeactivateOpen(false)}>
                 Cancel
               </button>
               <button className="button primary" disabled={deactivate.isPending}>
-                Deactivate
+                {deactivate.isPending ? 'Deactivating…' : 'Deactivate Branch'}
               </button>
-            </div>
-          </form>
-        </div>
+            </>
+          }
+        >
+          <Field label="Reason" required hint={`Enter the reason for deactivating ${data.name}.`}>
+            <TextArea name="reason" rows={3} required placeholder="Why is this branch being deactivated?" />
+          </Field>
+        </Dialog>
       ) : null}
     </section>
   );

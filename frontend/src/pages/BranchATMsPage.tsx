@@ -107,21 +107,25 @@ export function BranchATMsPage() {
       ) : (
         <div className="monitor-grid">
           {rows.map((atm) => (
-            <div className="monitor-card" key={atm.id}>
+            <Link className="monitor-card" key={atm.id} to={`/branch/atms/${atm.id}`}>
               <div className="monitor-card-head">
                 <strong>{atm.reference}</strong>
                 <DualStatus active={atm.is_active !== false} technical={atm.status} />
               </div>
               <small>{atm.location || atm.branch_name}</small>
               <div className="row-actions">
-                <Link className="button secondary small" to={`/branch/atms/${atm.id}`}>
+                <span className="button secondary small">
                   View Status
-                </Link>
-                <Link className="button primary small" to={`/branch/report?atm=${atm.id}`}>
+                </span>
+                <Link
+                  className="button primary small"
+                  to={`/branch/report?atm=${atm.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   Report Problem
                 </Link>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

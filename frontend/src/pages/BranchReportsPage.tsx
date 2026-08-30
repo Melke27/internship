@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -9,6 +9,7 @@ import { showToast } from '../lib/toast';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { EvidenceLightbox, EvidenceThumb } from '../components/ui/Evidence';
 import { PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
+import { CheckField, Dialog, Field, FormGrid, SelectInput, TextArea, TextInput } from '../components/ui/form';
 import type { BranchReport } from '../types/api';
 
 export default function BranchReportsPage() {
@@ -294,90 +295,76 @@ export function DistrictBranchReportDetailPage() {
       </div>
 
       {convertOpen ? (
-        <div className="dialog-backdrop" onClick={() => setConvertOpen(false)}>
-          <form
-            className="dialog-panel"
-            onClick={(event) => event.stopPropagation()}
-            onSubmit={(event: FormEvent<HTMLFormElement>) => {
-              event.preventDefault();
-              const form = event.currentTarget;
-              const value = (name: string) =>
-                (form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)?.value;
-              const checked = (name: string) => (form.elements.namedItem(name) as HTMLInputElement)?.checked;
-              convert.mutate({
-                confirmed_severity: value('confirmed_severity'),
-                title: value('title'),
-                apply_atm_status: checked('apply_atm_status'),
-              });
-            }}
-          >
-            <div className="dialog-header">
-              <h2>Create Incident</h2>
-              <button type="button" className="icon-button" onClick={() => setConvertOpen(false)}>
-                ×
-              </button>
-            </div>
-            <label>
-              Confirm Severity *
-              <select name="confirmed_severity" defaultValue={data.severity} required>
-                {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Incident Title
-              <input name="title" defaultValue={`${data.problem_type.replaceAll('_', ' ')} — ${data.atm_reference}`} />
-            </label>
-            <label className="checkbox-row">
-              <input name="apply_atm_status" type="checkbox" defaultChecked />
-              Update ATM technical status based on confirmed severity
-            </label>
-            <div className="dialog-actions">
+        <Dialog
+          title="Create Incident"
+          description="Convert this branch report into an ATM incident ticket."
+          onClose={() => setConvertOpen(false)}
+          onSubmit={(event) => {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const value = (name: string) =>
+              (form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)?.value;
+            const checked = (name: string) => (form.elements.namedItem(name) as HTMLInputElement)?.checked;
+            convert.mutate({
+              confirmed_severity: value('confirmed_severity'),
+              title: value('title'),
+              apply_atm_status: checked('apply_atm_status'),
+            });
+          }}
+          footer={
+            <>
               <button type="button" className="button secondary" onClick={() => setConvertOpen(false)}>
                 Cancel
               </button>
               <button className="button primary" disabled={convert.isPending}>
                 {convert.isPending ? 'Creating…' : 'Create Incident'}
               </button>
-            </div>
-          </form>
-        </div>
+            </>
+          }
+        >
+          <Field label="Confirm Severity" required>
+            <SelectInput name="confirmed_severity" defaultValue={data.severity} required>
+              {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </SelectInput>
+          </Field>
+          <Field label="Incident Title">
+            <TextInput name="title" defaultValue={`${data.problem_type.replaceAll('_', ' ')} — ${data.atm_reference}`} />
+          </Field>
+          <CheckField label="Update ATM technical status" hint="Apply a matching technical status to the ATM based on the confirmed severity.">
+            <input name="apply_atm_status" type="checkbox" defaultChecked />
+          </CheckField>
+        </Dialog>
       ) : null}
 
       {dismissOpen ? (
-        <div className="dialog-backdrop" onClick={() => setDismissOpen(false)}>
-          <form
-            className="dialog-panel"
-            onClick={(event) => event.stopPropagation()}
-            onSubmit={(event: FormEvent<HTMLFormElement>) => {
-              event.preventDefault();
-              const reason = (event.currentTarget.elements.namedItem('reason') as HTMLTextAreaElement).value;
-              dismiss.mutate(reason);
-            }}
-          >
-            <div className="dialog-header">
-              <h2>Dismiss Report</h2>
-              <button type="button" className="icon-button" onClick={() => setDismissOpen(false)}>
-                ×
-              </button>
-            </div>
-            <label>
-              Reason *
-              <textarea name="reason" rows={4} required placeholder="Explain why this report does not require an incident." />
-            </label>
-            <div className="dialog-actions">
+        <Dialog
+          title="Dismiss Report"
+          description="Mark this report as not requiring an incident investigation."
+          onClose={() => setDismissOpen(false)}
+          onSubmit={(event) => {
+            event.preventDefault();
+            const reason = (event.currentTarget.elements.namedItem('reason') as HTMLTextAreaElement).value;
+            dismiss.mutate(reason);
+          }}
+          footer={
+            <>
               <button type="button" className="button secondary" onClick={() => setDismissOpen(false)}>
                 Cancel
               </button>
               <button className="button primary" disabled={dismiss.isPending}>
                 {dismiss.isPending ? 'Dismissing…' : 'Dismiss'}
               </button>
-            </div>
-          </form>
-        </div>
+            </>
+          }
+        >
+          <Field label="Reason" required hint="Explain why this report does not require an incident">
+            <TextArea name="reason" rows={4} required placeholder="Explain why this report does not require an incident." />
+          </Field>
+        </Dialog>
       ) : null}
 
       {lightbox && evidence ? <EvidenceLightbox url={evidence} onClose={() => setLightbox(false)} /> : null}

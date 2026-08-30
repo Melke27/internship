@@ -145,7 +145,9 @@ export default function BranchReportDetailPage() {
               Back to reports
             </Link>
             {data.linked_incident_id ? (
-              <span className="helper-text">Linked to {data.linked_incident_number}</span>
+              <Link className="button primary small" to={`/incidents/${data.linked_incident_id}`}>
+                View Incident ({data.linked_incident_number})
+              </Link>
             ) : null}
           </div>
         </article>

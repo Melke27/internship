@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { FormEvent, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
@@ -9,6 +9,7 @@ import { hasPermission, useAuth } from '../context/AuthContext';
 import { showToast } from '../lib/toast';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
+import { CheckField, Dialog, Field, FormGrid, SelectInput, TextArea, TextInput } from '../components/ui/form';
 import type { Incident, User } from '../types/api';
 
 type DialogKind = null | 'assign' | 'action' | 'escalate' | 'resolve' | 'retest' | 'verify' | 'close';
@@ -68,150 +69,198 @@ function WorkflowDialog({ kind, incident, onClose }: { kind: Exclude<DialogKind,
   });
 
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
-      <form
-        className="dialog-panel"
-        onClick={(event) => event.stopPropagation()}
-        onSubmit={(event: FormEvent<HTMLFormElement>) => {
-          event.preventDefault();
-          const form = event.currentTarget;
-          const value = (name: string) => (form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)?.value;
-          const checked = (name: string) => (form.elements.namedItem(name) as HTMLInputElement)?.checked;
-          if (kind === 'assign') mutation.mutate({ assigned_to: Number(value('assigned_to')) });
-          if (kind === 'action') mutation.mutate({
-            action_type: value('action_type'),
-            action: value('action'),
-            observation: value('observation'),
-            result: value('result'),
-            next_action: value('next_action'),
-            remarks: value('remarks'),
-          });
-          if (kind === 'escalate') mutation.mutate({
-            reason: value('reason'),
-            technical_findings: value('technical_findings'),
-            required_team: value('required_team'),
-            assigned_team: value('assigned_team'),
-            priority: value('priority'),
-            remarks: value('remarks'),
-          });
-          if (kind === 'resolve') mutation.mutate({
-            description: value('description'),
-            action_performed: value('action_performed'),
-            final_status: value('final_status'),
-            final_result: value('final_result'),
-          });
-          if (kind === 'retest') mutation.mutate({
-            outcome: value('outcome'),
-            notes: value('notes'),
-            description: value('description'),
-            action_performed: value('action_performed'),
-            final_status: value('final_status'),
-            final_result: value('final_result'),
-          });
-          if (kind === 'verify') mutation.mutate({
-            atm_available: checked('atm_available'),
-            issue_cleared: checked('issue_cleared'),
-            communication_working: checked('communication_working'),
-            approved_test_completed: checked('approved_test_completed'),
-            notes: value('notes'),
-          });
-          if (kind === 'close') mutation.mutate({});
-        }}
-      >
-        <div className="dialog-header">
-          <h2>{dialogTitle(kind)}</h2>
-          <button type="button" className="icon-button" onClick={onClose}>×</button>
-        </div>
-        {kind === 'assign' ? (
-          <label>
-            Assign Technician *
-            <select name="assigned_to" required defaultValue="">
-              <option value="" disabled>Select technician</option>
-              {(technicians.data || []).map((tech) => <option key={tech.id} value={tech.id}>{tech.full_name || tech.username}</option>)}
-            </select>
-          </label>
-        ) : null}
-        {kind === 'action' ? (
-          <>
-            <label>
-              Technical Action *
-              <select name="action_type" required>
-                {['CHECK_ATM_STATUS', 'PHYSICAL_INSPECTION', 'CHECK_POWER', 'CHECK_CONNECTION', 'CHECK_NETWORK', 'CHECK_COMMUNICATION', 'CHECK_HARDWARE', 'CHECK_DISPLAY', 'CHECK_CARD_READER', 'CHECK_CASH_DISPENSER', 'CHECK_RECEIPT_PRINTER', 'RECORD_ERROR', 'PERFORM_AUTHORIZED_ACTION', 'VERIFY_SERVICE'].map((value) => (
-                  <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>
-                ))}
-              </select>
-            </label>
-            <label>Action Summary *<textarea name="action" rows={2} required /></label>
-            <label>Observation *<textarea name="observation" rows={3} required /></label>
-            <label>Result *<textarea name="result" rows={2} required placeholder="Normal or problem found" /></label>
-            <label>Next Step<textarea name="next_action" rows={2} /></label>
-            <label>Remarks<textarea name="remarks" rows={2} /></label>
-          </>
-        ) : null}
-        {kind === 'escalate' ? (
-          <>
-            <label>Reason *<textarea name="reason" rows={3} required /></label>
-            <label>Technical Findings<textarea name="technical_findings" rows={3} /></label>
-            <label>Escalate To *<input name="required_team" required placeholder="Select team or user" /></label>
-            <label>Assigned Team<input name="assigned_team" placeholder="Optional assigned team" /></label>
-            <label>Priority<select name="priority">{['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
-            <label>Remarks<textarea name="remarks" rows={2} /></label>
-          </>
-        ) : null}
-        {kind === 'resolve' ? (
-          <>
-            <label>Resolution Description *<textarea name="description" rows={3} required /></label>
-            <label>Authorized Action Performed *<textarea name="action_performed" rows={3} required /></label>
-            <label>Final Status *<input name="final_status" required placeholder="Service restored" /></label>
-            <label>Final Result *<textarea name="final_result" rows={2} required /></label>
-          </>
-        ) : null}
-        {kind === 'retest' ? (
-          <>
-            <div className="readonly-card">
-              <span>Current Status</span>
-              <div><StatusBadge value={incident.status} /></div>
-            </div>
-            <label>
-              Retest Result *
-              <select name="outcome" required>
-                <option value="PROBLEM_REMAINS">Problem remains</option>
-                <option value="SERVICE_RESTORED">Service restored</option>
-              </select>
-            </label>
-            <label>Retest Notes *<textarea name="notes" rows={3} required /></label>
-            <label>Resolution Description<textarea name="description" rows={2} /></label>
-            <label>Action Performed<textarea name="action_performed" rows={2} /></label>
-            <label>Final Status<input name="final_status" placeholder="Operational" /></label>
-            <label>Final Result<textarea name="final_result" rows={2} /></label>
-          </>
-        ) : null}
-        {kind === 'verify' ? (
-          <>
-            {[
-              ['atm_available', 'ATM Status Operational'],
-              ['issue_cleared', 'Previous Error No Longer Present'],
-              ['communication_working', 'Communication Available'],
-              ['approved_test_completed', 'Functional Test Passed'],
-            ].map(([name, label]) => (
-              <label key={name} className="check-row"><input type="checkbox" name={name} /> {label}</label>
-            ))}
-            <label>Verification Notes<textarea name="notes" rows={3} /></label>
-          </>
-        ) : null}
-        {kind === 'close' ? (
-          <div className="readonly-card">
-            <span>Close Incident</span>
-            <small>{incident.incident_id} has been verified. This action will close the incident.</small>
-          </div>
-        ) : null}
-        {error ? <div className="error-banner"><strong>{error}</strong></div> : null}
-        <div className="dialog-actions">
+    <Dialog
+      title={dialogTitle(kind)}
+      description={dialogDescription(kind)}
+      onClose={onClose}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const value = (name: string) => (form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)?.value;
+        const checked = (name: string) => (form.elements.namedItem(name) as HTMLInputElement)?.checked;
+        if (kind === 'assign') mutation.mutate({ assigned_to: Number(value('assigned_to')) });
+        if (kind === 'action') mutation.mutate({
+          action_type: value('action_type'),
+          action: value('action'),
+          observation: value('observation'),
+          result: value('result'),
+          next_action: value('next_action'),
+          remarks: value('remarks'),
+        });
+        if (kind === 'escalate') mutation.mutate({
+          reason: value('reason'),
+          technical_findings: value('technical_findings'),
+          required_team: value('required_team'),
+          assigned_team: value('assigned_team'),
+          priority: value('priority'),
+          remarks: value('remarks'),
+        });
+        if (kind === 'resolve') mutation.mutate({
+          description: value('description'),
+          action_performed: value('action_performed'),
+          final_status: value('final_status'),
+          final_result: value('final_result'),
+        });
+        if (kind === 'retest') mutation.mutate({
+          outcome: value('outcome'),
+          notes: value('notes'),
+          description: value('description'),
+          action_performed: value('action_performed'),
+          final_status: value('final_status'),
+          final_result: value('final_result'),
+        });
+        if (kind === 'verify') mutation.mutate({
+          atm_available: checked('atm_available'),
+          issue_cleared: checked('issue_cleared'),
+          communication_working: checked('communication_working'),
+          approved_test_completed: checked('approved_test_completed'),
+          notes: value('notes'),
+        });
+        if (kind === 'close') mutation.mutate({});
+      }}
+      footer={
+        <>
           <button type="button" className="button secondary" onClick={onClose}>Cancel</button>
-          <button className="button primary" disabled={mutation.isPending}>{mutation.isPending ? 'Saving...' : submitLabel(kind)}</button>
+          <button className="button primary" disabled={mutation.isPending}>{mutation.isPending ? 'Saving…' : submitLabel(kind)}</button>
+        </>
+      }
+    >
+      {kind === 'assign' ? (
+        <Field label="Assign Technician" required hint="Choose who will own and work the incident">
+          <SelectInput name="assigned_to" required defaultValue="">
+            <option value="" disabled>Select technician</option>
+            {(technicians.data || []).map((tech) => <option key={tech.id} value={tech.id}>{tech.full_name || tech.username}</option>)}
+          </SelectInput>
+        </Field>
+      ) : null}
+      {kind === 'action' ? (
+        <>
+          <Field label="Technical Action" required>
+            <SelectInput name="action_type" required>
+              {['CHECK_ATM_STATUS', 'PHYSICAL_INSPECTION', 'CHECK_POWER', 'CHECK_CONNECTION', 'CHECK_NETWORK', 'CHECK_COMMUNICATION', 'CHECK_HARDWARE', 'CHECK_DISPLAY', 'CHECK_CARD_READER', 'CHECK_CASH_DISPENSER', 'CHECK_RECEIPT_PRINTER', 'RECORD_ERROR', 'PERFORM_AUTHORIZED_ACTION', 'VERIFY_SERVICE'].map((value) => (
+                <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>
+              ))}
+            </SelectInput>
+          </Field>
+          <Field label="Action Summary" required>
+            <TextArea name="action" rows={2} required placeholder="Brief summary of what was done" />
+          </Field>
+          <Field label="Observation" required hint="What was observed during the action">
+            <TextArea name="observation" rows={3} required placeholder="What was observed on site" />
+          </Field>
+          <Field label="Result" required hint="Normal or problem found">
+            <TextArea name="result" rows={2} required placeholder="Normal or problem found" />
+          </Field>
+          <FormGrid cols={2}>
+            <Field label="Next Step">
+              <TextArea name="next_action" rows={2} placeholder="Planned follow-up" />
+            </Field>
+            <Field label="Remarks">
+              <TextArea name="remarks" rows={2} placeholder="Optional notes" />
+            </Field>
+          </FormGrid>
+        </>
+      ) : null}
+      {kind === 'escalate' ? (
+        <>
+          <Field label="Reason" required hint="Why this incident requires a higher team">
+            <TextArea name="reason" rows={3} required placeholder="Justification for escalation" />
+          </Field>
+          <Field label="Technical Findings">
+            <TextArea name="technical_findings" rows={3} placeholder="Diagnostic findings so far" />
+          </Field>
+          <Field label="Escalate To" required>
+            <TextInput name="required_team" required placeholder="Select team or user" />
+          </Field>
+          <FormGrid cols={2}>
+            <Field label="Assigned Team">
+              <TextInput name="assigned_team" placeholder="Optional assigned team" />
+            </Field>
+            <Field label="Priority">
+              <SelectInput name="priority">{['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((value) => <option key={value} value={value}>{value}</option>)}</SelectInput>
+            </Field>
+          </FormGrid>
+          <Field label="Remarks">
+            <TextArea name="remarks" rows={2} placeholder="Optional notes" />
+          </Field>
+        </>
+      ) : null}
+      {kind === 'resolve' ? (
+        <>
+          <Field label="Resolution Description" required>
+            <TextArea name="description" rows={3} required placeholder="How the problem was resolved" />
+          </Field>
+          <Field label="Authorized Action Performed" required>
+            <TextArea name="action_performed" rows={3} required placeholder="The authorized action carried out" />
+          </Field>
+          <FormGrid cols={2}>
+            <Field label="Final Status" required>
+              <TextInput name="final_status" required placeholder="Service restored" />
+            </Field>
+            <Field label="Final Result" required>
+              <TextArea name="final_result" rows={2} required placeholder="Outcome of the resolution" />
+            </Field>
+          </FormGrid>
+        </>
+      ) : null}
+      {kind === 'retest' ? (
+        <>
+          <div className="readonly-card">
+            <span>Current Status</span>
+            <div><StatusBadge value={incident.status} /></div>
+          </div>
+          <Field label="Retest Result" required>
+            <SelectInput name="outcome" required>
+              <option value="PROBLEM_REMAINS">Problem remains</option>
+              <option value="SERVICE_RESTORED">Service restored</option>
+            </SelectInput>
+          </Field>
+          <Field label="Retest Notes" required>
+            <TextArea name="notes" rows={3} required placeholder="What the retest found" />
+          </Field>
+          <Field label="Resolution Description">
+            <TextArea name="description" rows={2} placeholder="Optional" />
+          </Field>
+          <FormGrid cols={2}>
+            <Field label="Action Performed">
+              <TextArea name="action_performed" rows={2} placeholder="Optional" />
+            </Field>
+            <Field label="Final Status">
+              <TextInput name="final_status" placeholder="Operational" />
+            </Field>
+          </FormGrid>
+          <Field label="Final Result">
+            <TextArea name="final_result" rows={2} placeholder="Optional" />
+          </Field>
+        </>
+      ) : null}
+      {kind === 'verify' ? (
+        <>
+          <CheckField label="ATM Status Operational" hint="The ATM is running normally">
+            <input type="checkbox" name="atm_available" />
+          </CheckField>
+          <CheckField label="Previous Error No Longer Present" hint="The reported error has cleared">
+            <input type="checkbox" name="issue_cleared" />
+          </CheckField>
+          <CheckField label="Communication Available" hint="Network / communication is working">
+            <input type="checkbox" name="communication_working" />
+          </CheckField>
+          <CheckField label="Functional Test Passed" hint="Approved test was completed successfully">
+            <input type="checkbox" name="approved_test_completed" />
+          </CheckField>
+          <Field label="Verification Notes">
+            <TextArea name="notes" rows={3} placeholder="Anything worth recording about the verification" />
+          </Field>
+        </>
+      ) : null}
+      {kind === 'close' ? (
+        <div className="readonly-card">
+          <span>Close Incident</span>
+          <small>{incident.incident_id} has been verified. This action will close the incident.</small>
         </div>
-      </form>
-    </div>
+      ) : null}
+      {error ? <div className="error-banner"><strong>{error}</strong></div> : null}
+    </Dialog>
   );
 }
 
@@ -265,18 +314,18 @@ export default function IncidentDetailPage() {
         <article className="panel">
           <h2>Incident Overview</h2>
           <dl className="detail-grid">
-            <Field label="ATM" value={<Link to={`/atms/${incident.atm}`}>{incident.atm_reference}</Link>} />
-            <Field label="Branch" value={incident.branch_name} />
-            <Field label="District" value={incident.district_name} />
-            <Field label="Reported By" value={incident.reported_by_name || '—'} />
-            <Field label="Assigned Technician" value={incident.assigned_to_name || 'Unassigned'} />
-            <Field label="Category" value={incident.category} />
-            <Field label="Priority" value={<PriorityBadge value={incident.priority} />} />
-            <Field label="Status" value={<StatusBadge value={incident.status} />} />
-            <Field label="Error Message" value={incident.error_message || '—'} />
-            <Field label="Service Impact" value={incident.service_impact || '—'} />
-            <Field label="Created At" value={new Date(incident.created_at).toLocaleString()} />
-            <Field label="Resolved At" value={incident.resolved_at ? new Date(incident.resolved_at).toLocaleString() : '—'} />
+            <DetailField label="ATM" value={<Link to={`/atms/${incident.atm}`}>{incident.atm_reference}</Link>} />
+            <DetailField label="Branch" value={incident.branch_name} />
+            <DetailField label="District" value={incident.district_name} />
+            <DetailField label="Reported By" value={incident.reported_by_name || '—'} />
+            <DetailField label="Assigned Technician" value={incident.assigned_to_name || 'Unassigned'} />
+            <DetailField label="Category" value={incident.category} />
+            <DetailField label="Priority" value={<PriorityBadge value={incident.priority} />} />
+            <DetailField label="Status" value={<StatusBadge value={incident.status} />} />
+            <DetailField label="Error Message" value={incident.error_message || '—'} />
+            <DetailField label="Service Impact" value={incident.service_impact || '—'} />
+            <DetailField label="Created At" value={new Date(incident.created_at).toLocaleString()} />
+            <DetailField label="Resolved At" value={incident.resolved_at ? new Date(incident.resolved_at).toLocaleString() : '—'} />
           </dl>
           <div className="description-block">
             <strong>Problem Description</strong>
@@ -292,8 +341,10 @@ export default function IncidentDetailPage() {
             {hasPermission(currentUser, 'incident.assign') && incident.status === 'REPORTED' ? (
               <button className="button primary" onClick={() => transition.mutate({ status: 'ACKNOWLEDGED' })}>Acknowledge</button>
             ) : null}
-            {hasPermission(currentUser, 'incident.assign') && incident.status === 'ACKNOWLEDGED' ? (
-              <button className="button primary" onClick={() => setDialog('assign')}>Assign Technician</button>
+            {hasPermission(currentUser, 'incident.assign') && ['REPORTED', 'ACKNOWLEDGED', 'ASSIGNED', 'INVESTIGATING', 'TROUBLESHOOTING', 'WAITING', 'ESCALATED'].includes(incident.status) ? (
+              <button className="button primary" onClick={() => setDialog('assign')}>
+                {incident.assigned_to ? 'Reassign Technician' : 'Assign Technician'}
+              </button>
             ) : null}
             {hasPermission(currentUser, 'troubleshooting.create') && canInvestigate ? (
               <button className="button secondary" onClick={() => transition.mutate({ status: 'INVESTIGATING' })}>Start Investigation</button>
@@ -384,7 +435,7 @@ export default function IncidentDetailPage() {
   );
 }
 
-function Field({ label, value }: { label: string; value: ReactNode }) {
+function DetailField({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="detail-item">
       <dt>{label}</dt>
@@ -402,6 +453,18 @@ function dialogTitle(kind: Exclude<DialogKind, null>) {
     retest: 'Retest ATM',
     verify: 'Resolution Verification',
     close: 'Close Incident',
+  }[kind];
+}
+
+function dialogDescription(kind: Exclude<DialogKind, null>) {
+  return {
+    assign: 'Assign this incident to a technician for investigation and resolution.',
+    action: 'Record a troubleshooting action performed on the ATM.',
+    escalate: 'Escalate this incident to a higher team or specialist.',
+    resolve: 'Record how the incident was resolved and its final status.',
+    retest: 'Re-test the ATM after a resolution attempt.',
+    verify: 'Confirm the reported problem is cleared and the ATM is back in service.',
+    close: 'Close the incident after verification.',
   }[kind];
 }
 

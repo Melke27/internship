@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Activity, AlertTriangle, CalendarClock, CheckCircle2, CircleAlert, ClipboardList, Wrench } from 'lucide-react';
@@ -9,6 +9,7 @@ import { extractError, listResource } from '../lib/utils';
 import { showToast } from '../lib/toast';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
+import { ConfirmDialog, Dialog, Field, FormGrid, SelectInput, TextArea } from '../components/ui/form';
 import { MetricCard } from '../components/ui/MetricCard';
 import { Panel } from '../components/ui/Panel';
 import { BarList, DonutChart, TrendChart } from '../components/ui/Charts';
@@ -52,87 +53,77 @@ function CreateMaintenanceDialog({ onClose }: { onClose: () => void }) {
   });
 
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
-      <form
-        className="dialog-panel"
-        onClick={(event) => event.stopPropagation()}
-        onSubmit={(event: FormEvent<HTMLFormElement>) => {
-          event.preventDefault();
-          const form = event.currentTarget;
-          const value = (name: string) =>
-            (form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)?.value;
-          create.mutate({
-            atm: Number(value('atm')),
-            maintenance_type: value('maintenance_type'),
-            priority: value('priority'),
-            reason: value('reason'),
-            remarks: value('remarks'),
-            status: 'REQUESTED',
-          });
-        }}
-      >
-        <div className="dialog-header">
-          <h2>Create Maintenance</h2>
-          <button type="button" className="icon-button" onClick={onClose}>
-            ×
-          </button>
-        </div>
-        <label>
-          ATM *
-          <select name="atm" required>
-            <option value="">Select ATM</option>
-            {(atms.data || []).map((atm) => (
-              <option key={atm.id} value={atm.id}>
-                {atm.reference} · {atm.branch_name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="form-grid">
-          <label>
-            Type *
-            <select name="maintenance_type" required>
-              {['PREVENTIVE', 'CORRECTIVE', 'EMERGENCY', 'INSPECTION', 'NETWORK', 'HARDWARE', 'SOFTWARE'].map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Priority *
-            <select name="priority" defaultValue="MEDIUM" required>
-              {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <label>
-          Reason *
-          <textarea name="reason" rows={3} required />
-        </label>
-        <label>
-          Remarks
-          <textarea name="remarks" rows={2} />
-        </label>
-        {error ? (
-          <div className="error-banner">
-            <strong>{error}</strong>
-          </div>
-        ) : null}
-        <div className="dialog-actions">
+    <Dialog
+      title="Create Maintenance"
+      description="Request ATM maintenance work for the district team."
+      onClose={onClose}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const value = (name: string) =>
+          (form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)?.value;
+        create.mutate({
+          atm: Number(value('atm')),
+          maintenance_type: value('maintenance_type'),
+          priority: value('priority'),
+          reason: value('reason'),
+          remarks: value('remarks'),
+          status: 'REQUESTED',
+        });
+      }}
+      footer={
+        <>
           <button type="button" className="button secondary" onClick={onClose}>
             Cancel
           </button>
           <button className="button primary" disabled={create.isPending}>
             {create.isPending ? 'Saving…' : 'Create Request'}
           </button>
+        </>
+      }
+    >
+      <Field label="ATM" required>
+        <SelectInput name="atm" required>
+          <option value="">Select ATM</option>
+          {(atms.data || []).map((atm) => (
+            <option key={atm.id} value={atm.id}>
+              {atm.reference} · {atm.branch_name}
+            </option>
+          ))}
+        </SelectInput>
+      </Field>
+      <FormGrid cols={2}>
+        <Field label="Type" required>
+          <SelectInput name="maintenance_type" required>
+            {['PREVENTIVE', 'CORRECTIVE', 'EMERGENCY', 'INSPECTION', 'NETWORK', 'HARDWARE', 'SOFTWARE'].map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </SelectInput>
+        </Field>
+        <Field label="Priority" required>
+          <SelectInput name="priority" defaultValue="MEDIUM" required>
+            {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </SelectInput>
+        </Field>
+      </FormGrid>
+      <Field label="Reason" required hint="Describe why maintenance is required on this ATM">
+        <TextArea name="reason" rows={3} required placeholder="e.g. Repeated cash dispenser jams" />
+      </Field>
+      <Field label="Remarks" hint="Optional — extra instructions for the technician">
+        <TextArea name="remarks" rows={2} placeholder="Optional notes for the assigned technician" />
+      </Field>
+      {error ? (
+        <div className="error-banner">
+          <strong>{error}</strong>
         </div>
-      </form>
-    </div>
+      ) : null}
+    </Dialog>
   );
 }
 
@@ -154,53 +145,42 @@ function AssignDialog({ job, onClose }: { job: Maintenance; onClose: () => void 
   });
 
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
-      <form
-        className="dialog-panel"
-        onClick={(event) => event.stopPropagation()}
-        onSubmit={(event: FormEvent<HTMLFormElement>) => {
-          event.preventDefault();
-          const technician = Number(
-            (event.currentTarget.elements.namedItem('technician') as HTMLSelectElement).value,
-          );
-          assign.mutate(technician);
-        }}
-      >
-        <div className="dialog-header">
-          <h2>Assign Maintenance</h2>
-          <button type="button" className="icon-button" onClick={onClose}>
-            ×
-          </button>
-        </div>
-        <p className="helper-text">
-          {job.maintenance_id || `MJ-${job.id}`} · {job.atm_reference}
-        </p>
-        <label>
-          Technician *
-          <select name="technician" required>
-            <option value="">Select technician</option>
-            {(technicians.data || []).map((tech) => (
-              <option key={tech.id} value={tech.id}>
-                {tech.full_name || tech.username}
-              </option>
-            ))}
-          </select>
-        </label>
-        {error ? (
-          <div className="error-banner">
-            <strong>{error}</strong>
-          </div>
-        ) : null}
-        <div className="dialog-actions">
+    <Dialog
+      title="Assign Maintenance"
+      description={`${job.maintenance_id || `MJ-${job.id}`} · ${job.atm_reference}`}
+      onClose={onClose}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const technician = Number((event.currentTarget.elements.namedItem('technician') as HTMLSelectElement).value);
+        assign.mutate(technician);
+      }}
+      footer={
+        <>
           <button type="button" className="button secondary" onClick={onClose}>
             Cancel
           </button>
           <button className="button primary" disabled={assign.isPending}>
-            Assign
+            {assign.isPending ? 'Assigning…' : 'Assign'}
           </button>
+        </>
+      }
+    >
+      <Field label="Technician" required hint="Assign a technician to take ownership of this job">
+        <SelectInput name="technician" required>
+          <option value="">Select technician</option>
+          {(technicians.data || []).map((tech) => (
+            <option key={tech.id} value={tech.id}>
+              {tech.full_name || tech.username}
+            </option>
+          ))}
+        </SelectInput>
+      </Field>
+      {error ? (
+        <div className="error-banner">
+          <strong>{error}</strong>
         </div>
-      </form>
-    </div>
+      ) : null}
+    </Dialog>
   );
 }
 
@@ -210,6 +190,14 @@ export default function MaintenancePage() {
   const [open, setOpen] = useState(false);
   const [assignJob, setAssignJob] = useState<Maintenance | null>(null);
   const [actionError, setActionError] = useState('');
+  const [confirm, setConfirm] = useState<null | {
+    record: Maintenance;
+    status: string;
+    title: string;
+    message: string;
+    test_result?: string;
+    confirmed?: boolean;
+  }>(null);
   const queryClient = useQueryClient();
 
   const statusFilter = params.get('status') || '';
@@ -395,28 +383,39 @@ export default function MaintenancePage() {
                                   className="button secondary small"
                                   disabled={updateStatus.isPending}
                                   onClick={() => {
-                                    let test_result: string | undefined;
-                                    let confirmed: boolean | undefined;
                                     if (action.needsTest) {
-                                      const ok = window.confirm('Confirm ATM test PASSED before completing?');
-                                      if (!ok) return;
-                                      test_result = 'PASSED';
+                                      setConfirm({
+                                        record,
+                                        status: action.status,
+                                        title: action.label,
+                                        message: 'Confirm the ATM test PASSED before completing this maintenance job?',
+                                        test_result: 'PASSED',
+                                      });
+                                      return;
                                     }
                                     if (action.status === 'UNDER_REPAIR' && record.status === 'TESTING') {
-                                      test_result = 'FAILED';
+                                      setConfirm({
+                                        record,
+                                        status: action.status,
+                                        title: action.label,
+                                        message: 'The ATM failed testing and will be sent back under repair.',
+                                        test_result: 'FAILED',
+                                      });
+                                      return;
                                     }
                                     if (action.needsConfirm) {
-                                      const ok = window.confirm(
-                                        'Confirm ATM is operational after successful testing?',
-                                      );
-                                      if (!ok) return;
-                                      confirmed = true;
+                                      setConfirm({
+                                        record,
+                                        status: action.status,
+                                        title: action.label,
+                                        message: 'Confirm the ATM is back to operational after successful testing?',
+                                        confirmed: true,
+                                      });
+                                      return;
                                     }
                                     updateStatus.mutate({
                                       id: record.id,
                                       status: action.status,
-                                      confirmed,
-                                      test_result,
                                     });
                                   }}
                                 >
@@ -436,6 +435,25 @@ export default function MaintenancePage() {
       </div>
       {open ? <CreateMaintenanceDialog onClose={() => setOpen(false)} /> : null}
       {assignJob ? <AssignDialog job={assignJob} onClose={() => setAssignJob(null)} /> : null}
+      {confirm ? (
+        <ConfirmDialog
+          open
+          title={`${confirm.title}?`}
+          description={confirm.message}
+          confirmLabel={confirm.title}
+          confirming={updateStatus.isPending}
+          onConfirm={() => {
+            updateStatus.mutate({
+              id: confirm.record.id,
+              status: confirm.status,
+              confirmed: confirm.confirmed,
+              test_result: confirm.test_result,
+            });
+            setConfirm(null);
+          }}
+          onClose={() => setConfirm(null)}
+        />
+      ) : null}
     </section>
   );
 }

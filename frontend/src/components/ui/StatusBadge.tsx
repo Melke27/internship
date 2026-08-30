@@ -1,10 +1,17 @@
 import {
+  Activity,
   AlertTriangle,
+  ArrowUpRight,
   CheckCircle2,
   CircleAlert,
+  CircleCheck,
+  CircleDot,
   CircleOff,
+  Clock,
   OctagonAlert,
+  Search,
   Settings2,
+  ShieldCheck,
   WifiOff,
   Wrench,
 } from 'lucide-react';
@@ -68,9 +75,11 @@ export function statusLabel(value?: string | null) {
   return labels[value] || value.replaceAll('_', ' ');
 }
 
-export function StatusBadge({ value }: { value: string }) {
+export function StatusBadge({ value, showIcon = true }: { value: string; showIcon?: boolean }) {
+  const Icon = icons[value?.toUpperCase()];
   return (
-    <span className={`status-badge status-${value.toLowerCase()}`}>
+    <span className={`status-badge status-${(value || '').toLowerCase()}`}>
+      {showIcon && Icon ? <Icon size={12} style={{ flexShrink: 0 }} aria-hidden /> : null}
       {statusLabel(value)}
     </span>
   );
@@ -91,15 +100,38 @@ export function OperationalBadge({ active }: { active: boolean }) {
 
 const icons: Record<string, LucideIcon> = {
   OPERATIONAL: CheckCircle2,
+  AVAILABLE: CheckCircle2,
+  ACTIVE: CheckCircle2,
+  HEALTHY: CheckCircle2,
+  ONLINE: CheckCircle2,
+  NORMAL: CheckCircle2,
+  PASSED: CircleCheck,
+  RESOLVED: CircleCheck,
+  VERIFIED: ShieldCheck,
+  CLOSED: CheckCircle2,
+  COMPLETED: CheckCircle2,
   WARNING: AlertTriangle,
   DEGRADED: AlertTriangle,
   FAULT: CircleAlert,
   OFFLINE: WifiOff,
+  COMMUNICATION_PROBLEM: WifiOff,
   CRITICAL: OctagonAlert,
   MAINTENANCE: Wrench,
   UNDER_REPAIR: Settings2,
   INACTIVE: CircleOff,
   UNKNOWN: CircleOff,
+  INVESTIGATING: Search,
+  TROUBLESHOOTING: Activity,
+  IN_PROGRESS: Activity,
+  TESTING: Settings2,
+  ESCALATED: ArrowUpRight,
+  REPORTED: CircleAlert,
+  ACKNOWLEDGED: CircleDot,
+  ASSIGNED: CircleDot,
+  SUBMITTED: Clock,
+  RECEIVED: Clock,
+  REVIEWING: Search,
+  CONVERTED_TO_INCIDENT: ArrowUpRight,
 };
 
 export function StatusIcon({ value, size = 16 }: { value: string; size?: number }) {

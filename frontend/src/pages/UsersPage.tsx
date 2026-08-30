@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { canManageUsers, hasPermission, roleLabel, useAuth } from '../context/AuthContext';
@@ -8,6 +8,7 @@ import { extractError, listResource } from '../lib/utils';
 import { showToast } from '../lib/toast';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { StatusBadge } from '../components/ui/StatusBadge';
+import { Dialog, Field, FormGrid, SelectInput, TextInput } from '../components/ui/form';
 import type { BranchRow } from './BranchesPage';
 
 interface UserRow {
@@ -127,18 +128,18 @@ export default function UsersPage() {
                   </td>
                   <td>
                     {canEdit && currentUser?.id !== user.id ? (
-                      <button className="button secondary small" onClick={() => setEditing(user)}>
-                        Edit
-                      </button>
-                    ) : null}
-                    {canEdit && currentUser?.id !== user.id ? (
-                      <button
-                        className="button secondary small"
-                        disabled={toggleActive.isPending}
-                        onClick={() => toggleActive.mutate(user)}
-                      >
-                        {user.is_active ? 'Disable' : 'Enable'}
-                      </button>
+                      <div className="table-actions" style={{ display: 'flex', gap: 6 }}>
+                        <button className="button secondary small" onClick={() => setEditing(user)}>
+                          Edit
+                        </button>
+                        <button
+                          className={`button ${user.is_active ? 'secondary' : 'ghost'} small`}
+                          disabled={toggleActive.isPending}
+                          onClick={() => toggleActive.mutate(user)}
+                        >
+                          {user.is_active ? 'Disable' : 'Enable'}
+                        </button>
+                      </div>
                     ) : null}
                   </td>
                 </tr>
@@ -175,98 +176,85 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
   const needsBranch = ['BRANCH_USER', 'BRANCH_MANAGER'].includes(role);
 
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
-      <form
-        className="dialog-panel"
-        onClick={(event) => event.stopPropagation()}
-        onSubmit={(event: FormEvent<HTMLFormElement>) => {
-          event.preventDefault();
-          const form = event.currentTarget;
-          const value = (name: string) =>
-            (form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement)?.value;
-          create.mutate({
-            username: value('username'),
-            email: value('email'),
-            full_name: value('full_name'),
-            phone: value('phone'),
-            role: value('role'),
-            branch: value('branch') ? Number(value('branch')) : null,
-            password: value('password'),
-            is_active: true,
-          });
-        }}
-      >
-        <div className="dialog-header">
-          <h2>Create User</h2>
-          <button type="button" className="icon-button" onClick={onClose}>
-            ×
-          </button>
-        </div>
-        <p className="helper-text">District is fixed: {FIXED_DISTRICT_NAME}</p>
-        <label>
-          Full Name *
-          <input name="full_name" required />
-        </label>
-        <div className="form-grid">
-          <label>
-            Username *
-            <input name="username" required />
-          </label>
-          <label>
-            Email *
-            <input name="email" type="email" required />
-          </label>
-        </div>
-        <div className="form-grid">
-          <label>
-            Phone
-            <input name="phone" />
-          </label>
-          <label>
-            Password *
-            <input name="password" type="password" required minLength={8} />
-          </label>
-        </div>
-        <label>
-          Role *
-          <select name="role" value={role} onChange={(event) => setRole(event.target.value)} required>
-            {ROLES.map((value) => (
-              <option key={value} value={value}>
-                {roleLabel(value)}
-              </option>
-            ))}
-          </select>
-        </label>
-        {needsBranch ? (
-          <label>
-            Branch *
-            <select name="branch" required>
-              <option value="">Select branch</option>
-              {(branches.data || []).map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name} ({branch.code})
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : (
-          <input type="hidden" name="branch" value="" />
-        )}
-        {error ? (
-          <div className="error-banner">
-            <strong>{error}</strong>
-          </div>
-        ) : null}
-        <div className="dialog-actions">
+    <Dialog
+      title="Create User"
+      description={`Create an account for ${FIXED_DISTRICT_NAME} operations.`}
+      onClose={onClose}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const value = (name: string) =>
+          (form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement)?.value;
+        create.mutate({
+          username: value('username'),
+          email: value('email'),
+          full_name: value('full_name'),
+          phone: value('phone'),
+          role: value('role'),
+          branch: value('branch') ? Number(value('branch')) : null,
+          password: value('password'),
+          is_active: true,
+        });
+      }}
+      footer={
+        <>
           <button type="button" className="button secondary" onClick={onClose}>
             Cancel
           </button>
           <button className="button primary" disabled={create.isPending}>
             {create.isPending ? 'Creating…' : 'Create User'}
           </button>
+        </>
+      }
+    >
+      <Field label="Full Name" required hint={`District is fixed: ${FIXED_DISTRICT_NAME}`}>
+        <TextInput name="full_name" required placeholder="e.g. Abebe Kebede" />
+      </Field>
+      <FormGrid>
+        <Field label="Username" required>
+          <TextInput name="username" required placeholder="e.g. abebe.k" />
+        </Field>
+        <Field label="Email" required>
+          <TextInput name="email" type="email" required placeholder="user@example.com" />
+        </Field>
+      </FormGrid>
+      <FormGrid>
+        <Field label="Phone">
+          <TextInput name="phone" type="tel" placeholder="+251 9..." />
+        </Field>
+        <Field label="Temporary Password" required hint="Min 8 characters — user will be asked to change it later">
+          <TextInput name="password" type="password" required minLength={8} autoComplete="new-password" placeholder="••••••••" />
+        </Field>
+      </FormGrid>
+      <Field label="Role" required hint="The role controls which portal and actions this user can access">
+        <SelectInput name="role" value={role} onChange={(event) => setRole(event.target.value)} required>
+          {ROLES.map((value) => (
+            <option key={value} value={value}>
+              {roleLabel(value)}
+            </option>
+          ))}
+        </SelectInput>
+      </Field>
+      {needsBranch ? (
+        <Field label="Branch" required hint="Required for branch-level roles">
+          <SelectInput name="branch" required>
+            <option value="">Select branch</option>
+            {(branches.data || []).map((branch) => (
+              <option key={branch.id} value={branch.id}>
+                {branch.name} ({branch.code})
+              </option>
+            ))}
+          </SelectInput>
+        </Field>
+      ) : (
+        <input type="hidden" name="branch" value="" />
+      )}
+      {error ? (
+        <div className="error-banner">
+          <strong>{error}</strong>
         </div>
-      </form>
-    </div>
+      ) : null}
+    </Dialog>
   );
 }
 
@@ -291,90 +279,77 @@ function EditUserDialog({ user, onClose }: { user: UserRow; onClose: () => void 
   const needsBranch = ['BRANCH_USER', 'BRANCH_MANAGER'].includes(role);
 
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
-      <form
-        className="dialog-panel"
-        onClick={(event) => event.stopPropagation()}
-        onSubmit={(event: FormEvent<HTMLFormElement>) => {
-          event.preventDefault();
-          const form = event.currentTarget;
-          const value = (name: string) =>
-            (form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | null)?.value ?? '';
-          const payload: Record<string, unknown> = {
-            full_name: value('full_name'),
-            email: value('email'),
-            phone: value('phone'),
-            role: value('role'),
-            branch: needsBranch ? (value('branch') ? Number(value('branch')) : null) : null,
-            is_active: user.is_active,
-          };
-          if (value('password')) payload.password = value('password');
-          update.mutate(payload);
-        }}
-      >
-        <div className="dialog-header">
-          <h2>Edit {user.full_name || user.username}</h2>
-          <button type="button" className="icon-button" onClick={onClose}>
-            ×
-          </button>
-        </div>
-        <p className="helper-text">Update profile details. Username is fixed; leave password blank to keep it unchanged. District is fixed: {FIXED_DISTRICT_NAME}</p>
-
-        <label>
-          Full Name *
-          <input name="full_name" required defaultValue={user.full_name || ''} />
-        </label>
-        <div className="form-grid">
-          <label>
-            Email *
-            <input name="email" type="email" required defaultValue={user.email || ''} />
-          </label>
-          <label>
-            Phone
-            <input name="phone" defaultValue={user.phone || ''} />
-          </label>
-        </div>
-        <label>
-          Role *
-          <select name="role" value={role} onChange={(event) => setRole(event.target.value)} required>
-            {ROLES.map((value) => (
-              <option key={value} value={value}>
-                {roleLabel(value)}
-              </option>
-            ))}
-          </select>
-        </label>
-        {needsBranch ? (
-          <label>
-            Branch *
-            <select name="branch" defaultValue={user.branch || ''} required>
-              <option value="">Select branch</option>
-              {(branches.data || []).map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name} ({branch.code})
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-        <label>
-          New Password (optional)
-          <input name="password" type="password" minLength={8} autoComplete="new-password" />
-        </label>
-        {error ? (
-          <div className="error-banner">
-            <strong>{error}</strong>
-          </div>
-        ) : null}
-        <div className="dialog-actions">
+    <Dialog
+      title={`Edit ${user.full_name || user.username}`}
+      description="Update profile details. Username is fixed; leave the password blank to keep it unchanged."
+      onClose={onClose}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const value = (name: string) =>
+          (form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | null)?.value ?? '';
+        const payload: Record<string, unknown> = {
+          full_name: value('full_name'),
+          email: value('email'),
+          phone: value('phone'),
+          role: value('role'),
+          branch: needsBranch ? (value('branch') ? Number(value('branch')) : null) : null,
+          is_active: user.is_active,
+        };
+        if (value('password')) payload.password = value('password');
+        update.mutate(payload);
+      }}
+      footer={
+        <>
           <button type="button" className="button secondary" onClick={onClose}>
             Cancel
           </button>
           <button className="button primary" disabled={update.isPending}>
             {update.isPending ? 'Saving…' : 'Save Changes'}
           </button>
+        </>
+      }
+    >
+      <Field label="Full Name" required hint={`District is fixed: ${FIXED_DISTRICT_NAME}`}>
+        <TextInput name="full_name" required defaultValue={user.full_name || ''} />
+      </Field>
+      <FormGrid>
+        <Field label="Email" required>
+          <TextInput name="email" type="email" required defaultValue={user.email || ''} />
+        </Field>
+        <Field label="Phone">
+          <TextInput name="phone" defaultValue={user.phone || ''} />
+        </Field>
+      </FormGrid>
+      <Field label="Role" required>
+        <SelectInput name="role" value={role} onChange={(event) => setRole(event.target.value)} required>
+          {ROLES.map((value) => (
+            <option key={value} value={value}>
+              {roleLabel(value)}
+            </option>
+          ))}
+        </SelectInput>
+      </Field>
+      {needsBranch ? (
+        <Field label="Branch" required>
+          <SelectInput name="branch" defaultValue={user.branch || ''} required>
+            <option value="">Select branch</option>
+            {(branches.data || []).map((branch) => (
+              <option key={branch.id} value={branch.id}>
+                {branch.name} ({branch.code})
+              </option>
+            ))}
+          </SelectInput>
+        </Field>
+      ) : null}
+      <Field label="New Password" hint="Leave blank to keep the current password">
+        <TextInput name="password" type="password" minLength={8} autoComplete="new-password" placeholder="••••••••" />
+      </Field>
+      {error ? (
+        <div className="error-banner">
+          <strong>{error}</strong>
         </div>
-      </form>
-    </div>
+      ) : null}
+    </Dialog>
   );
 }

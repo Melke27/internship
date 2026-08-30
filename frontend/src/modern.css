@@ -652,12 +652,14 @@ a.metric-card:hover {
 .status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   padding: 3px 10px;
   border-radius: 999px;
   font-size: 11.5px;
   font-weight: 600;
   white-space: nowrap;
+  border: 1px solid transparent;
+  transition: all .16s ease;
 }
 .status-badge::before {
   content: '';
@@ -665,6 +667,17 @@ a.metric-card:hover {
   height: 6px;
   border-radius: 50%;
   background: currentColor;
+  flex-shrink: 0;
+}
+.status-badge.status-critical::before,
+.status-badge.status-investigating::before,
+.status-badge.status-troubleshooting::before,
+.status-badge.status-in_progress::before {
+  animation: badge-pulse 1.8s infinite ease-in-out;
+}
+@keyframes badge-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .4; transform: scale(1.3); }
 }
 .status-badge.status-operational,
 .status-badge.status-available,
@@ -1946,4 +1959,249 @@ input.check-field { width: auto; }
   .atm-hero-kpis { gap: 8px; }
   .atm-hero-kpi { min-width: 0; padding: 10px 12px; }
   .atm-hero-kpi strong { font-size: 17px; }
+}
+/* ════════════════════════════════════════════════════════════════════
+   DESIGN SYSTEM v2 — unified form, dialog, and button language
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ---------- Form fields ---------- */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px 14px;
+  align-items: start;
+}
+.form-field {
+  display: block;
+  min-width: 0;
+}
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  line-height: 1.25;
+}
+.req-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--danger);
+  margin-left: 5px;
+  vertical-align: 2px;
+  font-style: normal;
+}
+.form-input {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13.5px;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s, background .15s;
+  appearance: none;
+}
+.form-input::placeholder { color: #a6b1c4; }
+.form-input:hover:not(:disabled) { border-color: #c9d2e4; }
+.form-input:focus {
+  outline: none;
+  border-color: #a5b0f0;
+  box-shadow: 0 0 0 4px rgba(59, 79, 216, .1);
+}
+.form-input:disabled { background: var(--surface-2); color: var(--text-3); cursor: not-allowed; }
+.form-textarea {
+  min-height: 88px;
+  resize: vertical;
+  line-height: 1.55;
+}
+.form-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a97ad' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 34px;
+  cursor: pointer;
+}
+.form-hint {
+  display: block;
+  margin-top: 5px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+.form-error-text {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--danger);
+}
+.form-field.has-error .form-input {
+  border-color: var(--danger);
+}
+.form-field.has-error .form-input:focus {
+  box-shadow: 0 0 0 4px rgba(225, 29, 72, .1);
+}
+
+/* Checkbox row (switch-like field that wraps an input) */
+.check-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.check-field:hover { border-color: #c9d2e4; }
+.check-field:has(input:checked) {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+.check-node { display: inline-flex; align-items: center; margin-top: 1px; flex-shrink: 0; }
+.check-node input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+.check-copy { display: block; }
+.check-copy strong { display: block; font-size: 13px; font-weight: 600; color: var(--text); }
+.check-copy small { display: block; font-size: 11.5px; color: var(--text-3); margin-top: 1px; line-height: 1.45; }
+
+/* ---------- Dialog structure ---------- */
+.dialog-panel {
+  position: relative;
+  max-height: min(90vh, 860px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  width: min(540px, calc(100vw - 32px));
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+.dialog-panel.dialog-wide { width: min(640px, calc(100vw - 32px)); }
+.dialog-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.dialog-header h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -.01em;
+}
+.dialog-header h2::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 17px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--brand), var(--brand-strong));
+  margin-right: 9px;
+  vertical-align: -2px;
+}
+.dialog-description {
+  margin: 5px 0 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-3);
+  max-width: 46ch;
+}
+.dialog-kicker {
+  margin: 0 0 3px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.dialog-close {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.dialog-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 18px 22px 4px;
+}
+.dialog-body > * + * { margin-top: 14px; }
+.dialog-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.confirm-text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--text-2);
+}
+.confirm-text strong { color: var(--text); }
+
+/* ---------- Buttons (unified variants) ---------- */
+.app-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .14s, border-color .14s, color .14s, box-shadow .14s, transform .05s;
+  white-space: nowrap;
+  user-select: none;
+}
+.app-btn:disabled { opacity: .55; cursor: not-allowed; }
+.app-btn-md { padding: 0 16px; height: 40px; }
+.app-btn-sm { padding: 0 11px; height: 30px; font-size: 12px; border-radius: 8px; }
+.app-btn-primary { background: var(--brand); color: #fff; }
+.app-btn-primary:hover:not(:disabled) { background: var(--brand-strong); box-shadow: 0 4px 14px rgba(59, 79, 216, .28); }
+.app-btn-primary:active:not(:disabled) { transform: translateY(1px); }
+.app-btn-secondary { background: var(--surface); border-color: var(--line); color: var(--text); }
+.app-btn-secondary:hover:not(:disabled) { border-color: #c3cdf0; background: var(--surface-2); color: var(--brand-strong); }
+.app-btn-ghost { background: transparent; color: var(--text-2); }
+.app-btn-ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+.app-btn-danger { background: var(--danger); color: #fff; }
+.app-btn-danger:hover:not(:disabled) { background: var(--danger-strong); box-shadow: 0 4px 14px rgba(225, 29, 72, .24); }
+.app-btn-outline { background: transparent; border-color: var(--line); color: var(--text-2); }
+.app-btn-outline:hover:not(:disabled) { border-color: var(--brand); color: var(--brand-strong); }
+
+@media (max-width: 640px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .dialog-header, .dialog-body, .dialog-footer { padding-left: 18px; padding-right: 18px; }
 }

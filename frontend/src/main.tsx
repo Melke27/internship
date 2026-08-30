@@ -67,13 +67,13 @@ function App() {
                 <Route path="/branch/report" element={<PortalRoute portal="branch"><PermissionRoute permission="branch_report.create"><BranchReportFormPage /></PermissionRoute></PortalRoute>} />
                 <Route path="/branch/reports" element={<PortalRoute portal="branch"><PermissionRoute permission="branch_report.view"><BranchReportsListPage /></PermissionRoute></PortalRoute>} />
                 <Route path="/branch/reports/:id" element={<PortalRoute portal="branch"><PermissionRoute permission="branch_report.view"><BranchReportDetailPage /></PermissionRoute></PortalRoute>} />
-                <Route path="/atms" element={<PortalRoute portal="district"><PermissionRoute permission="atm.view"><ATMsPage /></PermissionRoute></PortalRoute>} />
-                <Route path="/atms/:id" element={<PortalRoute portal="district"><PermissionRoute permission="atm.view"><ATMDetailsPage /></PermissionRoute></PortalRoute>} />
-                <Route path="/active-faults" element={<PortalRoute portal="district"><PermissionRoute permission="atm.view"><ActiveFaultsPage /></PermissionRoute></PortalRoute>} />
-                <Route path="/incidents" element={<PortalRoute portal="district"><PermissionRoute permission="incident.view"><IncidentsPage /></PermissionRoute></PortalRoute>} />
-                <Route path="/incidents/:id" element={<PortalRoute portal="district"><PermissionRoute permission="incident.view"><IncidentDetailPage /></PermissionRoute></PortalRoute>} />
-                <Route path="/branch-reports" element={<PortalRoute portal="district"><PermissionRoute permission="branch_report.view"><BranchReportsPage /></PermissionRoute></PortalRoute>} />
-                <Route path="/branch-reports/:id" element={<PortalRoute portal="district"><PermissionRoute permission="branch_report.view"><DistrictBranchReportDetailPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/atms" element={<PortalRoute portal={['district', 'maintenance']}><PermissionRoute permission="atm.view"><ATMsPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/atms/:id" element={<PortalRoute portal={['district', 'maintenance']}><PermissionRoute permission="atm.view"><ATMDetailsPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/active-faults" element={<PortalRoute portal={['district', 'maintenance']}><PermissionRoute permission="atm.view"><ActiveFaultsPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/incidents" element={<PortalRoute portal={['district', 'maintenance']}><PermissionRoute permission="incident.view"><IncidentsPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/incidents/:id" element={<PortalRoute portal={['district', 'maintenance']}><PermissionRoute permission="incident.view"><IncidentDetailPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/branch-reports" element={<PortalRoute portal={['district', 'maintenance']}><PermissionRoute permission="branch_report.view"><BranchReportsPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/branch-reports/:id" element={<PortalRoute portal={['district', 'maintenance']}><PermissionRoute permission="branch_report.view"><DistrictBranchReportDetailPage /></PermissionRoute></PortalRoute>} />
                 <Route path="/troubleshooting" element={<PortalRoute portal="maintenance"><PermissionRoute permission="troubleshooting.view"><TroubleshootingPage /></PermissionRoute></PortalRoute>} />
                 <Route path="/escalations" element={<PortalRoute portal="maintenance"><PermissionRoute permission="incident.view"><EscalationsPage /></PermissionRoute></PortalRoute>} />
                 <Route path="/maintenance" element={<PortalRoute portal="maintenance"><PermissionRoute permission="maintenance.view"><MaintenancePage /></PermissionRoute></PortalRoute>} />

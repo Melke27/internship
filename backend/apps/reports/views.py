@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.db.models import Avg, Count, DurationField, F, Q
+from django.db.models import Avg, Count, DurationField, F, Prefetch, Q
 from django.db.models.functions import Cast, TruncDate
 from django.utils import timezone
 from rest_framework.response import Response
@@ -11,7 +11,6 @@ from apps.accounts.models import User
 from apps.assets.models import ATM, ATMStatusHistory, Maintenance
 from apps.incidents.models import BranchReport, Incident, TroubleshootingAction
 from apps.organization.models import Branch, District
-
 
 def scoped(user):
     districts = District.objects.all()
@@ -75,15 +74,23 @@ class DashboardSummaryView(APIView):
                 BranchReport.Status.REVIEWING,
             ]
         )
-        critical_atms = atms.filter(status=ATM.Status.CRITICAL, is_active=True)
+
+        open_incidents_prefetch = Prefetch(
+            "incidents",
+            queryset=Incident.objects.exclude(status=Incident.Status.CLOSED).select_related("assigned_to").order_by("-created_at"),
+            to_attr="open_incidents_list",
+        )
+
+        critical_atms = atms.filter(status=ATM.Status.CRITICAL, is_active=True).prefetch_related(open_incidents_prefetch)
         fault_atms = atms.filter(
             status__in=[ATM.Status.FAULT, ATM.Status.CRITICAL, ATM.Status.OFFLINE, ATM.Status.DEGRADED, ATM.Status.WARNING],
             is_active=True,
-        )
+        ).prefetch_related(open_incidents_prefetch)
 
         attention_rows = []
         for atm in critical_atms.order_by("last_status_change", "reference")[:12]:
-            active = atm.incidents.exclude(status=Incident.Status.CLOSED).order_by("-created_at").first()
+            active_list = getattr(atm, "open_incidents_list", [])
+            active = active_list[0] if active_list else None
             duration_minutes = None
             if atm.last_status_change:
                 duration_minutes = int((timezone.now() - atm.last_status_change).total_seconds() // 60)
@@ -113,7 +120,8 @@ class DashboardSummaryView(APIView):
 
         active_faults = []
         for atm in fault_atms.order_by("-last_status_change")[:20]:
-            active = atm.incidents.exclude(status=Incident.Status.CLOSED).order_by("-created_at").first()
+            active_list = getattr(atm, "open_incidents_list", [])
+            active = active_list[0] if active_list else None
             duration_minutes = None
             if atm.last_status_change:
                 duration_minutes = int((timezone.now() - atm.last_status_change).total_seconds() // 60)
@@ -140,7 +148,7 @@ class DashboardSummaryView(APIView):
         recent_status_changes = ATMStatusHistory.objects.filter(atm__in=atms).select_related("atm", "changed_by").order_by(
             "-created_at"
         )[:8]
-        recent_branch_reports = reports.order_by("-created_at")[:8]
+        recent_branch_reports = reports.select_related("atm", "branch").prefetch_related("incident").order_by("-created_at")[:8]
         technicians = User.objects.filter(assigned_incidents__in=open_incidents).distinct()
 
         return Response(

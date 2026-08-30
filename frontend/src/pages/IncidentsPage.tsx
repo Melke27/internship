@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
@@ -9,6 +9,7 @@ import { hasPermission, useAuth } from '../context/AuthContext';
 import { showToast } from '../lib/toast';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
+import { Dialog, Field, FormGrid, SelectInput, TextArea, TextInput } from '../components/ui/form';
 import type { ATM, Incident, User } from '../types/api';
 
 function list<T>(path: string) {
@@ -53,119 +54,107 @@ function CreateIncidentDialog({ initialAtmId, onClose }: { initialAtmId?: string
   });
 
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
-      <form
-        className="dialog-panel"
-        onClick={(event) => event.stopPropagation()}
-        onSubmit={(event: FormEvent<HTMLFormElement>) => {
-          event.preventDefault();
-          const form = event.currentTarget;
-          const value = (name: string) => (form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)?.value;
-          setError('');
-          setDuplicate(null);
-          createIncident.mutate({
-            atm: Number(value('atm')),
-            category: value('category'),
-            priority: value('priority'),
-            title: value('title'),
-            error_message: value('error_message'),
-            description: value('description'),
-            service_impact: value('service_impact'),
-            assigned_to: value('assigned_to') ? Number(value('assigned_to')) : undefined,
-          });
-        }}
-      >
-        <div className="dialog-header">
-          <h2>Create ATM Incident</h2>
-          <button type="button" className="icon-button" onClick={onClose}>×</button>
-        </div>
-        <label>
-          ATM *
-          <select name="atm" value={atmId} onChange={(event) => setAtmId(event.target.value)} required>
-            <option value="">Select ATM</option>
-            {(atms.data || []).map((atm) => (
-              <option key={atm.id} value={atm.id}>{atm.reference} · {atm.branch_name}</option>
-            ))}
-          </select>
-        </label>
-        <div className="form-grid">
-          <label>
-            Category *
-            <select name="category" required>
-              {['NETWORK / COMMUNICATION', 'POWER', 'HARDWARE', 'DISPLAY', 'CARD READER', 'CASH DISPENSER', 'RECEIPT PRINTER', 'GENERAL ATM ERROR', 'OTHER TECHNICAL ISSUE'].map((value) => (
-                <option key={value} value={value}>{value}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Priority *
-            <select name="priority" required>
-              {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((value) => <option key={value} value={value}>{value}</option>)}
-            </select>
-          </label>
-        </div>
-        <div className="readonly-card">
-          <span>Current ATM Status</span>
-          <div>{selectedATM ? <StatusBadge value={selectedATM.status} /> : <em className="empty-inline">Select an ATM to view status</em>}</div>
-          {selectedATM ? (
-            <div className="badge-group">
-              <StatusBadge value={selectedATM.network_status} />
-              <StatusBadge value={selectedATM.hardware_status} />
-            </div>
-          ) : null}
-        </div>
-        <label>
-          Incident title *
-          <input name="title" required placeholder="Brief technical summary" />
-        </label>
-        <label>
-          Error Message
-          <input name="error_message" placeholder="Optional backend or terminal error message" />
-        </label>
-        <label>
-          Service Impact
-          <textarea name="service_impact" rows={2} placeholder="Describe ATM availability or service impact" />
-        </label>
-        <label>
-          Problem Description *
-          <textarea name="description" rows={4} required placeholder="Describe the actual ATM problem" />
-        </label>
-{technicians.data && technicians.data.length > 0 ? (
-            <label>
-              Assignable Technicians
-              <small>Optional — pick a technician or auto-assign later.</small>
-              <div className="technician-picker">
-                <label className="tech-option">
-                  <input type="radio" name="assigned_to" value="" defaultChecked />
-                  <span className="tech-avatar">±</span>
-                  <strong>Auto-assign later<small>Leave unassigned for now</small></strong>
-                  <span className="check-mark">✓</span>
-                </label>
-                {technicians.data.map((tech) => (
-                  <label key={tech.id} className="tech-option">
-                    <input type="radio" name="assigned_to" value={tech.id} />
-                    <span className="tech-avatar">{(tech.full_name || tech.username).slice(0, 2).toUpperCase()}</span>
-                    <strong>{tech.full_name || tech.username}<small>{tech.username}</small></strong>
-                    <span className="check-mark">✓</span>
-                  </label>
-                ))}
-              </div>
-            </label>
-          ) : null}
-        {duplicate ? (
-          <div className="error-banner">
-            <strong>{selectedATM?.reference} already has an active incident.</strong>
-            <small>{duplicate.incident_number} · {duplicate.title} · {duplicate.priority} · {duplicate.status}</small>
-            <Link className="text-link" to={`/incidents/${duplicate.id}`}>Open Existing Incident</Link>
+    <Dialog
+      title="Create ATM Incident"
+      description="Report an ATM problem and assign it for resolution."
+      onClose={onClose}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const value = (name: string) => (form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)?.value;
+        setError('');
+        setDuplicate(null);
+        createIncident.mutate({
+          atm: Number(value('atm')),
+          category: value('category'),
+          priority: value('priority'),
+          title: value('title'),
+          error_message: value('error_message'),
+          description: value('description'),
+          service_impact: value('service_impact'),
+          assigned_to: value('assigned_to') ? Number(value('assigned_to')) : undefined,
+        });
+      }}
+      footer={
+        <>
+          <button type="button" className="button secondary" onClick={onClose}>Cancel</button>
+          <button className="button primary" disabled={createIncident.isPending}>{createIncident.isPending ? 'Creating…' : 'Create Incident'}</button>
+        </>
+      }
+    >
+      <Field label="ATM" required>
+        <SelectInput name="atm" value={atmId} onChange={(event) => setAtmId(event.target.value)} required>
+          <option value="">Select ATM</option>
+          {(atms.data || []).map((atm) => (
+            <option key={atm.id} value={atm.id}>{atm.reference} · {atm.branch_name}</option>
+          ))}
+        </SelectInput>
+      </Field>
+      <div className="readonly-card">
+        <span>Current ATM Status</span>
+        <div>{selectedATM ? <StatusBadge value={selectedATM.status} /> : <em className="empty-inline">Select an ATM to view status</em>}</div>
+        {selectedATM ? (
+          <div className="badge-group">
+            <StatusBadge value={selectedATM.network_status} />
+            <StatusBadge value={selectedATM.hardware_status} />
           </div>
         ) : null}
-        {error ? <div className="error-banner"><strong>{error}</strong></div> : null}
-        <div className="dialog-actions">
-          <button type="button" className="button secondary" onClick={onClose}>Cancel</button>
-          <button className="button primary" disabled={createIncident.isPending}>{createIncident.isPending ? 'Creating...' : 'Create Incident'}</button>
+      </div>
+      <FormGrid cols={2}>
+        <Field label="Category" required>
+          <SelectInput name="category" required>
+            {['NETWORK / COMMUNICATION', 'POWER', 'HARDWARE', 'DISPLAY', 'CARD READER', 'CASH DISPENSER', 'RECEIPT PRINTER', 'GENERAL ATM ERROR', 'OTHER TECHNICAL ISSUE'].map((value) => (
+              <option key={value} value={value}>{value}</option>
+            ))}
+          </SelectInput>
+        </Field>
+        <Field label="Priority" required>
+          <SelectInput name="priority" required>
+            {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((value) => <option key={value} value={value}>{value}</option>)}
+          </SelectInput>
+        </Field>
+      </FormGrid>
+      <Field label="Incident Title" required>
+        <TextInput name="title" required placeholder="Brief technical summary" />
+      </Field>
+      <Field label="Error Message" hint="Optional backend or terminal error message">
+        <TextInput name="error_message" placeholder="e.g. Cash dispenser jammed — error 04" />
+      </Field>
+      <Field label="Service Impact" hint="Describe ATM availability or service impact">
+        <TextArea name="service_impact" rows={2} placeholder="Describe ATM availability or service impact" />
+      </Field>
+      <Field label="Problem Description" required>
+        <TextArea name="description" rows={4} required placeholder="Describe the actual ATM problem" />
+      </Field>
+      {technicians.data && technicians.data.length > 0 ? (
+        <Field label="Assignable Technicians" hint="Optional — pick a technician or auto-assign later.">
+          <div className="technician-picker">
+            <label className="tech-option">
+              <input type="radio" name="assigned_to" value="" defaultChecked />
+              <span className="tech-avatar">±</span>
+              <strong>Auto-assign later<small>Leave unassigned for now</small></strong>
+              <span className="check-mark">✓</span>
+            </label>
+            {technicians.data.map((tech) => (
+              <label key={tech.id} className="tech-option">
+                <input type="radio" name="assigned_to" value={tech.id} />
+                <span className="tech-avatar">{(tech.full_name || tech.username).slice(0, 2).toUpperCase()}</span>
+                <strong>{tech.full_name || tech.username}<small>{tech.username}</small></strong>
+                <span className="check-mark">✓</span>
+              </label>
+            ))}
+          </div>
+        </Field>
+      ) : null}
+      {duplicate ? (
+        <div className="error-banner">
+          <strong>{selectedATM?.reference} already has an active incident.</strong>
+          <small>{duplicate.incident_number} · {duplicate.title} · {duplicate.priority} · {duplicate.status}</small>
+          <Link className="text-link" to={`/incidents/${duplicate.id}`}>Open Existing Incident</Link>
         </div>
-      </form>
-    </div>
+      ) : null}
+      {error ? <div className="error-banner"><strong>{error}</strong></div> : null}
+    </Dialog>
   );
 }
 
@@ -252,6 +241,7 @@ export default function IncidentsPage() {
                   <th>Status</th>
                   <th>Assigned Technician</th>
                   <th>Created</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -267,6 +257,11 @@ export default function IncidentsPage() {
                     <td><StatusBadge value={incident.status} /></td>
                     <td>{incident.assigned_to_name || 'Unassigned'}</td>
                     <td>{new Date(incident.created_at).toLocaleString()}</td>
+                    <td>
+                      <Link className="button secondary small" to={`/incidents/${incident.id}`}>
+                        Details
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -274,7 +269,18 @@ export default function IncidentsPage() {
           </div>
         ) : null}
       </div>
-      {openNew ? <CreateIncidentDialog initialAtmId={atmId} onClose={() => setSearchParams({})} /> : null}
+      {openNew ? (
+        <CreateIncidentDialog
+          initialAtmId={atmId}
+          onClose={() =>
+            setSearchParams((params) => {
+              params.delete('new');
+              params.delete('atm');
+              return params;
+            })
+          }
+        />
+      ) : null}
     </section>
   );
 }

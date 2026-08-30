@@ -46,6 +46,9 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 AUTH_USER_MODEL = "accounts.User"
 CORS_ALLOWED_ORIGINS = [x for x in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173").split(",") if x]
+CORS_ALLOWED_ORIGIN_REGEXES = []
+if os.getenv("CORS_ALLOW_VERCEL", "true").lower() == "true":
+    CORS_ALLOWED_ORIGIN_REGEXES.append(r"^https://.*\.vercel\.app$")
 REST_FRAMEWORK = {"DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",), "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",), "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend", "rest_framework.filters.SearchFilter", "rest_framework.filters.OrderingFilter"), "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination", "PAGE_SIZE": int(os.getenv("API_PAGE_SIZE", "50")), "DEFAULT_SCHEMA_CLASS":"drf_spectacular.openapi.AutoSchema"}
 SIMPLE_JWT = {"ACCESS_TOKEN_LIFETIME":timedelta(minutes=30),"REFRESH_TOKEN_LIFETIME":timedelta(days=1),"AUTH_HEADER_TYPES":("Bearer",)}
 SPECTACULAR_SETTINGS = {"TITLE":"CBE Enterprise ATM & ICT Support API","DESCRIPTION":"Scoped internal technical-support API. No customer or banking transaction data.","VERSION":"1.0.0"}

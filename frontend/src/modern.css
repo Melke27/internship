@@ -2304,3 +2304,24 @@ input.check-field { width: auto; }
   .app-toast { left: 16px; right: 16px; bottom: 16px; min-width: auto; }
 }
 
+/* ---------- Print & PDF Export ---------- */
+@media print {
+  .sidebar, .topbar, .page-actions, .app-toast, .quick-actions {
+    display: none !important;
+  }
+  .shell-main, .page-container {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .panel {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+}
+
+

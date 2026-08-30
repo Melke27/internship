@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
+import { Download, Printer } from 'lucide-react';
 
 import { api } from '../lib/api';
+import { showToast } from '../lib/toast';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import type { DashboardSummary, Maintenance } from '../types/api';
 
@@ -63,6 +65,37 @@ export default function ReportsPage() {
     queryFn: () => list<Maintenance>('/maintenance/'),
   });
 
+  function exportCSV() {
+    const lines: string[] = ['CBE ATM Operations Report', `Generated: ${new Date().toLocaleString()}`, ''];
+    lines.push('DISTRICT ATM SUMMARY');
+    lines.push('District,Branches,ATMs,Availability %,Incidents,Open,Escalated,Resolved');
+    (districts.data || []).forEach((row) => {
+      lines.push(`"${row.district}",${row.branches},${row.atms},${row.atm_availability},${row.incidents},${row.open_incidents},${row.escalations},${row.resolved}`);
+    });
+    lines.push('');
+    lines.push('BRANCH OVERVIEW');
+    lines.push('Branch,ATMs,Incidents,Resolved');
+    (branches.data || []).forEach((row) => {
+      lines.push(`"${row.branch}",${row.atms},${row.incidents},${row.resolved}`);
+    });
+    lines.push('');
+    lines.push('TECHNICIAN ACTIVITY');
+    lines.push('Technician,Assigned,Pending,Resolved,Escalations,Avg Resolution (hrs)');
+    (technicians.data || []).forEach((row) => {
+      lines.push(`"${row.technician}",${row.assigned},${row.pending},${row.resolved},${row.escalations},${row.avg_resolution_hours ?? ''}`);
+    });
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `CBE_ATM_District_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Report CSV downloaded successfully');
+  }
+
   if (summary.isLoading || districts.isLoading) {
     return <LoadingState label="Compiling technical reports..." />;
   }
@@ -84,6 +117,14 @@ export default function ReportsPage() {
           <p className="page-kicker">Monitoring</p>
           <h1>Reports</h1>
           <p className="page-copy">District ATM availability, incident activity, technician performance and maintenance summaries.</p>
+        </div>
+        <div className="page-actions">
+          <button className="button secondary" onClick={exportCSV}>
+            <Download size={14} style={{ marginRight: 6 }} /> Export CSV
+          </button>
+          <button className="button primary" onClick={() => window.print()}>
+            <Printer size={14} style={{ marginRight: 6 }} /> Print / Save PDF
+          </button>
         </div>
       </div>
 

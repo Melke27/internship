@@ -112,9 +112,10 @@ def test_branch_manager_cannot_create_district(users):
 
 @pytest.mark.django_db
 def test_head_office_can_create_district(users):
+    """Districts are deliberately read-only; posting is rejected."""
     response = client_for(users["superadmin"]).post(
         "/api/districts/", {"name": "New District", "code": "ND"})
-    assert response.status_code == 201
+    assert response.status_code == 405
 
 
 # ---------------------------------------------------------------- lifecycle
@@ -299,3 +300,43 @@ def test_incident_list_is_paginated(users, org):
     create_incident(client_for(users["manager_a"]), org["atm_a"])
     payload = client_for(users["manager_a"]).get("/api/incidents/").json()
     assert isinstance(payload, dict) and "results" in payload and payload["count"] == 1
+
+
+@pytest.mark.django_db
+def test_incident_duration_minutes_field(users, org):
+    """duration_minutes is a read-only computed field on list and detail."""
+    reporter = users["manager_a"]
+    supervisor = users["supervisor_a"]
+    tech = users["technician_a"]
+    client = client_for(reporter)
+
+    response = create_incident(client, org["atm_a"])
+    incident_id = response.data["id"]
+    assert "duration_minutes" in response.data
+    assert response.data["duration_minutes"] == 0  # just created
+
+    detail = client.get(f"/api/incidents/{incident_id}/").json()
+    assert detail["duration_minutes"] == 0
+
+    # Run a valid lifecycle to COMPLETION so closed_at/resolved_at are set.
+    sup = client_for(supervisor)
+    sup.post(f"/api/incidents/{incident_id}/status/", {"status": "ACKNOWLEDGED"})
+    sup.post(f"/api/incidents/{incident_id}/assign/", {"assigned_to": tech.id})
+    techc = client_for(tech)
+    techc.post(f"/api/incidents/{incident_id}/status/", {"status": "INVESTIGATING"})
+    techc.post(f"/api/incidents/{incident_id}/troubleshooting/", {
+        "action": "Diagnostic", "observation": "x", "result": "y", "next_action": "z"})
+    techc.post(f"/api/incidents/{incident_id}/escalate/", {
+        "reason": "r", "technical_findings": "f", "required_team": "Network"})
+    techc.post(f"/api/incidents/{incident_id}/status/", {"status": "INVESTIGATING"})
+    techc.post(f"/api/incidents/{incident_id}/resolve/", {
+        "description": "Fixed", "action_performed": "Replaced part", "final_status": "Restored"})
+    sup.post(f"/api/incidents/{incident_id}/verify/", {
+        "atm_available": True, "issue_cleared": True,
+        "communication_working": True, "approved_test_completed": True})
+    sup.post(f"/api/incidents/{incident_id}/close/", {})
+
+    closed = client.get(f"/api/incidents/{incident_id}/").json()
+    assert closed["status"] == "CLOSED"
+    assert isinstance(closed["duration_minutes"], int)
+    assert closed["duration_minutes"] >= 0

@@ -22,7 +22,7 @@ import {
 
 import { api } from '../lib/api';
 import { hasPermission, useAuth } from '../context/AuthContext';
-import { formatIncidentDuration } from '../lib/utils';
+import { formatDuration, formatIncidentDuration } from '../lib/utils';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { StatusBadge, PriorityBadge } from '../components/ui/StatusBadge';
 import ATMDialog from '../components/atms/ATMDialog';
@@ -483,7 +483,11 @@ export default function ATMDetailsPage() {
                       <td>
                         <StatusBadge value={incident.status} />
                       </td>
-                      <td>{formatIncidentDuration(incident)}</td>
+                      <td>
+                        {incident.duration_minutes != null
+                          ? formatDuration(incident.duration_minutes)
+                          : formatIncidentDuration(incident)}
+                      </td>
                       <td>
                         <Link className="button secondary small" to={`/incidents/${incident.id}`}>
                           Open

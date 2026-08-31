@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from .models import BranchReport, Escalation, Incident, Resolution, TroubleshootingAction, Verification
@@ -148,6 +149,7 @@ class IncidentSerializer(serializers.ModelSerializer):
     escalations = EscalationSerializer(many=True, read_only=True)
     resolution = ResolutionSerializer(read_only=True)
     verification = serializers.SerializerMethodField()
+    duration_minutes = serializers.SerializerMethodField()
 
     def get_assigned_to_name(self, obj):
         if hasattr(obj, "assigned_to") and obj.assigned_to:
@@ -158,6 +160,15 @@ class IncidentSerializer(serializers.ModelSerializer):
         if hasattr(obj, "reported_by") and obj.reported_by:
             return obj.reported_by.full_name or obj.reported_by.username
         return None
+
+    def get_duration_minutes(self, obj):
+        start = obj.created_at
+        if start is None:
+            return None
+        end = obj.closed_at or obj.resolved_at or timezone.now()
+        if end < start:
+            end = start
+        return int((end - start).total_seconds() // 60)
 
     class Meta:
         model = Incident

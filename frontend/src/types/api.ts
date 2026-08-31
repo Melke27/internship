@@ -163,6 +163,7 @@ export interface Incident {
   updated_at: string;
   resolved_at: string | null;
   closed_at: string | null;
+  duration_minutes?: number | null;
   actions?: TroubleshootingAction[];
   escalations?: Escalation[];
   resolution?: Resolution | null;

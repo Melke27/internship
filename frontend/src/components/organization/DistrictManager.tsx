@@ -1,4 +1,4 @@
-import {FormEvent,useState} from 'react'; import {useAuth,hasPermission} from '../../context/AuthContext'; import {useCreateDistrict,useUpdateDistrict,useDeleteDistrict,DistrictInput} from '../../services/organization'; import {isAxiosError} from 'axios';
+import {FormEvent,useState} from 'react'; import {useAuth,hasPermission} from '../../context/AuthContext'; import {useCreateDistrict,useUpdateDistrict,useDeleteDistrict,DistrictInput} from '../../services/organization'; import {isAxiosError} from 'axios'; import {Dialog,Field,FormGrid,SelectInput,TextArea,TextInput} from '../ui/form';
 
 export interface DistrictRow{id:number;name:string;code:string;description?:string;address?:string;phone?:string;email?:string;status:string}
 
@@ -12,20 +12,18 @@ function set<K extends keyof DistrictInput>(key:K,value:DistrictInput[K]){setFor
 async function submit(e:FormEvent){e.preventDefault();setError('');
 try{if(row)await update.mutateAsync({id:row.id,...form});else await create.mutateAsync(form);onClose()}
 catch(err){if(isAxiosError(err)&&err.response?.data){const data=err.response.data as Record<string,unknown>;const first=typeof data.detail==='string'?data.detail:Object.entries(data).map(([k,v])=>`${k}: ${Array.isArray(v)?v.join(', '):v}`).join(' · ');setError(first||'Request failed.')}else setError('Unable to reach the Django API.')}}
-return <div className="dialog-backdrop" onClick={onClose}><form className="panel dialog" onClick={e=>e.stopPropagation()} onSubmit={submit}>
-<h2>{row?'Edit district':'New district'}</h2>
-<label>Name<input required value={form.name} onChange={e=>set('name',e.target.value)}/></label>
-<label>Code<input required value={form.code} onChange={e=>set('code',e.target.value)}/></label>
-<div className="dialog-grid">
-<label>Status<select value={form.status} onChange={e=>set('status',e.target.value)}>{['ACTIVE','INACTIVE'].map(s=><option key={s}>{s}</option>)}</select></label>
-<label>Phone<input value={form.phone} onChange={e=>set('phone',e.target.value)}/></label>
-</div>
-<label>Email<input type="email" value={form.email} onChange={e=>set('email',e.target.value)}/></label>
-<label>Address<input value={form.address} onChange={e=>set('address',e.target.value)}/></label>
-<label>Description<textarea rows={2} value={form.description} onChange={e=>set('description',e.target.value)}/></label>
+return <Dialog title={row?'Edit district':'New district'} description={row?'Update district configuration details.':'Create a new district for the organization.'} onClose={onClose} onSubmit={submit} footer={<><button type="button" className="button secondary" onClick={onClose}>Cancel</button><button className="button primary" disabled={create.isPending||update.isPending}>{create.isPending||update.isPending?'Saving…':row?'Save Changes':'Create District'}</button></>}>
+<Field label="Name" required><TextInput required value={form.name} onChange={e=>set('name',e.target.value)} placeholder="e.g. Yeka District"/></Field>
+<Field label="Code" required><TextInput required value={form.code} onChange={e=>set('code',e.target.value)} placeholder="e.g. YKA"/></Field>
+<FormGrid cols={2}>
+<Field label="Status"><SelectInput value={form.status} onChange={e=>set('status',e.target.value)}>{['ACTIVE','INACTIVE'].map(s=><option key={s}>{s}</option>)}</SelectInput></Field>
+<Field label="Phone"><TextInput value={form.phone} onChange={e=>set('phone',e.target.value)} placeholder="+251 11 ..."/></Field>
+</FormGrid>
+<Field label="Email"><TextInput type="email" value={form.email} onChange={e=>set('email',e.target.value)} placeholder="district@example.com"/></Field>
+<Field label="Address"><TextInput value={form.address} onChange={e=>set('address',e.target.value)} placeholder="Street or building address"/></Field>
+<Field label="Description"><TextArea rows={2} value={form.description} onChange={e=>set('description',e.target.value)} placeholder="Optional notes"/></Field>
 {error&&<div className="form-error">{error}</div>}
-<div className="dialog-actions"><button type="button" className="button secondary" onClick={onClose}>Cancel</button><button className="button primary" disabled={create.isPending||update.isPending}>{row?'Save changes':'Create district'}</button></div>
-</form></div>}
+</Dialog>}
 
 export function DistrictRowActions({row,onEdit}:{row:DistrictRow;onEdit:()=>void}){
 const {currentUser}=useAuth();const del=useDeleteDistrict();const [confirming,setConfirming]=useState(false);const [error,setError]=useState('');

@@ -521,10 +521,8 @@ export default function DashboardPage() {
           )}
         </Panel>
 
-        <Panel title="Recent Status Changes" subtitle="Latest ATM status transitions across the district.">
-          {data.recent_status_changes.length === 0 ? (
-            <EmptyState title="No status changes yet" description="ATM status transitions will appear here." />
-          ) : (
+        {data.recent_status_changes.length > 0 ? (
+          <Panel title="Recent Status Changes" subtitle="Latest ATM status transitions across the district.">
             <div className="list-stack">
               {data.recent_status_changes.slice(0, 6).map((row) => (
                 <div className="list-card" key={row.id}>
@@ -541,8 +539,8 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          )}
-        </Panel>
+          </Panel>
+        ) : null}
       </div>
     </section>
   );

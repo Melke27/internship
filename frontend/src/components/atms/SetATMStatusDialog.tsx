@@ -1,10 +1,11 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { api } from '../../lib/api';
 import { extractError } from '../../lib/utils';
 import { showToast } from '../../lib/toast';
 import { StatusBadge } from '../ui/StatusBadge';
+import { Dialog, Field, FormGrid, SelectInput, TextArea } from '../ui/form';
 import type { ATM } from '../../types/api';
 
 const ATM_STATUS_OPTIONS = [
@@ -48,75 +49,56 @@ export default function SetATMStatusDialog({
   });
 
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
-      <form
-        className="dialog-panel"
-        style={{ maxWidth: 520 }}
-        onClick={(e) => e.stopPropagation()}
-        onSubmit={(e: FormEvent<HTMLFormElement>) => {
-          e.preventDefault();
-          if (status === atm.status) {
-            setError('Please select a different status.');
-            return;
-          }
-          mutation.mutate({ status, reason });
-        }}
-      >
-        <div className="dialog-header">
-          <div>
-            <h2>Update Technical Status</h2>
-            <p className="helper-text">{atm.reference} — {atm.branch_name}</p>
-          </div>
-          <button type="button" className="icon-button" onClick={onClose}>×</button>
-        </div>
-
-        <div className="readonly-card" style={{ marginBottom: 14 }}>
-          <span>Current Status</span>
-          <div style={{ marginTop: 4 }}>
-            <StatusBadge value={atm.status} />
-          </div>
-        </div>
-
-        <label>
-          New Technical Status *
-          <select
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value);
-              setError('');
-            }}
-            required
-          >
-            {ATM_STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label} — {opt.desc}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={{ marginTop: 12 }}>
-          Reason for Change *
-          <textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            rows={3}
-            required
-            placeholder="Explain why this status is being set (e.g. Card reader replaced, power restored)."
-          />
-        </label>
-
-        {error ? <div className="error-banner"><strong>{error}</strong></div> : null}
-
-        <div className="dialog-actions" style={{ marginTop: 18 }}>
-          <button type="button" className="button secondary" onClick={onClose}>
-            Cancel
-          </button>
+    <Dialog
+      title="Update Technical Status"
+      description={`${atm.reference} — ${atm.branch_name}`}
+      onClose={onClose}
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (status === atm.status) {
+          setError('Please select a different status.');
+          return;
+        }
+        mutation.mutate({ status, reason });
+      }}
+      footer={
+        <>
+          <button type="button" className="button secondary" onClick={onClose}>Cancel</button>
           <button className="button primary" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Updating...' : 'Update Status'}
+            {mutation.isPending ? 'Updating…' : 'Update Status'}
           </button>
+        </>
+      }
+    >
+      <div className="readonly-card">
+        <span>Current Status</span>
+        <div style={{ marginTop: 4 }}>
+          <StatusBadge value={atm.status} />
         </div>
-      </form>
-    </div>
+      </div>
+      <Field label="New Technical Status" required>
+        <SelectInput
+          value={status}
+          onChange={(e) => { setStatus(e.target.value); setError(''); }}
+          required
+        >
+          {ATM_STATUS_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label} — {opt.desc}
+            </option>
+          ))}
+        </SelectInput>
+      </Field>
+      <Field label="Reason for Change" required hint="Explain why this status is being set (e.g. Card reader replaced, power restored)">
+        <TextArea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          rows={3}
+          required
+          placeholder="Explain why this status is being set (e.g. Card reader replaced, power restored)."
+        />
+      </Field>
+      {error ? <div className="error-banner"><strong>{error}</strong></div> : null}
+    </Dialog>
   );
 }

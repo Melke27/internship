@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, CircleAlert, ClipboardList, Landmark, PlusCircle, Wifi } from 'lucide-react';
 
@@ -25,6 +25,7 @@ function relativeTime(iso?: string, now = Date.now()) {
 
 export default function BranchDashboardPage() {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const now = useNow(30_000);
   const summary = useQuery({
     queryKey: ['dashboard-summary', 'branch'],
@@ -218,13 +219,17 @@ export default function BranchDashboardPage() {
                   </small>
                   <div className="row-actions">
                     <span className="button secondary small">View Status</span>
-                    <Link
+                    <button
+                      type="button"
                       className="button primary small"
-                      to={`/branch/report?atm=${atm.id}`}
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        navigate(`/branch/report?atm=${atm.id}`);
+                      }}
                     >
                       <PlusCircle size={11} /> Report
-                    </Link>
+                    </button>
                   </div>
                 </Link>
               ))}

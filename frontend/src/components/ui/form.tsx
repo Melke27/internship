@@ -9,7 +9,7 @@ import {
   type TextareaHTMLAttributes,
 } from 'react';
 
-export function cx(...parts: Array<string | false | null | undefined>) {
+export function cx(...parts: Array<string | false | null | undefined | number>) {
   return parts.filter(Boolean).join(' ');
 }
 

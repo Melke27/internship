@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, ClipboardList, Clock, FileWarning, Search } from 'lucide-react';
+import { Check, CheckCircle2, ClipboardList, Clock, FileSearch, FileWarning, Search, ShieldAlert } from 'lucide-react';
 
 import { hasPermission, useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
@@ -285,6 +285,9 @@ export function DistrictBranchReportDetailPage() {
         </div>
       ) : null}
 
+      {/* Visual Report Processing Step Tracker */}
+      <ReportStepTracker currentStatus={data.status} />
+
       <div className="content-grid">
         <article className="panel">
           <h2>Report</h2>
@@ -436,5 +439,77 @@ export function DistrictBranchReportDetailPage() {
 
       {lightbox && evidence ? <EvidenceLightbox url={evidence} onClose={() => setLightbox(false)} /> : null}
     </section>
+  );
+}
+
+const REPORT_STEPS = [
+  { key: 'SUBMITTED', label: 'Submitted', icon: Clock },
+  { key: 'RECEIVED', label: 'Received', icon: CheckCircle2 },
+  { key: 'REVIEWING', label: 'Under Review', icon: FileSearch },
+  { key: 'PROCESSED', label: 'Resolved / Incident', icon: ShieldAlert },
+];
+
+function reportStepIndex(status: string): number {
+  switch (status) {
+    case 'SUBMITTED': return 0;
+    case 'RECEIVED': return 1;
+    case 'REVIEWING': return 2;
+    case 'CONVERTED_TO_INCIDENT':
+    case 'DISMISSED':
+    case 'CLOSED': return 3;
+    default: return 0;
+  }
+}
+
+function ReportStepTracker({ currentStatus }: { currentStatus: string }) {
+  const currentIndex = reportStepIndex(currentStatus);
+
+  return (
+    <div className="panel" style={{ marginBottom: 20, padding: '16px 20px' }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 14 }}>
+        Branch Report Processing Stage
+      </div>
+      <div className="step-tracker" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12, position: 'relative' }}>
+        {REPORT_STEPS.map((step, idx) => {
+          const Icon = step.icon;
+          const isDone = idx < currentIndex;
+          const isCurrent = idx === currentIndex;
+          return (
+            <div
+              key={step.key}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                padding: '12px 8px',
+                borderRadius: 8,
+                background: isCurrent ? 'var(--brand-surface)' : isDone ? 'var(--surface-2)' : 'transparent',
+                border: isCurrent ? '1.5px solid var(--brand)' : '1px dashed var(--border-subtle)',
+              }}
+            >
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: isDone ? 'var(--success)' : isCurrent ? 'var(--brand)' : 'var(--surface-3)',
+                  color: isDone || isCurrent ? '#fff' : 'var(--text-3)',
+                  marginBottom: 6,
+                }}
+              >
+                {isDone ? <Check size={16} /> : <Icon size={16} />}
+              </div>
+              <span style={{ fontSize: 13, fontWeight: isCurrent ? 700 : 500, color: isCurrent ? 'var(--brand)' : isDone ? 'var(--text-1)' : 'var(--text-3)' }}>
+                {step.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

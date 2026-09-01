@@ -85,6 +85,7 @@ export interface ATM {
   assigned_technician_name?: string | null;
   active_incident?: ActiveIncidentSummary | null;
   components?: ATMComponent[];
+  photo?: string | null;
 }
 
 export interface TroubleshootingAction {

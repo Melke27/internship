@@ -87,15 +87,10 @@ export default function UsersPage() {
     onError: (err) => setError(extractError(err, 'Unable to update the user account.')),
   });
 
-  if (users.isLoading) return <LoadingState label="Loading users..." />;
-  if (users.isError) {
-    return <ErrorState message="Unable to load users." onRetry={() => users.refetch()} />;
-  }
-
   const allRows = users.data || [];
   const canEdit = canManageUsers(currentUser);
 
-  // Client-side filtering
+  // Client-side filtering — must stay before any early returns to preserve hook order
   const rows = useMemo(() => {
     let filtered = allRows;
     if (searchInput.trim()) {
@@ -118,6 +113,11 @@ export default function UsersPage() {
   const activeUsers = allRows.filter((u) => u.is_active).length;
   const technicians = allRows.filter((u) => u.role === 'TECHNICIAN').length;
   const branchUsers = allRows.filter((u) => ['BRANCH_USER', 'BRANCH_MANAGER'].includes(u.role)).length;
+
+  if (users.isLoading) return <LoadingState label="Loading users..." />;
+  if (users.isError) {
+    return <ErrorState message="Unable to load users." onRetry={() => users.refetch()} />;
+  }
 
   return (
     <section className="page-content">

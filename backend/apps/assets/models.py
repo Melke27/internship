@@ -83,6 +83,12 @@ class ATM(TimeStamped):
     )
     assigned_team = models.CharField(max_length=150, blank=True)
     notes = models.TextField(blank=True)
+    photo = models.ImageField(
+        upload_to="atms/%Y/%m/",
+        null=True,
+        blank=True,
+        help_text="Photo of the ATM unit (front view or signage).",
+    )
 
     def __str__(self):
         return self.reference

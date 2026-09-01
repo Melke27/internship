@@ -11,6 +11,7 @@ import { EmptyState, ErrorState, LoadingState } from '../components/feedback/Sta
 import { PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
 import { CheckField, Dialog, Field, FormGrid, SelectInput, TextArea, TextInput } from '../components/ui/form';
 import type { Incident, User } from '../types/api';
+import { Check, CheckCircle, Clock, AlertTriangle, Search, ShieldCheck, Lock } from 'lucide-react';
 
 type DialogKind = null | 'assign' | 'action' | 'escalate' | 'resolve' | 'retest' | 'verify' | 'close';
 
@@ -310,6 +311,9 @@ export default function IncidentDetailPage() {
         </div>
       </div>
 
+      {/* Visual Incident Lifecycle Step Tracker */}
+      <IncidentStepTracker currentStatus={incident.status} />
+
       <div className="details-grid">
         <article className="panel">
           <h2>Incident Overview</h2>
@@ -478,4 +482,82 @@ function submitLabel(kind: Exclude<DialogKind, null>) {
     verify: 'Verify Resolution',
     close: 'Close Incident',
   }[kind];
+}
+
+const LIFECYCLE_STEPS = [
+  { key: 'REPORTED', label: 'Reported', icon: AlertTriangle },
+  { key: 'ACKNOWLEDGED', label: 'Acknowledged', icon: Clock },
+  { key: 'INVESTIGATING', label: 'Troubleshooting', icon: Search },
+  { key: 'RESOLVED', label: 'Resolved', icon: CheckCircle },
+  { key: 'VERIFIED', label: 'Verified', icon: ShieldCheck },
+  { key: 'CLOSED', label: 'Closed', icon: Lock },
+];
+
+function statusStepIndex(status: string): number {
+  switch (status) {
+    case 'REPORTED': return 0;
+    case 'ACKNOWLEDGED':
+    case 'ASSIGNED': return 1;
+    case 'INVESTIGATING':
+    case 'TROUBLESHOOTING':
+    case 'WAITING':
+    case 'ESCALATED': return 2;
+    case 'RESOLVED': return 3;
+    case 'VERIFIED': return 4;
+    case 'CLOSED': return 5;
+    default: return 0;
+  }
+}
+
+function IncidentStepTracker({ currentStatus }: { currentStatus: string }) {
+  const currentIndex = statusStepIndex(currentStatus);
+
+  return (
+    <div className="panel" style={{ marginBottom: 20, padding: '16px 20px' }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 14 }}>
+        Incident Lifecycle Progress
+      </div>
+      <div className="step-tracker" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 8, position: 'relative' }}>
+        {LIFECYCLE_STEPS.map((step, idx) => {
+          const Icon = step.icon;
+          const isDone = idx < currentIndex;
+          const isCurrent = idx === currentIndex;
+          return (
+            <div
+              key={step.key}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                padding: '10px 6px',
+                borderRadius: 8,
+                background: isCurrent ? 'var(--brand-surface)' : isDone ? 'var(--surface-2)' : 'transparent',
+                border: isCurrent ? '1.5px solid var(--brand)' : '1px dashed var(--border-subtle)',
+              }}
+            >
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: isDone ? 'var(--success)' : isCurrent ? 'var(--brand)' : 'var(--surface-3)',
+                  color: isDone || isCurrent ? '#fff' : 'var(--text-3)',
+                  marginBottom: 6,
+                }}
+              >
+                {isDone ? <Check size={14} /> : <Icon size={14} />}
+              </div>
+              <span style={{ fontSize: 12, fontWeight: isCurrent ? 700 : 500, color: isCurrent ? 'var(--brand)' : isDone ? 'var(--text-1)' : 'var(--text-3)' }}>
+                {step.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }

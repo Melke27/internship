@@ -2,13 +2,32 @@ import type { FormEvent, RefObject } from 'react';
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isAxiosError } from 'axios';
-import { ArrowRight, BellRing, Cpu, LogIn, ShieldCheck, Zap } from 'lucide-react';
+import { ArrowRight, BellRing, Cpu, LogIn, ShieldCheck, UserCheck, Wrench, Zap } from 'lucide-react';
 
 import { portalHome, useAuth } from '../context/AuthContext';
 import CBELogo from '../components/branding/CBELogo';
 import HeadOfficeVisual from '../components/branding/HeadOfficeVisual';
 
-const DEMO_ACCOUNTS = ['district.admin', 'maintenance.tech', 'branch.user'];
+const DEMO_PROFILES = [
+  {
+    username: 'district.admin',
+    role: 'District Administrator',
+    description: 'Full district ATM fleet, incidents, and branch oversight',
+    icon: ShieldCheck,
+  },
+  {
+    username: 'maintenance.tech',
+    role: 'Field Technician',
+    description: 'Troubleshooting, physical repairs, and retest execution',
+    icon: Wrench,
+  },
+  {
+    username: 'branch.user',
+    role: 'Branch Officer',
+    description: 'Local ATM status reporting and incident escalation',
+    icon: UserCheck,
+  },
+];
 const DEMO_PASSWORD = 'DemoPass123!';
 
 export default function LoginPage() {
@@ -17,7 +36,7 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showDemo, setShowDemo] = useState(false);
+  const [showDemo, setShowDemo] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const passwordRef: RefObject<HTMLInputElement> = useRef(null);
@@ -61,7 +80,7 @@ export default function LoginPage() {
         <p className="auth-card-eyebrow">Secure internal access</p>
         <h1>Welcome back</h1>
         <p className="auth-card-muted">
-          Sign in to the ATM technical support portal to manage operations for your scope.
+          Sign in to the CBE ATM technical support portal to manage operations for your scope.
         </p>
 
         <form className="auth-form" onSubmit={submit}>
@@ -119,32 +138,55 @@ export default function LoginPage() {
         <div className="demo-hint">
           {showDemo ? (
             <div className="demo-list">
-              <span className="demo-list-label">One-click local demo sign-in</span>
-              <div className="demo-quick">
-                {DEMO_ACCOUNTS.map((account) => (
-                  <button
-                    type="button"
-                    key={account}
-                    className={username === account ? 'active' : ''}
-                    onClick={() => pickAccount(account)}
-                  >
-                    <LogIn size={12} />
-                    {account}
-                  </button>
-                ))}
+              <span className="demo-list-label">Quick Role Access (Local Demo)</span>
+              <div className="demo-quick-grid" style={{ display: 'grid', gap: 6, margin: '8px 0' }}>
+                {DEMO_PROFILES.map((profile) => {
+                  const Icon = profile.icon;
+                  const selected = username === profile.username;
+                  return (
+                    <button
+                      type="button"
+                      key={profile.username}
+                      className={`demo-quick-profile ${selected ? 'active' : ''}`}
+                      onClick={() => pickAccount(profile.username)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '8px 12px',
+                        borderRadius: 8,
+                        border: selected ? '1px solid var(--brand)' : '1px solid var(--border-subtle)',
+                        background: selected ? 'var(--brand-surface)' : 'var(--surface-2)',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Icon size={16} style={{ color: selected ? 'var(--brand)' : 'var(--text-2)' }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-1)' }}>
+                          {profile.username}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                          {profile.role}
+                        </div>
+                      </div>
+                      <LogIn size={13} style={{ opacity: selected ? 1 : 0.4 }} />
+                    </button>
+                  );
+                })}
               </div>
               {username ? (
                 <p className="demo-quick-auth">
-                  Selected <code>{username}</code> · password pre-filled. Press{' '}
-                  <button type="button" onClick={() => void submit()}>Sign in securely</button> or switch portal above.
+                  Selected <code>{username}</code> · credentials set.{' '}
+                  <button type="button" onClick={() => void submit()} style={{ fontWeight: 600, textDecoration: 'underline' }}>
+                    Click to sign in &rarr;
+                  </button>
                 </p>
-              ) : (
-                <p className="demo-quick-hint">Pick a portal to pre-fill its account and the local demo password.</p>
-              )}
+              ) : null}
             </div>
           ) : (
             <button type="button" onClick={() => setShowDemo(true)}>
-              Show local demo sign-in
+              Show demo role accounts
             </button>
           )}
         </div>
@@ -154,7 +196,7 @@ export default function LoginPage() {
         <p className="auth-help">Need access? Contact your district administrator.</p>
         <small className="security-note">
           <BellRing size={14} style={{ flexShrink: 0 }} />
-          Technical-support metadata only. Never enter customer or card data.
+          Commercial Bank of Ethiopia — Internal Support Access.
         </small>
       </section>
     </main>

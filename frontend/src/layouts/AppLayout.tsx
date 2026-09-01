@@ -2,9 +2,10 @@ import type { PropsWithChildren } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, LogOut, Menu, RefreshCw, Search, ShieldCheck, Wifi } from 'lucide-react';
+import { Bell, BellOff, LogOut, Menu, RefreshCw, Search, ShieldCheck, Wifi } from 'lucide-react';
 
 import { api } from '../lib/api';
+import { showToast } from '../lib/toast';
 import { hasPermission, portalForUser, roleLabel, useAuth } from '../context/AuthContext';
 import { navForPortal, portalBrand, FIXED_DISTRICT_NAME, type NavItem } from '../lib/navigation';
 import type { DashboardSummary } from '../types/api';
@@ -91,7 +92,25 @@ export default function AppLayout({ children }: PropsWithChildren) {
       const rows = Array.isArray(data) ? data : data.results;
       return rows.slice(0, 6);
     },
+    refetchInterval: 30000,
   });
+
+  const seenNotifIds = useRef<Set<number>>(new Set());
+  useEffect(() => {
+    if (notifications.data) {
+      const unreadList = notifications.data.filter((n) => !n.is_read);
+      if (seenNotifIds.current.size === 0) {
+        unreadList.forEach((n) => seenNotifIds.current.add(n.id));
+      } else {
+        unreadList.forEach((n) => {
+          if (!seenNotifIds.current.has(n.id)) {
+            seenNotifIds.current.add(n.id);
+            showToast(`New alert: ${n.title}`, 'info');
+          }
+        });
+      }
+    }
+  }, [notifications.data]);
   const searchQuery = useQuery({
     queryKey: ['global-search', search],
     queryFn: () => api.get<SearchResults>(`/search/?q=${encodeURIComponent(search)}`).then((r) => r.data),
@@ -243,8 +262,13 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 ref={searchRef}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search ATM, branch, incident... (Ctrl+K)"
+                placeholder="Search ATM, branch, incident..."
               />
+              {!search && (
+                <span className="search-kbd-hint">
+                  <kbd>Ctrl</kbd><kbd>K</kbd>
+                </span>
+              )}
               {search.trim().length >= 2 && (
                 <div className="search-panel">
                   {searchQuery.isLoading ? <p className="search-empty">Searching…</p> : null}
@@ -331,24 +355,34 @@ export default function AppLayout({ children }: PropsWithChildren) {
               <div className="notification-panel">
                 <div className="notification-panel-head">
                   <strong>Notifications</strong>
-                  <Link to="/notifications" onClick={() => setNotificationsOpen(false)}>
+                  <Link to="/notifications" onClick={() => setNotificationsOpen(false)}
+                    style={{ fontSize: 12, color: 'var(--brand)', fontWeight: 600 }}>
                     View all
                   </Link>
                 </div>
                 {(notifications.data || []).length === 0 ? (
-                  <p className="search-empty">No notifications.</p>
+                  <div className="notification-panel-empty">
+                    <BellOff size={28} />
+                    <span>You're all caught up!</span>
+                  </div>
                 ) : null}
                 {(notifications.data || []).map((notification) => (
                   <div
                     key={notification.id}
                     className={`notification-item ${notification.is_read ? '' : 'unread'}`}
                   >
-                    <div>
+                    <div className="notification-item-icon">
+                      <Bell size={14} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <strong>{notification.title}</strong>
                       <small>{notification.body || notification.incident_ref || 'System event'}</small>
+                      <span className="notification-item-time">
+                        {new Date(notification.created_at).toLocaleString()}
+                      </span>
                     </div>
                     {!notification.is_read && (
-                      <button className="text-button" onClick={() => markNotificationRead(notification.id)}>
+                      <button className="text-button" style={{ flexShrink: 0 }} onClick={() => markNotificationRead(notification.id)}>
                         Mark read
                       </button>
                     )}

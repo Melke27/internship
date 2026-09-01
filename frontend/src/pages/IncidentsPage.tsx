@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
+import { AlertTriangle, CheckCircle2, Filter, Search, ShieldAlert, Users } from 'lucide-react';
 
 import { api } from '../lib/api';
 import { useDebounce } from '../lib/useDebounce';
@@ -9,6 +10,7 @@ import { hasPermission, useAuth } from '../context/AuthContext';
 import { showToast } from '../lib/toast';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
+import { MetricCard } from '../components/ui/MetricCard';
 import { Dialog, Field, FormGrid, SelectInput, TextArea, TextInput } from '../components/ui/form';
 import type { ATM, Incident, User } from '../types/api';
 
@@ -158,16 +160,29 @@ function CreateIncidentDialog({ initialAtmId, onClose }: { initialAtmId?: string
   );
 }
 
+const STATUS_OPTIONS = ['REPORTED', 'ACKNOWLEDGED', 'ASSIGNED', 'INVESTIGATING', 'TROUBLESHOOTING', 'WAITING', 'ESCALATED', 'RESOLVED', 'VERIFIED', 'CLOSED'];
+const PRIORITY_OPTIONS = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+
+function priorityRowClass(priority: string) {
+  switch (priority) {
+    case 'CRITICAL': return 'row-priority-critical';
+    case 'HIGH': return 'row-priority-high';
+    case 'MEDIUM': return 'row-priority-medium';
+    case 'LOW': return 'row-priority-low';
+    default: return '';
+  }
+}
+
 export default function IncidentsPage() {
   const { currentUser } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
-  // Debounce the search so we don't fire a request on every keystroke
   const search = useDebounce(searchInput, 400);
   const [status, setStatus] = useState(searchParams.get('status') || '');
   const [priority, setPriority] = useState(searchParams.get('priority') || '');
   const openNew = searchParams.get('new') === '1';
   const atmId = searchParams.get('atm');
+
   const incidents = useQuery({
     queryKey: ['incidents', search, status, priority],
     queryFn: () => {
@@ -183,6 +198,11 @@ export default function IncidentsPage() {
   const rows = useMemo(() => incidents.data || [], [incidents.data]);
   const openRows = rows.filter((incident) => incident.status !== 'CLOSED');
   const closedRows = rows.filter((incident) => ['RESOLVED', 'VERIFIED', 'CLOSED'].includes(incident.status));
+  const criticalOpen = openRows.filter((i) => i.priority === 'CRITICAL').length;
+  const highOpen = openRows.filter((i) => i.priority === 'HIGH').length;
+  const unassigned = openRows.filter((i) => !i.assigned_to_name).length;
+
+  const hasFilters = Boolean(search || status || priority);
 
   return (
     <section className="page-content">
@@ -193,30 +213,66 @@ export default function IncidentsPage() {
           <p className="page-copy">Create, assign, investigate, retest, resolve, verify and close ATM incidents from one workflow.</p>
         </div>
         <div className="page-actions">
-          <input className="field-input" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Search ATM, incident, error..." />
-          <select className="field-input" value={status} onChange={(event) => setStatus(event.target.value)}>
-            <option value="">All statuses</option>
-            {['REPORTED', 'ACKNOWLEDGED', 'ASSIGNED', 'INVESTIGATING', 'TROUBLESHOOTING', 'WAITING', 'ESCALATED', 'RESOLVED', 'VERIFIED', 'CLOSED'].map((value) => (
-              <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>
-            ))}
-          </select>
-          <select className="field-input" value={priority} onChange={(event) => setPriority(event.target.value)}>
-            <option value="">All priorities</option>
-            {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((value) => <option key={value} value={value}>{value}</option>)}
-          </select>
-          <button className="button secondary" onClick={() => incidents.refetch()}>Refresh</button>
           {hasPermission(currentUser, 'incident.create') ? (
-            <button className="button primary" onClick={() => setSearchParams((params) => { params.set('new', '1'); return params; })}>Create Incident</button>
+            <button className="button primary" onClick={() => setSearchParams((params) => { params.set('new', '1'); return params; })}>
+              <AlertTriangle size={14} /> Create Incident
+            </button>
           ) : null}
         </div>
       </div>
-      <div className="kpi-grid compact">
-        <article className="metric-card"><span>Open Incidents</span><strong>{openRows.length}</strong></article>
-        <article className="metric-card danger"><span>Critical Open</span><strong>{openRows.filter((incident) => incident.priority === 'CRITICAL').length}</strong></article>
-        <article className="metric-card warning"><span>High Open</span><strong>{openRows.filter((incident) => incident.priority === 'HIGH').length}</strong></article>
-        <article className="metric-card"><span>Unassigned</span><strong>{openRows.filter((incident) => !incident.assigned_to_name).length}</strong></article>
-        <article className="metric-card success"><span>Resolved / Closed</span><strong>{closedRows.length}</strong></article>
+
+      {/* KPI summary row */}
+      <div className="kpi-grid compact" style={{ gridTemplateColumns: 'repeat(5, minmax(0,1fr))', marginBottom: 20 }}>
+        <MetricCard label="Open Incidents" value={openRows.length} icon={<AlertTriangle size={18} />} hint="currently active" tone="warning" />
+        <MetricCard label="Critical Open" value={criticalOpen} icon={<ShieldAlert size={18} />} hint="need immediate action" tone="danger" />
+        <MetricCard label="High Open" value={highOpen} icon={<AlertTriangle size={18} />} hint="elevated priority" tone={highOpen > 0 ? 'warning' : 'default'} />
+        <MetricCard label="Unassigned" value={unassigned} icon={<Users size={18} />} hint="no technician yet" tone={unassigned > 0 ? 'warning' : 'default'} />
+        <MetricCard label="Resolved / Closed" value={closedRows.length} icon={<CheckCircle2 size={18} />} hint="incidents closed" tone="success" />
       </div>
+
+      {/* Filter bar */}
+      <div className="filter-bar">
+        <div className="page-search-bar" style={{ flex: 1, minWidth: 220, margin: 0 }}>
+          <Search size={15} />
+          <input
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder="Search ATM, incident ID, error message..."
+          />
+        </div>
+        <select
+          className="field-input"
+          style={{ width: 180 }}
+          value={status}
+          onChange={(event) => setStatus(event.target.value)}
+        >
+          <option value="">All statuses</option>
+          {STATUS_OPTIONS.map((value) => (
+            <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>
+          ))}
+        </select>
+        <select
+          className="field-input"
+          style={{ width: 160 }}
+          value={priority}
+          onChange={(event) => setPriority(event.target.value)}
+        >
+          <option value="">All priorities</option>
+          {PRIORITY_OPTIONS.map((value) => <option key={value} value={value}>{value}</option>)}
+        </select>
+        {hasFilters && (
+          <button
+            className="button secondary small"
+            onClick={() => { setSearchInput(''); setStatus(''); setPriority(''); }}
+          >
+            Clear filters
+          </button>
+        )}
+        <button className="button secondary" onClick={() => incidents.refetch()}>
+          <Filter size={14} /> Refresh
+        </button>
+      </div>
+
       <div className="panel">
         <div className="panel-header">
           <div>
@@ -226,10 +282,13 @@ export default function IncidentsPage() {
         </div>
         {incidents.isLoading ? <LoadingState label="Loading incidents..." /> : null}
         {incidents.isError ? <ErrorState message="Unable to load incident data. Please try again." /> : null}
-        {!incidents.isLoading && !incidents.isError && (incidents.data || []).length === 0 ? (
-          <EmptyState title="No incidents" description="No incidents match the selected filters." />
+        {!incidents.isLoading && !incidents.isError && rows.length === 0 ? (
+          <EmptyState
+            title={hasFilters ? 'No incidents match your filters' : 'No incidents'}
+            description={hasFilters ? 'Try adjusting the search or filter criteria above.' : 'No incidents match the selected filters.'}
+          />
         ) : null}
-        {!incidents.isLoading && !incidents.isError && (incidents.data || []).length > 0 ? (
+        {!incidents.isLoading && !incidents.isError && rows.length > 0 ? (
           <div className="table-wrap">
             <table className="data-table">
               <thead>
@@ -245,8 +304,8 @@ export default function IncidentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {(incidents.data || []).map((incident) => (
-                  <tr key={incident.id}>
+                {rows.map((incident) => (
+                  <tr key={incident.id} className={priorityRowClass(incident.priority)}>
                     <td>
                       <Link to={`/incidents/${incident.id}`}><strong>{incident.incident_id}</strong></Link>
                       <small>{incident.title}</small>
@@ -255,7 +314,18 @@ export default function IncidentsPage() {
                     <td>{incident.branch_name}</td>
                     <td><PriorityBadge value={incident.priority} /></td>
                     <td><StatusBadge value={incident.status} /></td>
-                    <td>{incident.assigned_to_name || 'Unassigned'}</td>
+                    <td>
+                      {incident.assigned_to_name ? (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                          <span style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--brand-soft)', color: 'var(--brand)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
+                            {incident.assigned_to_name.slice(0, 2).toUpperCase()}
+                          </span>
+                          {incident.assigned_to_name}
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--text-3)', fontStyle: 'italic' }}>Unassigned</span>
+                      )}
+                    </td>
                     <td>{new Date(incident.created_at).toLocaleString()}</td>
                     <td>
                       <Link className="button secondary small" to={`/incidents/${incident.id}`}>

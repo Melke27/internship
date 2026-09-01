@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CheckCircle2, ClipboardList, Clock, FileWarning, Search } from 'lucide-react';
 
 import { hasPermission, useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
@@ -8,6 +9,7 @@ import { extractError, listResource, mediaUrl } from '../lib/utils';
 import { showToast } from '../lib/toast';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { EvidenceLightbox, EvidenceThumb } from '../components/ui/Evidence';
+import { MetricCard } from '../components/ui/MetricCard';
 import { PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
 import { CheckField, Dialog, Field, FormGrid, SelectInput, TextArea, TextInput } from '../components/ui/form';
 import type { BranchReport } from '../types/api';
@@ -15,6 +17,7 @@ import type { BranchReport } from '../types/api';
 export default function BranchReportsPage() {
   const [params] = useSearchParams();
   const pending = params.get('pending') === '1';
+  const [search, setSearch] = useState('');
   const reports = useQuery({
     queryKey: ['district-branch-reports', pending],
     queryFn: () =>
@@ -30,6 +33,31 @@ export default function BranchReportsPage() {
 
   const rows = reports.data || [];
 
+  // Client-side search filter
+  const filteredRows = search.trim()
+    ? rows.filter((r) =>
+        (r.report_id || '').toLowerCase().includes(search.toLowerCase()) ||
+        (r.atm_reference || '').toLowerCase().includes(search.toLowerCase()) ||
+        (r.branch_name || '').toLowerCase().includes(search.toLowerCase()) ||
+        (r.problem_type || '').toLowerCase().includes(search.toLowerCase()),
+      )
+    : rows;
+
+  // KPI counts (always from full list)
+  const pending_count = rows.filter((r) => r.status === 'SUBMITTED').length;
+  const reviewing_count = rows.filter((r) => ['RECEIVED', 'REVIEWING'].includes(r.status)).length;
+  const converted_count = rows.filter((r) => r.status === 'CONVERTED_TO_INCIDENT').length;
+  const dismissed_count = rows.filter((r) => r.status === 'DISMISSED').length;
+
+  function severityRowClass(sev: string) {
+    switch (sev) {
+      case 'CRITICAL': return 'row-priority-critical';
+      case 'HIGH': return 'row-priority-high';
+      case 'MEDIUM': return 'row-priority-medium';
+      default: return '';
+    }
+  }
+
   return (
     <section className="page-content">
       <div className="page-header">
@@ -39,17 +67,54 @@ export default function BranchReportsPage() {
           <p className="page-copy">Review branch ATM fault reports and convert confirmed issues into incidents.</p>
         </div>
         <div className="page-actions">
-          <Link className={`button ${pending ? 'primary' : 'secondary'}`} to="/branch-reports?pending=1">
-            Pending
-          </Link>
-          <Link className={`button ${!pending ? 'primary' : 'secondary'}`} to="/branch-reports">
-            All reports
-          </Link>
+          {/* Tab strip toggle */}
+          <div className="tab-strip">
+            <Link
+              className={`tab-strip-btn ${pending ? 'active' : ''}`}
+              to="/branch-reports?pending=1"
+            >
+              <Clock size={13} style={{ marginRight: 4, verticalAlign: -2 }} />
+              Pending
+            </Link>
+            <Link
+              className={`tab-strip-btn ${!pending ? 'active' : ''}`}
+              to="/branch-reports"
+            >
+              <ClipboardList size={13} style={{ marginRight: 4, verticalAlign: -2 }} />
+              All Reports
+            </Link>
+          </div>
         </div>
       </div>
 
-      {rows.length === 0 ? (
-        <EmptyState title="No new branch reports" description="Branch ATM problem reports will appear here for review." />
+      {/* KPI summary row */}
+      <div className="reports-kpi-bar">
+        <MetricCard label="Pending Review" value={pending_count} icon={<Clock size={18} />} tone={pending_count > 0 ? 'warning' : 'default'} hint="just submitted" />
+        <MetricCard label="Under Review" value={reviewing_count} icon={<FileWarning size={18} />} tone={reviewing_count > 0 ? 'info' : 'default'} hint="being assessed" />
+        <MetricCard label="Converted" value={converted_count} icon={<CheckCircle2 size={18} />} tone="success" hint="turned into incident" />
+        <MetricCard label="Dismissed" value={dismissed_count} icon={<ClipboardList size={18} />} hint="closed as non-issue" />
+      </div>
+
+      {/* Search bar */}
+      <div className="filter-bar">
+        <div className="page-search-bar" style={{ flex: 1, margin: 0 }}>
+          <Search size={15} />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by report ID, ATM, branch, or problem type..."
+          />
+        </div>
+        {search && (
+          <button className="button secondary small" onClick={() => setSearch('')}>Clear</button>
+        )}
+      </div>
+
+      {filteredRows.length === 0 ? (
+        <EmptyState
+          title={search ? 'No reports match your search' : 'No new branch reports'}
+          description={search ? 'Try a different search term.' : 'Branch ATM problem reports will appear here for review.'}
+        />
       ) : (
         <div className="table-wrap panel">
           <table className="data-table">
@@ -67,8 +132,8 @@ export default function BranchReportsPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((report) => (
-                <tr key={report.id}>
+              {filteredRows.map((report) => (
+                <tr key={report.id} className={severityRowClass(report.severity)}>
                   <td>
                     <strong>{report.report_id}</strong>
                   </td>
@@ -187,6 +252,8 @@ export function DistrictBranchReportDetailPage() {
     <section className="page-content">
       <div className="page-header">
         <div>
+        
+        
           <p className="page-kicker">Branch Report Review</p>
           <h1>{data.report_id}</h1>
           <p className="page-copy">

@@ -14,6 +14,7 @@ const HEALTH_OPTIONS = ['HEALTHY', 'GOOD', 'WARNING', 'DEGRADED', 'CRITICAL', 'M
 interface ATMDialogProps {
   onClose: () => void;
   atm?: ATM | null;
+  initialBranchId?: string | number | null;
 }
 
 function inputValue(form: HTMLFormElement, name: string) {
@@ -24,7 +25,7 @@ function optionLabel(value: string) {
   return value.replaceAll('_', ' ');
 }
 
-export default function ATMDialog({ onClose, atm }: ATMDialogProps) {
+export default function ATMDialog({ onClose, atm, initialBranchId }: ATMDialogProps) {
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
   const editing = Boolean(atm);
@@ -34,12 +35,19 @@ export default function ATMDialog({ onClose, atm }: ATMDialogProps) {
     queryFn: () => listResource<BranchRow>('/branches/?ordering=name'),
   });
 
+  const defaultBranchValue = atm?.branch || initialBranchId || '';
+
   const save = useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
       editing ? api.patch(`/atms/${atm!.id}/`, payload) : api.post('/atms/', payload),
     onSuccess: async () => {
-      showToast(editing ? 'ATM updated' : 'ATM registered');
-      await queryClient.invalidateQueries({ queryKey: ['atms'] });
+      showToast(editing ? 'ATM updated' : 'ATM registered successfully', 'success');
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['atms'] }),
+        queryClient.invalidateQueries({ queryKey: ['branch-summary'] }),
+        queryClient.invalidateQueries({ queryKey: ['branches'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] }),
+      ]);
       onClose();
     },
     onError: (err) => setError(extractError(err, 'ATM could not be saved.')),
@@ -48,7 +56,11 @@ export default function ATMDialog({ onClose, atm }: ATMDialogProps) {
   return (
     <Dialog
       title={editing ? `Edit ${atm?.reference}` : 'Register ATM'}
-      description={editing ? 'Update the technical details of this ATM.' : 'Required fields are marked with *. The reference is how the ATM appears across the platform.'}
+      description={
+        editing
+          ? 'Update technical and location details of this ATM unit.'
+          : 'Register a new ATM unit and assign it to a branch.'
+      }
       onClose={onClose}
       onSubmit={(event) => {
         event.preventDefault();
@@ -79,35 +91,35 @@ export default function ATMDialog({ onClose, atm }: ATMDialogProps) {
       }
     >
       {error ? (
-        <div className="error-box">
+        <div className="error-banner">
           <strong>{error}</strong>
         </div>
       ) : null}
 
       <FormGrid>
-        <Field label="ATM Reference" required hint="Unique code such as YKA-1011">
+        <Field label="ATM Reference Code" required hint="Unique identifier (e.g. YKA-1011)">
           <TextInput name="reference" required defaultValue={atm?.reference || ''} placeholder="e.g. YKA-1011" />
         </Field>
-        <Field label="ATM Name">
-          <TextInput name="name" defaultValue={atm?.name || ''} placeholder="Floor or location name" />
+        <Field label="ATM Name / Label">
+          <TextInput name="name" defaultValue={atm?.name || ''} placeholder="Lobby ATM 1" />
         </Field>
       </FormGrid>
 
-      <Field label="Branch" required>
-        <SelectInput name="branch" required defaultValue={atm?.branch || ''}>
+      <Field label="Assigned Branch" required hint="Branch responsible for monitoring & maintenance">
+        <SelectInput name="branch" required defaultValue={defaultBranchValue}>
           <option value="" disabled>
             Select branch
           </option>
           {(branches.data || []).map((branch) => (
             <option key={branch.id} value={branch.id}>
-              {branch.name}
+              {branch.name} ({branch.code})
             </option>
           ))}
         </SelectInput>
       </Field>
 
       <FormGrid cols={2}>
-        <Field label="Technical Status">
+        <Field label="Initial Technical Status">
           <SelectInput name="status" defaultValue={atm?.status || 'OPERATIONAL'}>
             {STATUS_OPTIONS.map((option) => (
               <option key={option} value={option}>
@@ -116,7 +128,7 @@ export default function ATMDialog({ onClose, atm }: ATMDialogProps) {
             ))}
           </SelectInput>
         </Field>
-        <Field label="Health">
+        <Field label="Health Assessment">
           <SelectInput name="health" defaultValue={atm?.health || 'HEALTHY'}>
             {HEALTH_OPTIONS.map((option) => (
               <option key={option} value={option}>
@@ -129,7 +141,7 @@ export default function ATMDialog({ onClose, atm }: ATMDialogProps) {
 
       <FormGrid cols={2}>
         <Field label="Manufacturer">
-          <TextInput name="manufacturer" defaultValue={atm?.manufacturer || ''} placeholder="NCR" />
+          <TextInput name="manufacturer" defaultValue={atm?.manufacturer || ''} placeholder="NCR, Diebold, Wincor" />
         </Field>
         <Field label="Model">
           <TextInput name="model" defaultValue={atm?.model || ''} placeholder="e.g. NCR SelfServ 86" />
@@ -139,15 +151,15 @@ export default function ATMDialog({ onClose, atm }: ATMDialogProps) {
         <TextInput name="serial_number" defaultValue={atm?.serial_number || ''} placeholder="SN-..." />
       </Field>
       <FormGrid cols={2}>
-        <Field label="Location">
-          <TextInput name="location" defaultValue={atm?.location || ''} placeholder="e.g. Main Lobby" />
+        <Field label="Location Detail">
+          <TextInput name="location" defaultValue={atm?.location || ''} placeholder="e.g. Main Branch Lobby" />
         </Field>
-        <Field label="Address">
-          <TextInput name="address" defaultValue={atm?.address || ''} placeholder="Street or building address" />
+        <Field label="Physical Address">
+          <TextInput name="address" defaultValue={atm?.address || ''} placeholder="Street / Building address" />
         </Field>
       </FormGrid>
 
-      <CheckField label="Active in district operations" hint="Disabled ATMs are hidden from operations views.">
+      <CheckField label="Active in district operations" hint="Disabled ATMs are hidden from standard operations views.">
         <input name="is_active" type="checkbox" defaultChecked={atm?.is_active !== false} />
       </CheckField>
     </Dialog>

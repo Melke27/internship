@@ -13,6 +13,7 @@ import {
   ShieldAlert,
   Users,
   Wrench,
+  Zap,
 } from 'lucide-react';
 
 import { hasPermission, useAuth } from '../context/AuthContext';
@@ -161,11 +162,26 @@ export default function DashboardPage() {
       </div>
 
       <div className="quick-actions" aria-label="Quick actions">
-        <Link className="quick-action" to="/incidents?new=1"><AlertTriangle size={14} /> Create Incident</Link>
-        <Link className="quick-action" to="/branch-reports?pending=1"><ClipboardList size={14} /> Review Reports</Link>
-        <Link className="quick-action" to="/monitoring"><Activity size={14} /> Live Monitoring</Link>
-        <Link className="quick-action" to="/active-faults?priority=CRITICAL"><ShieldAlert size={14} /> Critical Faults</Link>
+        <Link className="quick-action qa-incident" to="/incidents?new=1"><AlertTriangle size={14} /> Create Incident</Link>
+        <Link className="quick-action qa-review" to="/branch-reports?pending=1"><ClipboardList size={14} /> Review Reports</Link>
+        <Link className="quick-action qa-monitoring" to="/monitoring"><Activity size={14} /> Live Monitoring</Link>
+        <Link className="quick-action qa-critical" to="/active-faults?priority=CRITICAL"><ShieldAlert size={14} /> Critical Faults</Link>
       </div>
+
+      {critical > 0 && (
+        <div className="critical-alert-banner">
+          <div className="cab-icon"><Zap size={18} /></div>
+          <div className="cab-body">
+            <strong>{critical} Critical ATM{critical > 1 ? 's' : ''} Requiring Immediate Attention</strong>
+            <small>{openIncidents} open incident{openIncidents !== 1 ? 's' : ''} active across the district fleet — scroll down to see Critical Action Center</small>
+          </div>
+          <div className="cab-actions">
+            <Link className="button danger small" to="/active-faults?priority=CRITICAL">
+              <ShieldAlert size={13} /> View Critical
+            </Link>
+          </div>
+        </div>
+      )}
 
       <div className="kpi-grid kpi-grid-8" aria-label="District ATM summary">
         <MetricCard label="Total ATMs" value={total} to="/atms" icon={<Activity size={18} />} hint="registered units" />

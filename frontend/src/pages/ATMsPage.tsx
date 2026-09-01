@@ -1,14 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Activity, LayoutGrid, List, Search, ShieldAlert, Wifi, Zap } from 'lucide-react';
 
 import { useDebounce } from '../lib/useDebounce';
 import { api } from '../lib/api';
+import { extractError, listResource } from '../lib/utils';
 import { hasPermission, useAuth } from '../context/AuthContext';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { DualStatus, StatusBadge } from '../components/ui/StatusBadge';
+import { MetricCard } from '../components/ui/MetricCard';
 import ATMDialog from '../components/atms/ATMDialog';
 import type { ATM } from '../types/api';
+import type { BranchRow } from './BranchesPage';
 
 function list<T>(path: string) {
   return api.get<T[] | { results: T[] }>(path).then((response) =>
@@ -35,26 +39,74 @@ export default function ATMsPage() {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   const [chip, setChip] = useState('');
-  const [registerOpen, setRegisterOpen] = useState(false);
+  const [branchFilter, setBranchFilter] = useState(params.get('branch') || '');
+  const [registerOpen, setRegisterOpen] = useState(params.get('register') === '1');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+
+  const branches = useQuery({
+    queryKey: ['branches', 'atms-page-filter'],
+    queryFn: () => listResource<BranchRow>('/branches/?ordering=name'),
+  });
 
   useEffect(() => {
     if (params.get('active') === '1') setChip('active:1');
     else if (params.get('active') === '0') setChip('active:0');
     else if (params.get('status')) setChip(params.get('status') || '');
+
+    if (params.get('register') === '1') {
+      setRegisterOpen(true);
+    }
+    if (params.get('branch')) {
+      setBranchFilter(params.get('branch') || '');
+    }
   }, [params]);
 
   const atms = useQuery({
-    queryKey: ['atms', debouncedSearch, chip],
+    queryKey: ['atms', debouncedSearch, chip, branchFilter],
     queryFn: () => {
       const query = new URLSearchParams();
       if (debouncedSearch) query.set('search', debouncedSearch);
       if (chip === 'active:1') query.set('is_active', 'true');
       else if (chip === 'active:0') query.set('is_active', 'false');
       else if (chip) query.set('status', chip);
+      if (branchFilter) query.set('branch', branchFilter);
       query.set('ordering', 'reference');
       return list<ATM>(`/atms/?${query.toString()}`);
     },
   });
+
+  const fleet = atms.data || [];
+
+  // Count per filter for badge display
+  const allData = useQuery({
+    queryKey: ['atms-all-counts'],
+    queryFn: () => list<ATM>('/atms/?ordering=reference'),
+    staleTime: 30_000,
+  });
+  const allFleet = allData.data || [];
+
+  function countForFilter(value: string) {
+    if (!allFleet.length) return 0;
+    if (value === '') return allFleet.length;
+    if (value === 'active:1') return allFleet.filter((a) => a.is_active !== false).length;
+    if (value === 'active:0') return allFleet.filter((a) => a.is_active === false).length;
+    return allFleet.filter((a) => a.status === value).length;
+  }
+
+  const operational = useMemo(() => fleet.filter((a) => a.status === 'OPERATIONAL').length, [fleet]);
+  const warnDeg = useMemo(() => fleet.filter((a) => ['WARNING', 'DEGRADED'].includes(a.status)).length, [fleet]);
+  const faultCrit = useMemo(() => fleet.filter((a) => ['FAULT', 'CRITICAL'].includes(a.status)).length, [fleet]);
+  const offline = useMemo(() => fleet.filter((a) => a.status === 'OFFLINE').length, [fleet]);
+  const underRepair = useMemo(() => fleet.filter((a) => a.status === 'UNDER_REPAIR').length, [fleet]);
+  const availability = fleet.length ? Math.round((operational / fleet.length) * 100) : 0;
+
+  const closeRegister = () => {
+    setRegisterOpen(false);
+    setParams((prev) => {
+      prev.delete('register');
+      return prev;
+    });
+  };
 
   return (
     <section className="page-content">
@@ -62,18 +114,28 @@ export default function ATMsPage() {
         <div>
           <p className="page-kicker">ATM Operations</p>
           <h1>ATMs</h1>
-          <p className="page-copy">All ATMs within the district.</p>
+          <p className="page-copy">All ATMs within the district fleet and branch assignments.</p>
         </div>
         <div className="page-actions">
-          <input
-            className="field-input"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search ATM ID, branch, serial number..."
-          />
-          <button className="button secondary" onClick={() => atms.refetch()}>
-            Refresh
-          </button>
+          {/* View toggle */}
+          <div className="view-toggle" aria-label="View mode">
+            <button
+              type="button"
+              className={`view-toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
+              onClick={() => setViewMode('table')}
+              title="Table view"
+            >
+              <List size={15} />
+            </button>
+            <button
+              type="button"
+              className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
+              onClick={() => setViewMode('grid')}
+              title="Grid view"
+            >
+              <LayoutGrid size={15} />
+            </button>
+          </div>
           {hasPermission(currentUser, 'atm.create') ? (
             <button className="button primary" onClick={() => setRegisterOpen(true)}>
               + Register ATM
@@ -82,33 +144,90 @@ export default function ATMsPage() {
         </div>
       </div>
 
-      <div className="kpi-grid compact" aria-label="ATM fleet summary">
-        <article className="metric-card"><span>Total Units</span><strong>{(atms.data || []).length}</strong></article>
-        <article className="metric-card success"><span>Operational</span><strong>{(atms.data || []).filter((a) => a.status === 'OPERATIONAL').length}</strong></article>
-        <article className="metric-card warning"><span>Warning / Degraded</span><strong>{(atms.data || []).filter((a) => ['WARNING', 'DEGRADED'].includes(a.status)).length}</strong></article>
-        <article className="metric-card danger"><span>Fault / Critical</span><strong>{(atms.data || []).filter((a) => ['FAULT', 'CRITICAL'].includes(a.status)).length}</strong></article>
-        <article className="metric-card"><span>Offline</span><strong>{(atms.data || []).filter((a) => a.status === 'OFFLINE').length}</strong></article>
-        <article className="metric-card"><span>Under Repair</span><strong>{(atms.data || []).filter((a) => a.status === 'UNDER_REPAIR').length}</strong></article>
+      {/* KPI row */}
+      <div className="kpi-grid compact" style={{ gridTemplateColumns: 'repeat(6, minmax(0,1fr))', marginBottom: 18 }}>
+        <MetricCard label="Total Units" value={fleet.length} icon={<Activity size={16} />} hint="in filtered fleet" />
+        <MetricCard label="Operational" value={operational} icon={<Wifi size={16} />} tone="success" delta={{ up: availability >= 90, label: `${availability}%` }} hint="of fleet" />
+        <MetricCard label="Warning / Degraded" value={warnDeg} icon={<ShieldAlert size={16} />} tone={warnDeg > 0 ? 'warning' : 'default'} hint="reduced service" />
+        <MetricCard label="Fault / Critical" value={faultCrit} icon={<Zap size={16} />} tone={faultCrit > 0 ? 'danger' : 'default'} hint="attention needed" />
+        <MetricCard label="Offline" value={offline} icon={<Wifi size={16} />} tone={offline > 0 ? 'warning' : 'default'} hint="not communicating" />
+        <MetricCard label="Under Repair" value={underRepair} icon={<Activity size={16} />} hint="being serviced" />
       </div>
 
-      <div className="filter-chips">
-        {FILTERS.map((item) => (
+      {/* Search + filter bar */}
+      <div className="filter-bar">
+        <div className="page-search-bar" style={{ flex: 1, minWidth: 200, margin: 0 }}>
+          <Search size={15} />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search ATM ID, branch, serial number..."
+          />
+        </div>
+        <select
+          className="field-input"
+          style={{ width: 190 }}
+          value={branchFilter}
+          onChange={(event) => {
+            setBranchFilter(event.target.value);
+            setParams((prev) => {
+              if (event.target.value) prev.set('branch', event.target.value);
+              else prev.delete('branch');
+              return prev;
+            });
+          }}
+        >
+          <option value="">All Branches</option>
+          {(branches.data || []).map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name} ({b.code})
+            </option>
+          ))}
+        </select>
+        {(search || branchFilter || chip) && (
           <button
-            key={item.label}
-            type="button"
-            className={`chip ${chip === item.value ? 'active' : ''}`}
+            className="button secondary small"
             onClick={() => {
-              setChip(item.value);
-              const next = new URLSearchParams();
-              if (item.value === 'active:1') next.set('active', '1');
-              else if (item.value === 'active:0') next.set('active', '0');
-              else if (item.value) next.set('status', item.value);
-              setParams(next);
+              setSearch('');
+              setBranchFilter('');
+              setChip('');
+              setParams(new URLSearchParams());
             }}
           >
-            {item.label}
+            Clear Filters
           </button>
-        ))}
+        )}
+        <button className="button secondary" onClick={() => atms.refetch()}>
+          Refresh
+        </button>
+      </div>
+
+      {/* Filter chips with count badges */}
+      <div className="filter-chips">
+        {FILTERS.map((item) => {
+          const count = countForFilter(item.value);
+          return (
+            <button
+              key={item.label}
+              type="button"
+              className={`chip ${chip === item.value ? 'active' : ''}`}
+              onClick={() => {
+                setChip(item.value);
+                const next = new URLSearchParams(params);
+                if (item.value === 'active:1') next.set('active', '1');
+                else if (item.value === 'active:0') next.set('active', '0');
+                else if (item.value) next.set('status', item.value);
+                else next.delete('status');
+                setParams(next);
+              }}
+            >
+              {item.label}
+              {count > 0 && item.value !== '' ? (
+                <span className="filter-count-badge">{count}</span>
+              ) : null}
+            </button>
+          );
+        })}
       </div>
 
       <div className="panel">
@@ -116,10 +235,46 @@ export default function ATMsPage() {
         {atms.isError ? (
           <ErrorState message="Unable to load ATM information." onRetry={() => atms.refetch()} />
         ) : null}
-        {!atms.isLoading && !atms.isError && (atms.data || []).length === 0 ? (
-          <EmptyState title="No ATMs found" description="No ATMs match the current filters." />
+        {!atms.isLoading && !atms.isError && fleet.length === 0 ? (
+          <EmptyState title="No ATMs found" description="No ATMs match the current branch and status filters." />
         ) : null}
-        {!atms.isLoading && !atms.isError && (atms.data || []).length > 0 ? (
+
+        {/* Grid view */}
+        {!atms.isLoading && !atms.isError && fleet.length > 0 && viewMode === 'grid' ? (
+          <div className="monitor-grid" style={{ padding: '4px 0' }}>
+            {fleet.map((atm) => (
+              <Link className="monitor-card" key={atm.id} to={`/atms/${atm.id}`}>
+                <div className="monitor-card-head">
+                  <strong>{atm.reference}</strong>
+                  <DualStatus active={atm.is_active !== false} technical={atm.status} />
+                </div>
+                <small>{atm.branch_name}</small>
+                <small>{atm.name || atm.model || 'ATM unit'}</small>
+                <div className="meta-grid compact" style={{ marginTop: 4 }}>
+                  <div>
+                    <span>Health</span>
+                    <strong><StatusBadge value={atm.health} /></strong>
+                  </div>
+                  {atm.active_incident ? (
+                    <div>
+                      <span>Incident</span>
+                      <strong style={{ color: 'var(--danger)', fontSize: 11 }}>{atm.active_incident.incident_number}</strong>
+                    </div>
+                  ) : null}
+                </div>
+                <div className="row-actions" style={{ marginTop: 'auto' }}>
+                  <span className="button secondary small">View</span>
+                  {hasPermission(currentUser, 'incident.create') && (
+                    <span className="button ghost small">+ Incident</span>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : null}
+
+        {/* Table view */}
+        {!atms.isLoading && !atms.isError && fleet.length > 0 && viewMode === 'table' ? (
           <div className="table-wrap">
             <table className="data-table">
               <thead>
@@ -135,7 +290,7 @@ export default function ATMsPage() {
                 </tr>
               </thead>
               <tbody>
-                {(atms.data || []).map((atm) => (
+                {fleet.map((atm) => (
                   <tr key={atm.id}>
                     <td>
                       <Link to={`/atms/${atm.id}`}>
@@ -151,7 +306,10 @@ export default function ATMsPage() {
                       <DualStatus active={atm.is_active !== false} technical={atm.status} />
                     </td>
                     <td>
-                      <span className={`live-dot tone-${atm.health.toLowerCase()}`} style={{ marginRight: 7, verticalAlign: 'middle' }} />
+                      <span
+                        className={`live-dot tone-${atm.health.toLowerCase()}`}
+                        style={{ marginRight: 7, verticalAlign: 'middle' }}
+                      />
                       <StatusBadge value={atm.health} />
                     </td>
                     <td>
@@ -181,7 +339,12 @@ export default function ATMsPage() {
           </div>
         ) : null}
       </div>
-      {registerOpen ? <ATMDialog onClose={() => setRegisterOpen(false)} /> : null}
+      {registerOpen ? (
+        <ATMDialog
+          onClose={closeRegister}
+          initialBranchId={branchFilter || params.get('branch')}
+        />
+      ) : null}
     </section>
   );
 }

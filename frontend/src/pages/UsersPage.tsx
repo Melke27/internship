@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Search, ShieldCheck, Users, UserX, Wrench } from 'lucide-react';
 
 import { canManageUsers, hasPermission, roleLabel, useAuth } from '../context/AuthContext';
 import { FIXED_DISTRICT_NAME } from '../lib/navigation';
@@ -8,6 +9,7 @@ import { extractError, listResource } from '../lib/utils';
 import { showToast } from '../lib/toast';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { StatusBadge } from '../components/ui/StatusBadge';
+import { MetricCard } from '../components/ui/MetricCard';
 import { Dialog, Field, FormGrid, SelectInput, TextInput } from '../components/ui/form';
 import type { BranchRow } from './BranchesPage';
 
@@ -35,12 +37,40 @@ const ROLES = [
   'AUDITOR',
 ];
 
+/** Pick avatar color class by role family */
+function avatarClass(role: string) {
+  if (role === 'TECHNICIAN') return 'role-technician';
+  if (['BRANCH_USER', 'BRANCH_MANAGER'].includes(role)) return 'role-branch';
+  if (role === 'AUDITOR') return 'role-auditor';
+  return '';
+}
+
+/** Color-coded role badge */
+function RoleBadge({ role }: { role: string }) {
+  const cls = role.toLowerCase().replace(/ /g, '_');
+  return (
+    <span className={`role-badge role-${cls}`}>
+      {roleLabel(role)}
+    </span>
+  );
+}
+
+/** User initials from full_name or username */
+function initials(user: UserRow) {
+  const name = user.full_name || user.username;
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
 export default function UsersPage() {
   const queryClient = useQueryClient();
   const { currentUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<UserRow | null>(null);
   const [error, setError] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
 
   const users = useQuery({
     queryKey: ['users'],
@@ -62,8 +92,32 @@ export default function UsersPage() {
     return <ErrorState message="Unable to load users." onRetry={() => users.refetch()} />;
   }
 
-  const rows = users.data || [];
+  const allRows = users.data || [];
   const canEdit = canManageUsers(currentUser);
+
+  // Client-side filtering
+  const rows = useMemo(() => {
+    let filtered = allRows;
+    if (searchInput.trim()) {
+      const q = searchInput.toLowerCase();
+      filtered = filtered.filter(
+        (u) =>
+          (u.full_name || '').toLowerCase().includes(q) ||
+          u.username.toLowerCase().includes(q) ||
+          (u.email || '').toLowerCase().includes(q) ||
+          (u.branch_name || '').toLowerCase().includes(q),
+      );
+    }
+    if (roleFilter) {
+      filtered = filtered.filter((u) => u.role === roleFilter);
+    }
+    return filtered;
+  }, [allRows, searchInput, roleFilter]);
+
+  const totalUsers = allRows.length;
+  const activeUsers = allRows.filter((u) => u.is_active).length;
+  const technicians = allRows.filter((u) => u.role === 'TECHNICIAN').length;
+  const branchUsers = allRows.filter((u) => ['BRANCH_USER', 'BRANCH_MANAGER'].includes(u.role)).length;
 
   return (
     <section className="page-content">
@@ -91,15 +145,47 @@ export default function UsersPage() {
         </div>
       ) : null}
 
-      <div className="kpi-grid compact">
-        <article className="metric-card"><span>Total Users</span><strong>{rows.length}</strong></article>
-        <article className="metric-card success"><span>Active</span><strong>{rows.filter((user) => user.is_active).length}</strong></article>
-        <article className="metric-card"><span>Technicians</span><strong>{rows.filter((user) => user.role === 'TECHNICIAN').length}</strong></article>
-        <article className="metric-card"><span>Branch Users</span><strong>{rows.filter((user) => ['BRANCH_USER', 'BRANCH_MANAGER'].includes(user.role)).length}</strong></article>
+      {/* KPI row — proper MetricCards */}
+      <div className="kpi-grid compact" style={{ marginBottom: 20 }}>
+        <MetricCard label="Total Users" value={totalUsers} icon={<Users size={18} />} hint="in district" />
+        <MetricCard label="Active" value={activeUsers} icon={<ShieldCheck size={18} />} tone="success" hint="accounts enabled" />
+        <MetricCard label="Technicians" value={technicians} icon={<Wrench size={18} />} hint="field engineers" />
+        <MetricCard label="Branch Users" value={branchUsers} icon={<UserX size={18} />} hint="branch-level roles" />
+      </div>
+
+      {/* Search + filter bar */}
+      <div className="filter-bar">
+        <div className="page-search-bar" style={{ flex: 1, minWidth: 220, margin: 0 }}>
+          <Search size={15} />
+          <input
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder="Search by name, username, email, or branch..."
+          />
+        </div>
+        <select
+          className="field-input"
+          style={{ width: 200 }}
+          value={roleFilter}
+          onChange={(event) => setRoleFilter(event.target.value)}
+        >
+          <option value="">All roles</option>
+          {ROLES.map((r) => (
+            <option key={r} value={r}>{roleLabel(r)}</option>
+          ))}
+        </select>
+        {(searchInput || roleFilter) && (
+          <button className="button secondary small" onClick={() => { setSearchInput(''); setRoleFilter(''); }}>
+            Clear
+          </button>
+        )}
       </div>
 
       {rows.length === 0 ? (
-        <EmptyState title="No users" description="Create users for Yeka District operations." />
+        <EmptyState
+          title={searchInput || roleFilter ? 'No users match your search' : 'No users'}
+          description={searchInput || roleFilter ? 'Try a different name, email, or role.' : 'Create users for district operations.'}
+        />
       ) : (
         <div className="table-wrap panel">
           <table className="data-table">
@@ -117,11 +203,18 @@ export default function UsersPage() {
               {rows.map((user) => (
                 <tr key={user.id}>
                   <td>
-                    <strong>{user.full_name || user.username}</strong>
-                    <small>{user.email}</small>
+                    <div className="user-avatar-row">
+                      <span className={`user-avatar-sm ${avatarClass(user.role)}`}>
+                        {initials(user)}
+                      </span>
+                      <div className="user-info-cell">
+                        <strong>{user.full_name || user.username}</strong>
+                        <small>{user.email}</small>
+                      </div>
+                    </div>
                   </td>
-                  <td>{roleLabel(user.role)}</td>
-                  <td>{user.branch_name || 'District-wide'}</td>
+                  <td><RoleBadge role={user.role} /></td>
+                  <td>{user.branch_name || <span style={{ color: 'var(--text-3)' }}>District-wide</span>}</td>
                   <td>{FIXED_DISTRICT_NAME}</td>
                   <td>
                     <StatusBadge value={user.is_active ? 'ACTIVE' : 'INACTIVE'} />
@@ -146,6 +239,11 @@ export default function UsersPage() {
               ))}
             </tbody>
           </table>
+          {rows.length < allRows.length && (
+            <p style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-3)' }}>
+              Showing {rows.length} of {allRows.length} users
+            </p>
+          )}
         </div>
       )}
 

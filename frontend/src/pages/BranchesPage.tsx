@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Activity, AlertTriangle, CheckCircle2, Landmark, ShieldAlert, Wrench } from 'lucide-react';
 
 import { hasPermission, useAuth } from '../context/AuthContext';
 import { FIXED_DISTRICT_NAME } from '../lib/navigation';
@@ -8,8 +9,11 @@ import { extractError, listResource } from '../lib/utils';
 import { api } from '../lib/api';
 import { showToast } from '../lib/toast';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
-import { StatusBadge } from '../components/ui/StatusBadge';
+import { DualStatus, StatusBadge } from '../components/ui/StatusBadge';
+import { MetricCard } from '../components/ui/MetricCard';
 import { Dialog, Field, FormGrid, SelectInput, TextArea, TextInput } from '../components/ui/form';
+import ATMDialog from '../components/atms/ATMDialog';
+import type { ATM } from '../types/api';
 
 export interface BranchRow {
   id: number;
@@ -41,6 +45,9 @@ export default function BranchesPage() {
   }
 
   const rows = branches.data || [];
+  const totalATMs = rows.reduce((sum, b) => sum + (b.atm_count || 0), 0);
+  const totalOperational = rows.reduce((sum, b) => sum + (b.operational_count || 0), 0);
+  const totalFaults = rows.reduce((sum, b) => sum + (b.fault_count || 0), 0);
 
   return (
     <section className="page-content">
@@ -60,6 +67,14 @@ export default function BranchesPage() {
             </button>
           ) : null}
         </div>
+      </div>
+
+      {/* District KPI summary */}
+      <div className="kpi-grid compact" style={{ gridTemplateColumns: 'repeat(4, minmax(0,1fr))', marginBottom: 20 }}>
+        <MetricCard label="Total Branches" value={rows.length} icon={<Landmark size={18} />} hint="active in district" />
+        <MetricCard label="Total ATMs" value={totalATMs} icon={<Activity size={18} />} hint="across all branches" />
+        <MetricCard label="Operational ATMs" value={totalOperational} icon={<CheckCircle2 size={18} />} tone="success" hint="fully functional" />
+        <MetricCard label="Branch Faults" value={totalFaults} icon={<AlertTriangle size={18} />} tone={totalFaults > 0 ? 'warning' : 'default'} hint="reported issues" />
       </div>
 
       {rows.length === 0 ? (
@@ -89,18 +104,30 @@ export default function BranchesPage() {
                     </Link>
                     <small>{FIXED_DISTRICT_NAME}</small>
                   </td>
-                  <td>{branch.code}</td>
+                  <td><strong>{branch.code}</strong></td>
                   <td>{branch.atm_count ?? 0}</td>
-                  <td>{branch.operational_count ?? 0}</td>
-                  <td>{branch.fault_count ?? 0}</td>
-                  <td>{branch.critical_count ?? 0}</td>
+                  <td>
+                    <span style={{ color: 'var(--success)', fontWeight: 700 }}>
+                      {branch.operational_count ?? 0}
+                    </span>
+                  </td>
+                  <td>
+                    <span style={{ color: branch.fault_count ? 'var(--warning)' : 'inherit' }}>
+                      {branch.fault_count ?? 0}
+                    </span>
+                  </td>
+                  <td>
+                    <span style={{ color: branch.critical_count ? 'var(--danger)' : 'inherit', fontWeight: branch.critical_count ? 700 : 400 }}>
+                      {branch.critical_count ?? 0}
+                    </span>
+                  </td>
                   <td>{branch.maintenance_count ?? 0}</td>
                   <td>
                     <StatusBadge value={branch.status} />
                   </td>
                   <td>
                     <Link className="button secondary small" to={`/branches/${branch.id}`}>
-                      View
+                      View Branch
                     </Link>
                   </td>
                 </tr>
@@ -122,7 +149,7 @@ function CreateBranchDialog({ onClose }: { onClose: () => void }) {
   const create = useMutation({
     mutationFn: (payload: Record<string, unknown>) => api.post('/branches/', payload),
     onSuccess: async (response) => {
-      showToast('Branch created for Yeka District');
+      showToast('Branch created for Yeka District', 'success');
       await queryClient.invalidateQueries({ queryKey: ['branches'] });
       onClose();
       navigate(`/branches/${response.data.id}`);
@@ -200,6 +227,7 @@ export function BranchDetailPage() {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
   const [deactivateOpen, setDeactivateOpen] = useState(false);
+  const [registerATMOpen, setRegisterATMOpen] = useState(false);
   const [error, setError] = useState('');
 
   const branch = useQuery({
@@ -207,6 +235,7 @@ export function BranchDetailPage() {
     queryFn: () => api.get<BranchRow>(`/branches/${id}/`).then((r) => r.data),
     enabled: Boolean(id),
   });
+
   const summary = useQuery({
     queryKey: ['branch-summary', id],
     queryFn: () =>
@@ -222,10 +251,19 @@ export function BranchDetailPage() {
     enabled: Boolean(id),
   });
 
+  const branchATMs = useQuery({
+    queryKey: ['branch-atms', id],
+    queryFn: () =>
+      api
+        .get<ATM[] | { results: ATM[] }>(`/atms/?branch=${id}`)
+        .then((r) => (Array.isArray(r.data) ? r.data : r.data.results)),
+    enabled: Boolean(id),
+  });
+
   const deactivate = useMutation({
     mutationFn: (reason: string) => api.post(`/branches/${id}/deactivate/`, { reason }),
     onSuccess: async () => {
-      showToast('Branch deactivated');
+      showToast('Branch deactivated', 'warning');
       setDeactivateOpen(false);
       await queryClient.invalidateQueries({ queryKey: ['branch', id] });
       await queryClient.invalidateQueries({ queryKey: ['branches'] });
@@ -240,6 +278,7 @@ export function BranchDetailPage() {
 
   const data = branch.data;
   const stats = summary.data;
+  const atms = branchATMs.data || [];
 
   return (
     <section className="page-content">
@@ -248,15 +287,15 @@ export function BranchDetailPage() {
           <p className="page-kicker">{FIXED_DISTRICT_NAME}</p>
           <h1>{data.name}</h1>
           <p className="page-copy">
-            {data.code} · {FIXED_DISTRICT_NAME}
+            Code: <strong>{data.code}</strong> · {FIXED_DISTRICT_NAME}
           </p>
         </div>
         <div className="page-actions">
           <StatusBadge value={data.status} />
           {hasPermission(currentUser, 'atm.create') ? (
-            <Link className="button primary" to={`/atms?register=1&branch=${data.id}`}>
-              Register ATM
-            </Link>
+            <button className="button primary" onClick={() => setRegisterATMOpen(true)}>
+              + Register ATM
+            </button>
           ) : null}
           {hasPermission(currentUser, 'branch.deactivate') && data.status !== 'INACTIVE' ? (
             <button className="button danger-outline" onClick={() => setDeactivateOpen(true)}>
@@ -266,31 +305,21 @@ export function BranchDetailPage() {
         </div>
       </div>
 
-      <div className="kpi-grid">
-        <article className="metric-card">
-          <span>TOTAL ATMs</span>
-          <strong>{stats?.total_atms ?? data.atm_count ?? 0}</strong>
-        </article>
-        <article className="metric-card success">
-          <span>OPERATIONAL</span>
-          <strong>{stats?.operational ?? data.operational_count ?? 0}</strong>
-        </article>
-        <article className="metric-card warning">
-          <span>FAULTS</span>
-          <strong>{stats?.faults ?? data.fault_count ?? 0}</strong>
-        </article>
-        <article className="metric-card danger">
-          <span>CRITICAL</span>
-          <strong>{stats?.critical ?? data.critical_count ?? 0}</strong>
-        </article>
-        <article className="metric-card">
-          <span>MAINTENANCE</span>
-          <strong>{stats?.maintenance ?? data.maintenance_count ?? 0}</strong>
-        </article>
+      <div className="kpi-grid compact" style={{ marginBottom: 20 }}>
+        <MetricCard label="Total ATMs" value={stats?.total_atms ?? data.atm_count ?? 0} icon={<Activity size={18} />} hint="linked to branch" />
+        <MetricCard label="Operational" value={stats?.operational ?? data.operational_count ?? 0} icon={<CheckCircle2 size={18} />} tone="success" hint="fully functional" />
+        <MetricCard label="Faults" value={stats?.faults ?? data.fault_count ?? 0} icon={<AlertTriangle size={18} />} tone={(stats?.faults ?? 0) > 0 ? 'warning' : 'default'} hint="technical faults" />
+        <MetricCard label="Critical" value={stats?.critical ?? data.critical_count ?? 0} icon={<ShieldAlert size={18} />} tone={(stats?.critical ?? 0) > 0 ? 'danger' : 'default'} hint="needs urgent fix" />
+        <MetricCard label="Maintenance" value={stats?.maintenance ?? data.maintenance_count ?? 0} icon={<Wrench size={18} />} hint="under service" />
       </div>
 
-      <article className="panel">
-        <h2>Branch Information</h2>
+      <article className="panel" style={{ marginBottom: 20 }}>
+        <div className="panel-header">
+          <div>
+            <h2>Branch Information</h2>
+            <p>Contact and location details for {data.name}</p>
+          </div>
+        </div>
         <div className="detail-grid">
           <div>
             <span>Address</span>
@@ -309,23 +338,86 @@ export function BranchDetailPage() {
             <strong>{FIXED_DISTRICT_NAME}</strong>
           </div>
         </div>
-        <div className="row-actions">
-          <Link className="button secondary" to={`/atms?branch=${data.id}`}>
-            View ATMs
-          </Link>
-          <Link className="button secondary" to={`/branch-reports?branch=${data.id}`}>
-            View Reports
-          </Link>
-          <Link className="button secondary" to={`/incidents?branch=${data.id}`}>
-            View Incidents
-          </Link>
-        </div>
       </article>
 
+      {/* Embedded Branch ATMs section */}
+      <div className="panel">
+        <div className="panel-header">
+          <div>
+            <h2>ATMs at {data.name} ({atms.length})</h2>
+            <p>All registered ATMs physically located or assigned to this branch.</p>
+          </div>
+          {hasPermission(currentUser, 'atm.create') && (
+            <button className="button secondary small" onClick={() => setRegisterATMOpen(true)}>
+              + Add ATM to Branch
+            </button>
+          )}
+        </div>
+        {branchATMs.isLoading ? <LoadingState label="Loading branch ATMs..." /> : null}
+        {!branchATMs.isLoading && atms.length === 0 ? (
+          <EmptyState
+            title="No ATMs registered at this branch"
+            description="Click '+ Register ATM' above to add an ATM unit to this branch."
+          />
+        ) : null}
+        {!branchATMs.isLoading && atms.length > 0 ? (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>ATM Reference</th>
+                  <th>Model / Name</th>
+                  <th>Status</th>
+                  <th>Health</th>
+                  <th>Active Incident</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {atms.map((atm) => (
+                  <tr key={atm.id}>
+                    <td>
+                      <Link to={`/atms/${atm.id}`}><strong>{atm.reference}</strong></Link>
+                    </td>
+                    <td>{atm.name || atm.model || 'ATM Unit'}</td>
+                    <td><DualStatus active={atm.is_active !== false} technical={atm.status} /></td>
+                    <td><StatusBadge value={atm.health} /></td>
+                    <td>
+                      {atm.active_incident ? (
+                        <Link to={`/incidents/${atm.active_incident.id}`} style={{ color: 'var(--danger)', fontWeight: 600 }}>
+                          {atm.active_incident.incident_number}
+                        </Link>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td>
+                      <div className="table-actions" style={{ display: 'flex', gap: 6 }}>
+                        <Link className="button secondary small" to={`/atms/${atm.id}`}>View</Link>
+                        {hasPermission(currentUser, 'incident.create') && (
+                          <Link className="button ghost small" to={`/incidents?atm=${atm.id}&new=1`}>+ Incident</Link>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </div>
+
       {error ? (
-        <div className="error-banner">
+        <div className="error-banner" style={{ marginTop: 14 }}>
           <strong>{error}</strong>
         </div>
+      ) : null}
+
+      {registerATMOpen ? (
+        <ATMDialog
+          initialBranchId={data.id}
+          onClose={() => setRegisterATMOpen(false)}
+        />
       ) : null}
 
       {deactivateOpen ? (

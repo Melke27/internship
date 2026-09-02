@@ -94,7 +94,7 @@ export default function SettingsPage() {
                   defaultValue={currentUser.phone || ''}
                 />
               </label>
-              {formError ? <div className="error-banner"><strong>{formError}</strong></div> : null}
+              {formError ? <div className="error-banner" role="alert"><strong>{formError}</strong></div> : null}
               <div className="dialog-actions">
                 <button type="button" className="button secondary" onClick={() => { setEditing(false); setFormError(''); }}>
                   Cancel

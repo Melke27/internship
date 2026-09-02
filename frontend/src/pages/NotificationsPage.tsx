@@ -287,7 +287,7 @@ function AnnouncementDialog({ onClose, onSent }: { onClose: () => void; onSent: 
       </FormGrid>
 
       {error ? (
-        <div className="error-banner"><strong>{error}</strong></div>
+        <div className="error-banner" role="alert"><strong>{error}</strong></div>
       ) : null}
     </Dialog>
   );

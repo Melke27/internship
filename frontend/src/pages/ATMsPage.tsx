@@ -125,16 +125,20 @@ export default function ATMsPage() {
               className={`view-toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
               onClick={() => setViewMode('table')}
               title="Table view"
+              aria-label="Table view"
+              aria-pressed={viewMode === 'table'}
             >
-              <List size={15} />
+              <List size={15} aria-hidden />
             </button>
             <button
               type="button"
               className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
               onClick={() => setViewMode('grid')}
               title="Grid view"
+              aria-label="Grid view"
+              aria-pressed={viewMode === 'grid'}
             >
-              <LayoutGrid size={15} />
+              <LayoutGrid size={15} aria-hidden />
             </button>
           </div>
           {hasPermission(currentUser, 'atm.create') ? (
@@ -158,17 +162,19 @@ export default function ATMsPage() {
       {/* Search + filter bar */}
       <div className="filter-bar">
         <div className="page-search-bar" style={{ flex: 1, minWidth: 200, margin: 0 }}>
-          <Search size={15} />
+          <Search size={15} aria-hidden />
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search ATM ID, branch, serial number..."
+            aria-label="Search ATM ID, branch, serial number"
           />
         </div>
         <select
           className="field-input"
           style={{ width: 190 }}
           value={branchFilter}
+          aria-label="Filter by branch"
           onChange={(event) => {
             setBranchFilter(event.target.value);
             setParams((prev) => {

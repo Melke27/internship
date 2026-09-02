@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   type ButtonHTMLAttributes,
   type FormEvent,
   type HTMLAttributes,
@@ -76,7 +77,10 @@ export function FormGrid({ cols, className, style, ...props }: FormGridProps) {
   return (
     <div
       className={cx('form-grid', className)}
-      style={cols ? { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` } : style}
+      style={{
+        ...(cols ? { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` } : null),
+        ...style,
+      }}
       {...props}
     />
   );
@@ -107,6 +111,8 @@ export function Dialog({
   wide,
   className,
 }: DialogProps) {
+  const panelRef = useRef<HTMLDivElement | HTMLFormElement>(null);
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') onClose();
@@ -115,13 +121,51 @@ export function Dialog({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    const active = document.activeElement as HTMLElement | null;
+    const previouslyFocused = active ?? document.body;
+    const focusables = () =>
+      Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((el) => !el.hasAttribute('disabled'));
+    const first = () => focusables()[0];
+    const last = () => focusables()[focusables().length - 1];
+    first()?.focus();
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+      const list = focusables();
+      if (!list.length) return;
+      const f = list[0];
+      const l = list[list.length - 1];
+      if (event.shiftKey && document.activeElement === f) {
+        event.preventDefault();
+        l.focus();
+      } else if (!event.shiftKey && document.activeElement === l) {
+        event.preventDefault();
+        f.focus();
+      }
+    };
+    panel.addEventListener('keydown', onKeyDown as EventListener);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      panel.removeEventListener('keydown', onKeyDown as EventListener);
+      document.body.style.overflow = prevOverflow;
+      previouslyFocused?.focus?.();
+    };
+  }, []);
+
   const panelClass = cx('dialog-panel', wide && 'dialog-wide', className);
   const content = (
     <>
       <header className="dialog-header">
         <div>
           {kicker ? <p className="dialog-kicker">{kicker}</p> : null}
-          <h2>{title}</h2>
+          <h2 id="dialog-title">{title}</h2>
           {description ? <p className="dialog-description">{description}</p> : null}
         </div>
         <button type="button" className="icon-button dialog-close" onClick={onClose} aria-label="Close dialog">
@@ -137,9 +181,11 @@ export function Dialog({
     <div className="dialog-backdrop" onClick={onClose}>
       {onSubmit ? (
         <form
+          ref={panelRef as React.Ref<HTMLFormElement>}
           className={panelClass}
           role="dialog"
           aria-modal="true"
+          aria-labelledby="dialog-title"
           onClick={(event) => event.stopPropagation()}
           onSubmit={onSubmit}
         >
@@ -147,6 +193,7 @@ export function Dialog({
         </form>
       ) : (
         <div
+          ref={panelRef as React.Ref<HTMLDivElement>}
           className={panelClass}
           role="dialog"
           aria-modal="true"
@@ -184,7 +231,7 @@ export function DialogFooterActions({
       <button type="button" className="button secondary" onClick={onCancel}>
         {cancelLabel}
       </button>
-      <button className={cx('button', danger ? 'danger' : 'primary')} disabled={submitting || submitDisabled}>
+      <button type="submit" className={cx('button', danger ? 'danger' : 'primary')} disabled={submitting || submitDisabled}>
         {submitting ? submittingLabel || `${submitLabel}…` : submitLabel}
       </button>
     </>
@@ -226,9 +273,14 @@ export function ConfirmDialog({
       title={title}
       onClose={() => { if (!confirming) onClose(); }}
       footer={
-        <button type="button" className={cx('button', tone === 'danger' ? 'danger' : 'primary')} onClick={onConfirm} disabled={confirming}>
-          {confirming ? confirmPendingLabel || `${confirmLabel}…` : confirmLabel}
-        </button>
+        <>
+          <button type="button" className="button secondary" onClick={onClose} disabled={confirming}>
+            {cancelLabel}
+          </button>
+          <button type="button" className={cx('button', tone === 'danger' ? 'danger' : 'primary')} onClick={onConfirm} disabled={confirming}>
+            {confirming ? confirmPendingLabel || `${confirmLabel}…` : confirmLabel}
+          </button>
+        </>
       }
     >
       {description ? <p className="confirm-text">{description}</p> : null}

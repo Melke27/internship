@@ -183,7 +183,7 @@ export function ChartLegend({
     <div className="chart-legend">
       {shown.map((s) => (
         <div className="legend-row" key={s.label}>
-          <i style={{ background: s.color }} />
+          <i style={{ background: s.color }} aria-hidden />
           <span>{s.label}</span>
           <b>{s.value}</b>
           <small className="muted" style={{ width: 44, textAlign: 'right' }}>
@@ -223,6 +223,7 @@ export function BarList({
           </div>
           <div className="bar-track">
             <i
+              aria-hidden
               style={{
                 width: `${(row.value / max) * 100}%`,
                 background: row.color || color,

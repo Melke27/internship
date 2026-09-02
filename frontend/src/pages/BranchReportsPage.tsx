@@ -128,7 +128,7 @@ export default function BranchReportsPage() {
                 <th>Status</th>
                 <th>Submitted</th>
                 <th>Incident</th>
-                <th />
+                <th><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody>
@@ -280,7 +280,7 @@ export function DistrictBranchReportDetailPage() {
       ) : null}
 
       {error ? (
-        <div className="error-banner">
+        <div className="error-banner" role="alert">
           <strong>{error}</strong>
         </div>
       ) : null}

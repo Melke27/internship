@@ -105,7 +105,7 @@ export default function ATMDialog({ onClose, atm, initialBranchId }: ATMDialogPr
       }
     >
       {error ? (
-        <div className="error-banner">
+        <div className="error-banner" role="alert">
           <strong>{error}</strong>
         </div>
       ) : null}

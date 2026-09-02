@@ -301,7 +301,7 @@ function ActionForm({
         Remarks
         <textarea name="remarks" rows={2} />
       </label>
-      {error ? <div className="error-banner"><strong>{error}</strong></div> : null}
+      {error ? <div className="error-banner" role="alert"><strong>{error}</strong></div> : null}
       <div className="dialog-actions">
         <button type="button" className="button secondary" onClick={onCancel}>Cancel</button>
         <button className="button primary" disabled={pending}>{pending ? 'Saving...' : 'Save Action'}</button>

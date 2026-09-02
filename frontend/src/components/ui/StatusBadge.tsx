@@ -96,7 +96,7 @@ export function StatusBadge({ value, showIcon = true }: { value: string; showIco
 export function PriorityBadge({ value }: { value: string }) {
   return (
     <span className={`priority-badge priority-${value.toLowerCase()}`}>
-      <i />
+      <i aria-hidden />
       {statusLabel(value) || value}
     </span>
   );

@@ -46,16 +46,19 @@ export default function ATMFleetCard({
 
         <div className="atm-signal-strip">
           <span className="atm-signal">
-            <Wifi size={12} style={{ color: signalTone(atm.network_status) }} />
+            <Wifi size={12} style={{ color: signalTone(atm.network_status) }} aria-hidden />
             Network
+            <span className="sr-only">: {atm.network_status || 'unknown'}</span>
           </span>
           <span className="atm-signal">
-            <Zap size={12} style={{ color: signalTone(atm.power_status) }} />
+            <Zap size={12} style={{ color: signalTone(atm.power_status) }} aria-hidden />
             Power
+            <span className="sr-only">: {atm.power_status || 'unknown'}</span>
           </span>
           <span className="atm-signal">
-            <Cpu size={12} style={{ color: signalTone(atm.hardware_status) }} />
+            <Cpu size={12} style={{ color: signalTone(atm.hardware_status) }} aria-hidden />
             Hardware
+            <span className="sr-only">: {atm.hardware_status || 'unknown'}</span>
           </span>
         </div>
 

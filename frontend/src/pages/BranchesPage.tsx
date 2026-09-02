@@ -214,7 +214,7 @@ function CreateBranchDialog({ onClose }: { onClose: () => void }) {
         </SelectInput>
       </Field>
       {error ? (
-        <div className="error-banner">
+        <div className="error-banner" role="alert">
           <strong>{error}</strong>
         </div>
       ) : null}
@@ -408,7 +408,7 @@ export function BranchDetailPage() {
       </div>
 
       {error ? (
-        <div className="error-banner" style={{ marginTop: 14 }}>
+        <div className="error-banner" role="alert" style={{ marginTop: 14 }}>
           <strong>{error}</strong>
         </div>
       ) : null}

@@ -1,6 +1,8 @@
+import { Inbox } from 'lucide-react';
+
 export function LoadingState({ label = 'Loading records…' }: { label?: string }) {
   return (
-    <div className="state-view">
+    <div className="state-view" role="status" aria-live="polite">
       <div className="skeleton-line wide" />
       <div className="skeleton-line" />
       <p>{label}</p>
@@ -17,7 +19,7 @@ export function EmptyState({
 }) {
   return (
     <div className="state-view empty-state">
-      <div className="empty-icon">✓</div>
+      <div className="empty-icon" aria-hidden><Inbox size={22} /></div>
       <h3>{title}</h3>
       <p>{description}</p>
     </div>
@@ -32,7 +34,7 @@ export function ErrorState({
   onRetry?: () => void;
 }) {
   return (
-    <div className="state-view error-state">
+    <div className="state-view error-state" role="alert">
       <strong>Unable to load data</strong>
       <p>{message}</p>
       {onRetry ? (

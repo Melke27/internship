@@ -98,7 +98,7 @@ export default function SetATMStatusDialog({
           placeholder="Explain why this status is being set (e.g. Card reader replaced, power restored)."
         />
       </Field>
-      {error ? <div className="error-banner"><strong>{error}</strong></div> : null}
+      {error ? <div className="error-banner" role="alert"><strong>{error}</strong></div> : null}
     </Dialog>
   );
 }

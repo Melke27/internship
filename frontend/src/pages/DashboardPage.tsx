@@ -146,8 +146,8 @@ export default function DashboardPage() {
             Live view of {FIXED_DISTRICT_NAME} — ATM availability, critical faults, incidents and maintenance.
           </p>
           <span className="live-updated">
-            <span className="live-dot" />
-            Updated {relativeTime(data.last_updated, now)}
+            <span className="live-dot" aria-hidden />
+            <span aria-live="polite">Updated {relativeTime(data.last_updated, now)}</span>
           </span>
         </div>
         <div className="page-actions">
@@ -244,8 +244,8 @@ export default function DashboardPage() {
           subtitle="Created vs resolved incidents over the last two weeks."
           action={
             <div className="badge-group">
-              <span className="legend-row" style={{ display: 'inline-flex' }}><i style={{ width: 10, height: 10, borderRadius: 999, background: '#3b4fd8' }} /><span>Created</span></span>
-              <span className="legend-row" style={{ display: 'inline-flex' }}><i style={{ width: 10, height: 10, borderRadius: 999, background: '#16a34a' }} /><span>Resolved</span></span>
+              <span className="legend-row" style={{ display: 'inline-flex' }}><i style={{ width: 10, height: 10, borderRadius: 999, background: '#3b4fd8' }} aria-hidden /><span>Created</span></span>
+              <span className="legend-row" style={{ display: 'inline-flex' }}><i style={{ width: 10, height: 10, borderRadius: 999, background: '#16a34a' }} aria-hidden /><span>Resolved</span></span>
             </div>
           }
         >
@@ -269,8 +269,8 @@ export default function DashboardPage() {
           subtitle="Modelled daily fleet availability from the open incident backlog."
           action={
             <div className="badge-group">
-              <span className="legend-row" style={{ display: 'inline-flex' }}><i style={{ width: 10, height: 10, borderRadius: 999, background: '#16a34a' }} /><span>Available %</span></span>
-              <span className="legend-row" style={{ display: 'inline-flex' }}><i style={{ width: 10, height: 10, borderRadius: 999, background: '#2563eb' }} /><span>Target 95%</span></span>
+              <span className="legend-row" style={{ display: 'inline-flex' }}><i style={{ width: 10, height: 10, borderRadius: 999, background: '#16a34a' }} aria-hidden /><span>Available %</span></span>
+              <span className="legend-row" style={{ display: 'inline-flex' }}><i style={{ width: 10, height: 10, borderRadius: 999, background: '#2563eb' }} aria-hidden /><span>Target 95%</span></span>
             </div>
           }
         >

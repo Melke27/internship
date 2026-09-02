@@ -257,12 +257,13 @@ export default function AppLayout({ children }: PropsWithChildren) {
 
           {portal !== 'branch' ? (
             <div className="topbar-search">
-              <Search size={16} />
+              <Search size={16} aria-hidden />
               <input
                 ref={searchRef}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search ATM, branch, incident..."
+                aria-label="Global search"
               />
               {!search && (
                 <span className="search-kbd-hint">
@@ -352,7 +353,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
               {Boolean(unread.data) && <em>{unread.data}</em>}
             </button>
             {notificationsOpen && (
-              <div className="notification-panel">
+              <div className="notification-panel" role="dialog" aria-label="Notifications">
                 <div className="notification-panel-head">
                   <strong>Notifications</strong>
                   <Link to="/notifications" onClick={() => setNotificationsOpen(false)}

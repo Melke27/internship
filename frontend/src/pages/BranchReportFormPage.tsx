@@ -271,7 +271,7 @@ export default function BranchReportFormPage() {
         </FormSection>
 
         {error ? (
-          <div className="error-banner">
+          <div className="error-banner" role="alert">
             <strong>{error}</strong>
           </div>
         ) : null}
@@ -378,11 +378,12 @@ export function BranchReportsListPage() {
 
       <div className="filter-bar" style={{ marginBottom: 14 }}>
         <div className="page-search-bar" style={{ flex: 1, minWidth: 220, maxWidth: 380, margin: 0 }}>
-          <Search size={15} />
+          <Search size={15} aria-hidden />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search by report ID, ATM, or problem..."
+            aria-label="Search by report ID, ATM, or problem"
           />
         </div>
         {(query || status) ? (
@@ -425,7 +426,7 @@ export function BranchReportsListPage() {
                 <th>Submitted</th>
                 <th>Status</th>
                 <th>Linked Incident</th>
-                <th />
+                <th><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody>

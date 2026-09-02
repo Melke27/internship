@@ -265,7 +265,7 @@ function WorkflowDialog({ kind, incident, onClose }: { kind: Exclude<DialogKind,
           </Field>
         </>
       ) : null}
-      {error ? <div className="error-banner"><strong>{error}</strong></div> : null}
+      {error ? <div className="error-banner" role="alert"><strong>{error}</strong></div> : null}
     </Dialog>
   );
 }
@@ -377,7 +377,7 @@ export default function IncidentDetailPage() {
               <button className="button primary" onClick={() => setDialog('close')}>Close Incident</button>
             ) : null}
           </div>
-          {error ? <div className="error-banner"><strong>{error}</strong></div> : null}
+          {error ? <div className="error-banner" role="alert"><strong>{error}</strong></div> : null}
           {!error && (incident.actions || []).length === 0 ? (
             <EmptyState title="No technical actions yet" description="Technician actions will appear here as the incident is worked on." />
           ) : null}

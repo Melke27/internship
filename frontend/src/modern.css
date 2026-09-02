@@ -356,7 +356,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   transition: background .14s, color .14s, border-color .14s, transform .14s;
 }
 .icon-button:hover { background: var(--brand-soft); color: var(--brand); border-color: #ccd3f7; }
-.icon-button.is-spinning svg { animation: spin .7s linear; }
+.icon-button.is-spinning svg, .atm-qaction svg.is-spinning { animation: spin .7s linear; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .health-pill {
   display: inline-flex;
@@ -2806,6 +2806,17 @@ input.check-field { width: auto; }
     box-shadow: none !important;
     page-break-inside: avoid;
   }
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 

@@ -337,9 +337,8 @@ export default function ATMDetailsPage() {
           className="atm-qaction"
           onClick={refreshAll}
           disabled={refreshing}
-          style={{ border: 'none', cursor: 'pointer', background: 'none', font: 'inherit' }}
         >
-          <RefreshCw size={14} className={refreshing ? 'is-spinning' : ''} />
+          <RefreshCw size={14} className={refreshing ? 'is-spinning' : ''} aria-hidden />
           {refreshing ? 'Refreshing…' : 'Refresh'}
         </button>
         {hasPermission(currentUser, 'atm.update') && (

@@ -9,19 +9,33 @@ const ICONS: Record<ToastTone, string> = {
 
 export function showToast(message: string, tone: ToastTone = 'success') {
   const existing = document.querySelector('.app-toast');
-  if (existing) existing.remove();
+  if (existing) {
+    existing.classList.add('toast-hide');
+    existing.remove();
+  }
 
   const toast = document.createElement('div');
   toast.className = `app-toast toast-${tone}`;
-  toast.setAttribute('role', 'status');
-  toast.innerHTML = `
-    <span class="toast-icon">${ICONS[tone] || ICONS.info}</span>
-    <span class="toast-message">${message}</span>
-    <button type="button" class="toast-close" aria-label="Dismiss">&times;</button>
-  `;
+  toast.setAttribute('role', tone === 'error' ? 'alert' : 'status');
+  toast.setAttribute('aria-live', 'polite');
 
-  const closeBtn = toast.querySelector('.toast-close');
-  closeBtn?.addEventListener('click', () => {
+  const icon = document.createElement('span');
+  icon.className = 'toast-icon';
+  icon.innerHTML = ICONS[tone] || ICONS.info;
+
+  const msg = document.createElement('span');
+  msg.className = 'toast-message';
+  msg.textContent = message;
+
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'toast-close';
+  closeBtn.setAttribute('aria-label', 'Dismiss');
+  closeBtn.textContent = '×';
+
+  toast.append(icon, msg, closeBtn);
+
+  closeBtn.addEventListener('click', () => {
     toast.classList.add('toast-hide');
     window.setTimeout(() => toast.remove(), 220);
   });

@@ -119,7 +119,7 @@ function CreateMaintenanceDialog({ onClose }: { onClose: () => void }) {
         <TextArea name="remarks" rows={2} placeholder="Optional notes for the assigned technician" />
       </Field>
       {error ? (
-        <div className="error-banner">
+        <div className="error-banner" role="alert">
           <strong>{error}</strong>
         </div>
       ) : null}
@@ -190,7 +190,7 @@ function CompleteJobDialog({ job, onClose }: { job: Maintenance; onClose: () => 
         <TextArea name="remarks" rows={2} placeholder="Optional notes" />
       </Field>
       {error ? (
-        <div className="error-banner">
+        <div className="error-banner" role="alert">
           <strong>{error}</strong>
         </div>
       ) : null}
@@ -247,7 +247,7 @@ function AssignDialog({ job, onClose }: { job: Maintenance; onClose: () => void 
         </SelectInput>
       </Field>
       {error ? (
-        <div className="error-banner">
+        <div className="error-banner" role="alert">
           <strong>{error}</strong>
         </div>
       ) : null}
@@ -359,6 +359,7 @@ export default function MaintenancePage() {
       await queryClient.invalidateQueries({ queryKey: ['atms'] });
     },
     onError: (err) => setActionError(extractError(err, 'Action could not be completed.')),
+    onSettled: () => setConfirm(null),
   });
 
   return (
@@ -382,7 +383,7 @@ export default function MaintenancePage() {
       </div>
 
       {actionError ? (
-        <div className="error-banner">
+        <div className="error-banner" role="alert">
           <strong>{actionError}</strong>
         </div>
       ) : null}
@@ -541,7 +542,6 @@ export default function MaintenancePage() {
               confirmed: confirm.confirmed,
               test_result: confirm.test_result,
             });
-            setConfirm(null);
           }}
           onClose={() => setConfirm(null)}
         />

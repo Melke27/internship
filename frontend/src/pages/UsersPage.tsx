@@ -133,7 +133,7 @@ export default function UsersPage() {
       </div>
 
       {error ? (
-        <div className="error-banner">
+        <div className="error-banner" role="alert">
           <strong>{error}</strong>
         </div>
       ) : null}
@@ -149,17 +149,19 @@ export default function UsersPage() {
       {/* Search + filter bar */}
       <div className="filter-bar">
         <div className="page-search-bar" style={{ flex: 1, minWidth: 220, margin: 0 }}>
-          <Search size={15} />
+          <Search size={15} aria-hidden />
           <input
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
             placeholder="Search by name, username, email, or branch..."
+            aria-label="Search by name, username, email, or branch"
           />
         </div>
         <select
           className="field-input"
           style={{ width: 200 }}
           value={roleFilter}
+          aria-label="Filter by role"
           onChange={(event) => setRoleFilter(event.target.value)}
         >
           <option value="">All roles</option>
@@ -189,7 +191,7 @@ export default function UsersPage() {
                 <th>Branch</th>
                 <th>District</th>
                 <th>Status</th>
-                <th />
+                <th><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody>
@@ -370,7 +372,7 @@ function CreateUserDialog({ roles, onClose }: { roles: RoleOption[]; onClose: ()
         <input type="hidden" name="branch" value="" />
       )}
       {error ? (
-        <div className="error-banner">
+        <div className="error-banner" role="alert">
           <strong>{error}</strong>
         </div>
       ) : null}
@@ -474,7 +476,7 @@ function EditUserDialog({ user, roles, onClose }: { user: UserRow; roles: RoleOp
         <TextInput name="password" type="password" minLength={8} autoComplete="new-password" placeholder="••••••••" />
       </Field>
       {error ? (
-        <div className="error-banner">
+        <div className="error-banner" role="alert">
           <strong>{error}</strong>
         </div>
       ) : null}

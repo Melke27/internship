@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -6,30 +6,38 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, portalHome, useAuth } from './context/AuthContext';
 import { PortalRoute, ProtectedRoute, PermissionRoute } from './components/routes/RouteGuards';
 import ErrorBoundary from './components/feedback/ErrorBoundary';
+import { LoadingState } from './components/feedback/StateView';
 import AppLayout from './layouts/AppLayout';
-import DashboardPage from './pages/DashboardPage';
-import LoginPage from './pages/LoginPage';
-import ATMsPage from './pages/ATMsPage';
-import ATMDetailsPage from './pages/ATMDetailsPage';
-import IncidentsPage from './pages/IncidentsPage';
-import IncidentDetailPage from './pages/IncidentDetailPage';
-import TroubleshootingPage from './pages/TroubleshootingPage';
-import EscalationsPage from './pages/EscalationsPage';
-import MaintenancePage, { MaintenanceOpsPage } from './pages/MaintenancePage';
-import MonitoringPage from './pages/MonitoringPage';
-import ReportsPage from './pages/ReportsPage';
-import AuditPage from './pages/AuditPage';
-import NotificationsPage from './pages/NotificationsPage';
-import SettingsPage from './pages/SettingsPage';
-import BranchesPage, { BranchDetailPage } from './pages/BranchesPage';
-import UsersPage from './pages/UsersPage';
-import ActiveFaultsPage from './pages/ActiveFaultsPage';
-import BranchReportsPage, { DistrictBranchReportDetailPage } from './pages/BranchReportsPage';
-import BranchDashboardPage from './pages/BranchDashboardPage';
-import BranchReportFormPage, { BranchReportsListPage } from './pages/BranchReportFormPage';
-import BranchReportDetailPage from './pages/BranchReportDetailPage';
-import StatusHistoryPage, { BranchATMDetailPage, BranchATMsPage } from './pages/BranchATMsPage';
 import { AccessDeniedPage, NotFoundPage } from './pages/ErrorPages';
+
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const ATMsPage = lazy(() => import('./pages/ATMsPage'));
+const ATMDetailsPage = lazy(() => import('./pages/ATMDetailsPage'));
+const IncidentsPage = lazy(() => import('./pages/IncidentsPage'));
+const IncidentDetailPage = lazy(() => import('./pages/IncidentDetailPage'));
+const TroubleshootingPage = lazy(() => import('./pages/TroubleshootingPage'));
+const EscalationsPage = lazy(() => import('./pages/EscalationsPage'));
+const MaintenancePage = lazy(() => import('./pages/MaintenancePage'));
+const MaintenanceOpsPage = lazy(() => import('./pages/MaintenancePage').then(m => ({ default: m.MaintenanceOpsPage })));
+const MonitoringPage = lazy(() => import('./pages/MonitoringPage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const AuditPage = lazy(() => import('./pages/AuditPage'));
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const BranchesPage = lazy(() => import('./pages/BranchesPage'));
+const BranchDetailPage = lazy(() => import('./pages/BranchesPage').then(m => ({ default: m.BranchDetailPage })));
+const UsersPage = lazy(() => import('./pages/UsersPage'));
+const ActiveFaultsPage = lazy(() => import('./pages/ActiveFaultsPage'));
+const BranchReportsPage = lazy(() => import('./pages/BranchReportsPage'));
+const DistrictBranchReportDetailPage = lazy(() => import('./pages/BranchReportsPage').then(m => ({ default: m.DistrictBranchReportDetailPage })));
+const BranchDashboardPage = lazy(() => import('./pages/BranchDashboardPage'));
+const BranchReportFormPage = lazy(() => import('./pages/BranchReportFormPage'));
+const BranchReportsListPage = lazy(() => import('./pages/BranchReportFormPage').then(m => ({ default: m.BranchReportsListPage })));
+const BranchReportDetailPage = lazy(() => import('./pages/BranchReportDetailPage'));
+const StatusHistoryPage = lazy(() => import('./pages/BranchATMsPage'));
+const BranchATMDetailPage = lazy(() => import('./pages/BranchATMsPage').then(m => ({ default: m.BranchATMDetailPage })));
+const BranchATMsPage = lazy(() => import('./pages/BranchATMsPage').then(m => ({ default: m.BranchATMsPage })));
 
 import './modern.css';
 import './photo-overrides.css';
@@ -48,10 +56,15 @@ function HomeRedirect() {
   return <Navigate to={portalHome(currentUser)} replace />;
 }
 
+function RouteFallback() {
+  return <LoadingState label="Loading page…" />;
+}
+
 function App() {
   const location = useLocation();
   return (
     <ErrorBoundary key={location.pathname}>
+      <Suspense fallback={<RouteFallback />}>
       <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/access-denied" element={<AccessDeniedPage />} />
@@ -96,6 +109,7 @@ function App() {
         }
       />
       </Routes>
+      </Suspense>
     </ErrorBoundary>
   );
 }

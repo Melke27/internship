@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ImagePlus, X } from 'lucide-react';
 
 const ALLOWED = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -22,6 +22,12 @@ export function EvidenceUpload({
   const [error, setError] = useState('');
   const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
 
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
   function pick(next: File | null) {
     setError('');
     if (!next) {
@@ -43,13 +49,14 @@ export function EvidenceUpload({
     <div className="evidence-upload">
       <p className="helper-text">{hint}</p>
       {!file ? (
-        <label className="evidence-dropzone">
-          <ImagePlus size={22} />
+        <label className="evidence-dropzone" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.currentTarget.click(); }}>
+          <ImagePlus size={22} aria-hidden />
           <strong>Upload Photo</strong>
-          <span>Drag and drop or choose a photo</span>
+          <span>Choose a photo from your device</span>
           <input
             type="file"
             accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+            aria-label="Upload ATM evidence photo"
             onChange={(event) => pick(event.target.files?.[0] || null)}
           />
         </label>

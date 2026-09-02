@@ -65,20 +65,21 @@ export default function AuditPage() {
 
       <div className="filter-bar">
         <div className="page-search-bar" style={{ flex: 1, minWidth: 220, margin: 0 }}>
-          <Search size={15} />
+          <Search size={15} aria-hidden />
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search actions, entities..."
+            aria-label="Search actions, entities"
           />
         </div>
-        <select className="field-input" style={{ width: 180 }} value={entity} onChange={(event) => setEntity(event.target.value)}>
+        <select className="field-input" style={{ width: 180 }} value={entity} aria-label="Filter by entity" onChange={(event) => setEntity(event.target.value)}>
           <option value="">All entities</option>
           {ENTITY_OPTIONS.map((value) => (
             <option key={value} value={value}>{value}</option>
           ))}
         </select>
-        <select className="field-input" style={{ width: 200 }} value={action} onChange={(event) => setAction(event.target.value)}>
+        <select className="field-input" style={{ width: 200 }} value={action} aria-label="Filter by action" onChange={(event) => setAction(event.target.value)}>
           <option value="">All actions</option>
           {actions.map((value) => (
             <option key={value} value={value}>{value}</option>

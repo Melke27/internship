@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api } from '../lib/api';
 
 export type UserRole =
@@ -196,32 +196,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return currentUser?.permissions || [];
   }
 
-  return (
-    <AuthContext.Provider
-      value={{
-        currentUser,
-        isAuthenticated: Boolean(currentUser),
-        isLoading,
-        login,
-        logout,
-        refresh: async () => {
-          await fetchMe();
-        },
-        getUserPermissions,
-        userRole: currentUser?.role || null,
-        hasPermission,
-        canManageOrganization,
-        canManageUsers,
-        isSupervisorUser,
-        isTechnicianUser,
-        isBranchUser,
-        isOperationsUser,
-        portalHome,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      currentUser,
+      isAuthenticated: Boolean(currentUser),
+      isLoading,
+      login,
+      logout,
+      refresh: async () => {
+        await fetchMe();
+      },
+      getUserPermissions,
+      userRole: currentUser?.role || null,
+      hasPermission,
+      canManageOrganization,
+      canManageUsers,
+      isSupervisorUser,
+      isTechnicianUser,
+      isBranchUser,
+      isOperationsUser,
+      portalHome,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentUser, isLoading]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

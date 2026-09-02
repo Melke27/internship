@@ -149,13 +149,13 @@ function CreateIncidentDialog({ initialAtmId, onClose }: { initialAtmId?: string
         </Field>
       ) : null}
       {duplicate ? (
-        <div className="error-banner">
+        <div className="error-banner" role="alert">
           <strong>{selectedATM?.reference} already has an active incident.</strong>
           <small>{duplicate.incident_number} · {duplicate.title} · {duplicate.priority} · {duplicate.status}</small>
           <Link className="text-link" to={`/incidents/${duplicate.id}`}>Open Existing Incident</Link>
         </div>
       ) : null}
-      {error ? <div className="error-banner"><strong>{error}</strong></div> : null}
+      {error ? <div className="error-banner" role="alert"><strong>{error}</strong></div> : null}
     </Dialog>
   );
 }
@@ -233,17 +233,19 @@ export default function IncidentsPage() {
       {/* Filter bar */}
       <div className="filter-bar">
         <div className="page-search-bar" style={{ flex: 1, minWidth: 220, margin: 0 }}>
-          <Search size={15} />
+          <Search size={15} aria-hidden />
           <input
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
             placeholder="Search ATM, incident ID, error message..."
+            aria-label="Search ATM, incident ID, error message"
           />
         </div>
         <select
           className="field-input"
           style={{ width: 180 }}
           value={status}
+          aria-label="Filter by status"
           onChange={(event) => setStatus(event.target.value)}
         >
           <option value="">All statuses</option>
@@ -255,6 +257,7 @@ export default function IncidentsPage() {
           className="field-input"
           style={{ width: 160 }}
           value={priority}
+          aria-label="Filter by priority"
           onChange={(event) => setPriority(event.target.value)}
         >
           <option value="">All priorities</option>

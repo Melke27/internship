@@ -163,11 +163,12 @@ function BranchATMStatusPage() {
 
       <div className="filter-bar" style={{ marginBottom: 16 }}>
         <div className="page-search-bar" style={{ flex: 1, minWidth: 220, maxWidth: 380, margin: 0 }}>
-          <Search size={15} />
+          <Search size={15} aria-hidden />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search by reference, name, or location..."
+            aria-label="Search by reference, name, or location"
           />
         </div>
         {(query || filter) ? (

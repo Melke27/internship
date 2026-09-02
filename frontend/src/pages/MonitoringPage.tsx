@@ -125,11 +125,12 @@ export default function MonitoringPage() {
             <p>Current technical status for every ATM in the district.</p>
           </div>
           <div className="page-search-bar">
-            <Search size={15} />
+            <Search size={15} aria-hidden />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search by reference, branch, or location..."
+              aria-label="Search by reference, branch, or location"
             />
           </div>
         </div>
@@ -141,6 +142,7 @@ export default function MonitoringPage() {
               type="button"
               className={`chip ${filter === item.key ? 'active' : ''}`}
               onClick={() => setFilter(item.key)}
+              aria-pressed={filter === item.key}
             >
               {item.label}
             </button>
@@ -256,7 +258,7 @@ export default function MonitoringPage() {
                 <div className="timeline-dot" />
                 <div>
                   <strong>{row.atm_reference}</strong>
-                  <small>{row.old_status} → {row.new_status}</small>
+                  <small><StatusBadge value={row.old_status} /> <span aria-hidden>→</span> <StatusBadge value={row.new_status} /></small>
                   <small>{row.changed_by_name || 'System'} · {new Date(row.created_at).toLocaleString()}</small>
                 </div>
               </div>

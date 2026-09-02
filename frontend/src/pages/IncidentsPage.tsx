@@ -285,7 +285,7 @@ export default function IncidentsPage() {
         {!incidents.isLoading && !incidents.isError && rows.length === 0 ? (
           <EmptyState
             title={hasFilters ? 'No incidents match your filters' : 'No incidents'}
-            description={hasFilters ? 'Try adjusting the search or filter criteria above.' : 'No incidents match the selected filters.'}
+            description={hasFilters ? 'Try adjusting the search or filter criteria above.' : 'Incidents will appear here once ATM problems are reported.'}
           />
         ) : null}
         {!incidents.isLoading && !incidents.isError && rows.length > 0 ? (

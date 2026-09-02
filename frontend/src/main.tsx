@@ -1,10 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { AuthProvider, portalHome, useAuth } from './context/AuthContext';
 import { PortalRoute, ProtectedRoute, PermissionRoute } from './components/routes/RouteGuards';
+import ErrorBoundary from './components/feedback/ErrorBoundary';
 import AppLayout from './layouts/AppLayout';
 import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
@@ -48,8 +49,10 @@ function HomeRedirect() {
 }
 
 function App() {
+  const location = useLocation();
   return (
-    <Routes>
+    <ErrorBoundary key={location.pathname}>
+      <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/access-denied" element={<AccessDeniedPage />} />
       <Route
@@ -76,7 +79,7 @@ function App() {
                 <Route path="/branch-reports/:id" element={<PortalRoute portal={['district', 'maintenance']}><PermissionRoute permission="branch_report.view"><DistrictBranchReportDetailPage /></PermissionRoute></PortalRoute>} />
                 <Route path="/troubleshooting" element={<PortalRoute portal="maintenance"><PermissionRoute permission="troubleshooting.view"><TroubleshootingPage /></PermissionRoute></PortalRoute>} />
                 <Route path="/escalations" element={<PortalRoute portal="maintenance"><PermissionRoute permission="incident.view"><EscalationsPage /></PermissionRoute></PortalRoute>} />
-                <Route path="/maintenance" element={<PortalRoute portal="maintenance"><PermissionRoute permission="maintenance.view"><MaintenancePage /></PermissionRoute></PortalRoute>} />
+                <Route path="/maintenance" element={<PortalRoute portal={['district', 'maintenance']}><PermissionRoute permission="maintenance.view"><MaintenancePage /></PermissionRoute></PortalRoute>} />
                 <Route path="/monitoring" element={<PortalRoute portal="district"><PermissionRoute permission="atm.view"><MonitoringPage /></PermissionRoute></PortalRoute>} />
                 <Route path="/status-history" element={<PortalRoute portal="district"><PermissionRoute permission="atm.view"><StatusHistoryPage /></PermissionRoute></PortalRoute>} />
                 <Route path="/branches" element={<PortalRoute portal="district"><PermissionRoute permission="branch.view"><BranchesPage /></PermissionRoute></PortalRoute>} />
@@ -92,7 +95,8 @@ function App() {
           </ProtectedRoute>
         }
       />
-    </Routes>
+      </Routes>
+    </ErrorBoundary>
   );
 }
 

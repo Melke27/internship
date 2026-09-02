@@ -1,34 +1,12 @@
-import type { FormEvent, RefObject } from 'react';
-import { useRef, useState } from 'react';
+import type { FormEvent } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isAxiosError } from 'axios';
-import { ArrowRight, BellRing, Cpu, LogIn, ShieldCheck, UserCheck, Wrench, Zap } from 'lucide-react';
+import { ArrowRight, BellRing, Cpu, ShieldCheck } from 'lucide-react';
 
 import { portalHome, useAuth } from '../context/AuthContext';
 import CBELogo from '../components/branding/CBELogo';
 import HeadOfficeVisual from '../components/branding/HeadOfficeVisual';
-
-const DEMO_PROFILES = [
-  {
-    username: 'district.admin',
-    role: 'District Administrator',
-    description: 'Full district ATM fleet, incidents, and branch oversight',
-    icon: ShieldCheck,
-  },
-  {
-    username: 'maintenance.tech',
-    role: 'Field Technician',
-    description: 'Troubleshooting, physical repairs, and retest execution',
-    icon: Wrench,
-  },
-  {
-    username: 'branch.user',
-    role: 'Branch Officer',
-    description: 'Local ATM status reporting and incident escalation',
-    icon: UserCheck,
-  },
-];
-const DEMO_PASSWORD = 'DemoPass123!';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -36,10 +14,8 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showDemo, setShowDemo] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const passwordRef: RefObject<HTMLInputElement> = useRef(null);
 
   async function submit(event?: FormEvent) {
     event?.preventDefault();
@@ -59,12 +35,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  }
-
-  function pickAccount(account: string) {
-    setUsername(account);
-    setPassword(DEMO_PASSWORD);
-    passwordRef.current?.focus();
   }
 
   return (
@@ -93,7 +63,7 @@ export default function LoginPage() {
                 autoFocus
                 required
                 value={username}
-                placeholder="e.g. district.admin"
+                placeholder="Enter your username"
                 onChange={(event) => setUsername(event.target.value)}
               />
             </div>
@@ -101,9 +71,8 @@ export default function LoginPage() {
           <label className="auth-field">
             <span className="auth-field-label">Password</span>
             <div className="auth-field-box">
-              <i aria-hidden="true"><Zap size={15} /></i>
+              <i aria-hidden="true"><ShieldCheck size={15} /></i>
               <input
-                ref={passwordRef}
                 autoComplete="current-password"
                 required
                 type={showPassword ? 'text' : 'password'}
@@ -134,62 +103,6 @@ export default function LoginPage() {
             {!loading ? <ArrowRight size={16} /> : null}
           </button>
         </form>
-
-        <div className="demo-hint">
-          {showDemo ? (
-            <div className="demo-list">
-              <span className="demo-list-label">Quick Role Access (Local Demo)</span>
-              <div className="demo-quick-grid" style={{ display: 'grid', gap: 6, margin: '8px 0' }}>
-                {DEMO_PROFILES.map((profile) => {
-                  const Icon = profile.icon;
-                  const selected = username === profile.username;
-                  return (
-                    <button
-                      type="button"
-                      key={profile.username}
-                      className={`demo-quick-profile ${selected ? 'active' : ''}`}
-                      onClick={() => pickAccount(profile.username)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '8px 12px',
-                        borderRadius: 8,
-                        border: selected ? '1px solid var(--brand)' : '1px solid var(--border-subtle)',
-                        background: selected ? 'var(--brand-surface)' : 'var(--surface-2)',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <Icon size={16} style={{ color: selected ? 'var(--brand)' : 'var(--text-2)' }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-1)' }}>
-                          {profile.username}
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                          {profile.role}
-                        </div>
-                      </div>
-                      <LogIn size={13} style={{ opacity: selected ? 1 : 0.4 }} />
-                    </button>
-                  );
-                })}
-              </div>
-              {username ? (
-                <p className="demo-quick-auth">
-                  Selected <code>{username}</code> · credentials set.{' '}
-                  <button type="button" onClick={() => void submit()} style={{ fontWeight: 600, textDecoration: 'underline' }}>
-                    Click to sign in &rarr;
-                  </button>
-                </p>
-              ) : null}
-            </div>
-          ) : (
-            <button type="button" onClick={() => setShowDemo(true)}>
-              Show demo role accounts
-            </button>
-          )}
-        </div>
 
         <div className="auth-rule" />
 

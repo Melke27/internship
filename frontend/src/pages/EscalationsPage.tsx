@@ -55,6 +55,7 @@ export default function EscalationsPage() {
                   <th>Priority</th>
                   <th>Assigned</th>
                   <th>Reported</th>
+                  <th>Manage</th>
                 </tr>
               </thead>
               <tbody>
@@ -69,6 +70,11 @@ export default function EscalationsPage() {
                     <td><PriorityBadge value={incident.priority} /></td>
                     <td>{incident.assigned_to_name || 'Unassigned'}</td>
                     <td><small>{new Date(incident.created_at).toLocaleString()}</small></td>
+                    <td>
+                      <Link className="button secondary small" to={`/incidents/${incident.id}`}>
+                        Open
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

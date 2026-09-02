@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, CircleAlert, ClipboardList, Landmark, PlusCircle, Wifi } from 'lucide-react';
 
@@ -8,10 +8,11 @@ import { api } from '../lib/api';
 import { listResource } from '../lib/utils';
 import { useNow } from '../lib/useNow';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
-import { DualStatus, PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
+import { PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
 import { MetricCard } from '../components/ui/MetricCard';
 import { Panel } from '../components/ui/Panel';
 import { ChartLegend, DonutChart, Sparkline, statusColor, TrendChart } from '../components/ui/Charts';
+import ATMFleetCard from '../components/atms/FleetCard';
 import type { ATM, BranchReport, DashboardSummary, Incident } from '../types/api';
 
 function relativeTime(iso?: string, now = Date.now()) {
@@ -25,7 +26,6 @@ function relativeTime(iso?: string, now = Date.now()) {
 
 export default function BranchDashboardPage() {
   const { currentUser } = useAuth();
-  const navigate = useNavigate();
   const now = useNow(30_000);
   const summary = useQuery({
     queryKey: ['dashboard-summary', 'branch'],
@@ -204,34 +204,23 @@ export default function BranchDashboardPage() {
           {fleet.length === 0 ? (
             <EmptyState title="No ATMs assigned" description="No ATMs are registered for your branch." />
           ) : (
-            <div className="monitor-grid">
+            <div className="atm-fleet-grid">
               {fleet.slice(0, 8).map((atm) => (
-                <Link className="monitor-card" key={atm.id} to={`/branch/atms/${atm.id}`}>
-                  <div className="monitor-card-head">
-                    <strong>{atm.reference}</strong>
-                    <DualStatus active={atm.is_active !== false} technical={atm.status} />
-                  </div>
-                  <small>{atm.location || atm.name || atm.model || 'Branch ATM'}</small>
-                  <small>
-                    {atm.active_incident
-                      ? `${atm.active_incident.title} · ${atm.active_incident.status}`
-                      : 'No active incident'}
-                  </small>
-                  <div className="row-actions">
-                    <span className="button secondary small">View Status</span>
-                    <button
-                      type="button"
-                      className="button primary small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        navigate(`/branch/report?atm=${atm.id}`);
-                      }}
-                    >
-                      <PlusCircle size={11} /> Report
-                    </button>
-                  </div>
-                </Link>
+                <ATMFleetCard
+                  key={atm.id}
+                  atm={atm}
+                  to={`/branch/atms/${atm.id}`}
+                  actions={
+                    <>
+                      <Link className="button secondary small" to={`/branch/atms/${atm.id}`}>
+                        View Status
+                      </Link>
+                      <Link className="button primary small" to={`/branch/report?atm=${atm.id}`}>
+                        <PlusCircle size={11} /> Report
+                      </Link>
+                    </>
+                  }
+                />
               ))}
             </div>
           )}

@@ -21,10 +21,11 @@ import { FIXED_DISTRICT_NAME } from '../lib/navigation';
 import { api } from '../lib/api';
 import { formatDuration } from '../lib/utils';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
-import { DualStatus, PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
+import { PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
 import { MetricCard } from '../components/ui/MetricCard';
 import { Panel } from '../components/ui/Panel';
 import { BarList, ChartLegend, DonutChart, Sparkline, statusColor, TrendChart } from '../components/ui/Charts';
+import ATMFleetCard from '../components/atms/FleetCard';
 import type { ATM, DashboardSummary } from '../types/api';
 
 function list<T>(path: string) {
@@ -129,9 +130,14 @@ export default function DashboardPage() {
   ];
   const priorities = data.incidents_by_priority || {};
   const openTotal = Object.values(priorities).reduce<number>((a, b) => a + (typeof b === 'number' ? b : 0), 0);
+  const openIncidents = data.open_incidents ?? openTotal;
+
+  const branchList = data.branch_summary_list || [];
 
   return (
     <section className="page-content">
+      {/* Existing header, actions, KPIs */}
+
       <div className="portal-hero">
         <div>
           <p className="page-kicker">ATM District Operations · {todayLabel()}</p>
@@ -353,6 +359,74 @@ export default function DashboardPage() {
         )}
       </Panel>
 
+      <Panel
+        title="Branch Fleet & ATM Distribution"
+        subtitle="Live branch overview and ATM allocation per branch."
+        action={<Link className="text-link" to="/branches">Manage branches</Link>}
+      >
+        {branchList.length === 0 ? (
+          <EmptyState title="No active branches" description="Branches will appear here once created." />
+        ) : (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Branch Name</th>
+                  <th>Branch Code</th>
+                  <th>Status</th>
+                  <th>Total ATMs</th>
+                  <th>Operational</th>
+                  <th>Faults / Issues</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {branchList.map((branch) => (
+                  <tr key={branch.id}>
+                    <td>
+                      <Link to={`/branches/${branch.id}`}>
+                        <strong>{branch.name}</strong>
+                      </Link>
+                    </td>
+                    <td><code>{branch.code}</code></td>
+                    <td>
+                      <StatusBadge value={branch.status} />
+                    </td>
+                    <td>
+                      {branch.total_atms === 0 ? (
+                        <span className="badge warning">0 ATMs</span>
+                      ) : (
+                        <strong>{branch.total_atms} ATM{branch.total_atms === 1 ? '' : 's'}</strong>
+                      )}
+                    </td>
+                    <td>{branch.operational}</td>
+                    <td>
+                      {branch.faults > 0 ? (
+                        <span className="badge danger">{branch.faults} alert(s)</span>
+                      ) : (
+                        <span className="badge success">0</span>
+                      )}
+                    </td>
+                    <td>
+                      <div className="row-actions">
+                        <Link className="button secondary small" to={`/branches/${branch.id}`}>
+                          View Branch
+                        </Link>
+                        {hasPermission(currentUser, 'atm.create') ? (
+                          <Link className="button primary small" to={`/atms?register=1&branch=${branch.id}`}>
+                            + Add ATM
+                          </Link>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+
       <div className="content-grid">
         <Panel
           title="Active Faults"
@@ -434,30 +508,9 @@ export default function DashboardPage() {
           <EmptyState title="No ATMs registered" description="ATM units will appear here once registered for this district." />
         ) : null}
         {!atms.isLoading && !atms.isError && fleet.length > 0 ? (
-          <div className="monitor-grid">
+          <div className="atm-fleet-grid">
             {fleet.slice(0, 12).map((atm) => (
-              <Link to={`/atms/${atm.id}`} className="monitor-card" key={atm.id}>
-                <div className="monitor-card-head">
-                  <strong>{atm.reference}</strong>
-                  <DualStatus active={atm.is_active !== false} technical={atm.status} />
-                </div>
-                <small>{atm.branch_name}</small>
-                <div className="meta-grid compact">
-                  <div>
-                    <span>Health</span>
-                    <strong style={{ color: statusColor(atm.health) }}>{atm.health.replaceAll('_', ' ')}</strong>
-                  </div>
-                  <div>
-                    <span>Last check</span>
-                    <strong>{atm.last_checked ? new Date(atm.last_checked).toLocaleTimeString() : '—'}</strong>
-                  </div>
-                </div>
-                <small>
-                  {atm.active_incident
-                    ? `${atm.active_incident.incident_number} · ${atm.active_incident.status}`
-                    : 'No active incident'}
-                </small>
-              </Link>
+              <ATMFleetCard key={atm.id} atm={atm} to={`/atms/${atm.id}`} />
             ))}
           </div>
         ) : null}

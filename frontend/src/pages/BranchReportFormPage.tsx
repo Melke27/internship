@@ -1,13 +1,16 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AlertTriangle, ArrowLeft, Building2, Camera, CheckCircle2, ClipboardList, Clock, FileSearch, FileWarning, History, Info, Search } from 'lucide-react';
 
 import { api } from '../lib/api';
 import { extractError, listResource } from '../lib/utils';
 import { showToast } from '../lib/toast';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { EvidenceUpload } from '../components/ui/Evidence';
-import { PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
+import { Field, FormGrid, SelectInput, TextArea, TextInput } from '../components/ui/form';
+import { DualStatus, PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
+import { MetricCard } from '../components/ui/MetricCard';
 import type { ATM, BranchReport } from '../types/api';
 
 const PROBLEM_TYPES = [
@@ -23,6 +26,36 @@ const PROBLEM_TYPES = [
   'GENERAL',
   'UNKNOWN',
 ];
+
+const IMPACT_OPTIONS = ['None', 'Minor inconvenience', 'Service degraded', 'ATM unavailable', 'Branch service disrupted'];
+
+function FormSection({
+  step,
+  title,
+  subtitle,
+  icon,
+  children,
+}: {
+  step: string;
+  title: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="hr-section">
+      <div className="hr-section-head">
+        <div className="hr-section-icon">{icon}</div>
+        <div>
+          <span className="hr-section-step">STEP {step}</span>
+          <h2>{title}</h2>
+          <p>{subtitle}</p>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
 
 export default function BranchReportFormPage() {
   const navigate = useNavigate();
@@ -85,22 +118,36 @@ export default function BranchReportFormPage() {
   }
 
   return (
-    <section className="page-content narrow">
-      <div className="page-header">
+    <section className="page-content">
+      <Link className="breadcrumb-back" to="/branch/atms">
+        <ArrowLeft size={13} /> Back to My ATMs
+      </Link>
+
+      <div className="portal-hero">
         <div>
           <p className="page-kicker">Reporting</p>
           <h1>Report ATM Problem</h1>
           <p className="page-copy">
-            Submit a fault or crash report for an ATM at your branch. Operations will review severity.
+            Submit a fault or crash report for an ATM at your branch. Operations will review severity
+            {selected ? ` — reporting on ${selected.reference}` : ''}.
           </p>
+          <span className="live-updated">
+            <span className="live-dot" />
+            {selected
+              ? `${selected.reference} · ${(selected.active_incident ? 'active incident' : 'no active incident')} · updated ${new Date().toLocaleTimeString()}`
+              : `select an ATM to begin · updated ${new Date().toLocaleTimeString()}`}
+          </span>
         </div>
-        <Link className="button secondary" to="/branch">
-          Cancel
-        </Link>
+        <div className="page-actions">
+          <Link className="button ghost light" to="/branch">Cancel</Link>
+          <button className="button primary" type="submit" form="atm-report-form" disabled={create.isPending}>
+            {create.isPending ? 'Submitting…' : 'Submit Report'}
+          </button>
+        </div>
       </div>
 
       {activeCheck.data ? (
-        <div className="info-banner">
+        <div className="info-banner" style={{ marginBottom: 18 }}>
           <strong>ACTIVE INCIDENT EXISTS</strong>
           <p>
             {activeCheck.data.incident_number} · {activeCheck.data.title} · {activeCheck.data.priority} ·{' '}
@@ -116,6 +163,7 @@ export default function BranchReportFormPage() {
       ) : null}
 
       <form
+        id="atm-report-form"
         className="panel form-panel"
         onSubmit={(event: FormEvent<HTMLFormElement>) => {
           event.preventDefault();
@@ -123,104 +171,120 @@ export default function BranchReportFormPage() {
           create.mutate(event.currentTarget);
         }}
       >
-        <label>
-          Branch
-          <input value={selected?.branch_name || 'Your branch'} disabled />
-        </label>
-        <label>
-          ATM *
-          <select
-            name="atm"
-            required
-            value={selectedAtm}
-            onChange={(event) => setSelectedAtm(event.target.value)}
-          >
-            <option value="">Select ATM</option>
-            {(atms.data || []).map((atm) => (
-              <option key={atm.id} value={atm.id}>
-                {atm.reference} · {atm.status}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="form-grid">
-          <label>
-            Problem Type *
-            <select name="problem_type" required defaultValue="NETWORK_COMMUNICATION">
-              {PROBLEM_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {type.replaceAll('_', ' ')}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Severity *
-            <select name="severity" required defaultValue="MEDIUM">
-              {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            ATM Currently Working? *
-            <select name="atm_currently_working" required defaultValue="UNKNOWN">
-              <option value="YES">YES</option>
-              <option value="NO">NO</option>
-              <option value="UNKNOWN">UNKNOWN</option>
-            </select>
-          </label>
-          <label>
-            When did the problem start?
-            <input type="datetime-local" name="problem_started_at" />
-          </label>
-        </div>
-        <label>
-          Problem Description *
-          <textarea name="description" rows={4} required placeholder="Describe what is happening at the ATM." />
-        </label>
-        <label>
-          Observed Error
-          <textarea name="observed_error" rows={3} placeholder="Any error message or observed behavior." />
-        </label>
-        <label>
-          Customer / service impact
-          <select name="customer_impact" defaultValue="">
-            <option value="">Select impact</option>
-            <option value="None">None</option>
-            <option value="Minor inconvenience">Minor inconvenience</option>
-            <option value="Service degraded">Service degraded</option>
-            <option value="ATM unavailable">ATM unavailable</option>
-            <option value="Branch service disrupted">Branch service disrupted</option>
-          </select>
-        </label>
-        <EvidenceUpload file={evidence} onChange={setEvidence} />
-        <p className="helper-text">
-          Branch severity is advisory. District operations confirms whether the issue is officially critical.
-        </p>
+        <FormSection step="1" title="ATM & Branch" subtitle="Identify the ATM unit that is experiencing the problem." icon={<Building2 size={16} />}>
+          <FormGrid cols={2}>
+            <Field label="Branch">
+              <TextInput value={selected?.branch_name || 'Your branch'} disabled />
+              <input type="hidden" name="branch" value={selected?.branch_name || ''} />
+            </Field>
+            <Field label="ATM" required hint="Select the affected ATM unit">
+              <SelectInput
+                name="atm"
+                required
+                value={selectedAtm}
+                onChange={(event) => setSelectedAtm(event.target.value)}
+              >
+                <option value="">Select ATM</option>
+                {(atms.data || []).map((atm) => (
+                  <option key={atm.id} value={atm.id}>
+                    {atm.reference} · {atm.status.replaceAll('_', ' ')}
+                  </option>
+                ))}
+              </SelectInput>
+            </Field>
+          </FormGrid>
+
+          {selected ? (
+            <div className="atm-context-card">
+              <div className="atm-context-copy">
+                <span className="context-chip"><DualStatus active={selected.is_active !== false} technical={selected.status} /></span>
+                <span className="context-chip"><StatusBadge value={selected.health} /></span>
+              </div>
+              <p className="helper-text">
+                {selected.name || selected.reference} · {selected.location || selected.branch_name}
+                {selected.active_incident ? ` · Active: ${selected.active_incident.incident_number}` : ' · No active incident'}
+              </p>
+            </div>
+          ) : (
+            <div className="atm-context-card muted">
+              <Info size={14} />
+              <span>Select an ATM to see its current technical status and any active incident.</span>
+            </div>
+          )}
+        </FormSection>
+
+        <FormSection step="2" title="Problem Details" subtitle="Describe the fault and how severe it appears from the branch." icon={<AlertTriangle size={16} />}>
+          <FormGrid cols={2}>
+            <Field label="Problem Type" required>
+              <SelectInput name="problem_type" required defaultValue="NETWORK_COMMUNICATION">
+                {PROBLEM_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type.replaceAll('_', ' ')}
+                  </option>
+                ))}
+              </SelectInput>
+            </Field>
+            <Field label="Severity" required hint="Branch severity is advisory — operations confirms critical status">
+              <SelectInput name="severity" required defaultValue="MEDIUM">
+                {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </SelectInput>
+            </Field>
+            <Field label="ATM Currently Working?" required>
+              <SelectInput name="atm_currently_working" required defaultValue="UNKNOWN">
+                <option value="YES">Yes — operating normally</option>
+                <option value="NO">No — out of service</option>
+                <option value="UNKNOWN">Unknown</option>
+              </SelectInput>
+            </Field>
+            <Field label="When did the problem start?">
+              <TextInput type="datetime-local" name="problem_started_at" />
+            </Field>
+          </FormGrid>
+
+          <Field label="Problem Description" required hint="Describe what is happening at the ATM">
+            <TextArea name="description" rows={4} required placeholder="e.g. The cash dispenser stopped paying out and shows a jam error." />
+          </Field>
+
+          <div className="form-grid">
+            <Field label="Observed Error" hint="Any error message or behaviour observed">
+              <TextArea name="observed_error" rows={3} placeholder="e.g. Dispenser module EPP4 error 51" />
+            </Field>
+            <Field label="Customer / service impact" hint="How customers or the branch are affected">
+              <SelectInput name="customer_impact" defaultValue="">
+                <option value="">Select impact</option>
+                {IMPACT_OPTIONS.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </SelectInput>
+            </Field>
+          </div>
+        </FormSection>
+
+        <FormSection step="3" title="Evidence" subtitle="Attach a photo showing the issue to help the district team diagnose it faster." icon={<Camera size={16} />}>
+          <EvidenceUpload file={evidence} onChange={setEvidence} />
+        </FormSection>
+
         {error ? (
           <div className="error-banner">
             <strong>{error}</strong>
           </div>
         ) : null}
-        <div className="dialog-actions">
-          <Link className="button secondary" to="/branch">
-            Cancel
-          </Link>
-          <button className="button primary" disabled={create.isPending}>
-            {create.isPending ? 'Submitting…' : 'Submit Report'}
-          </button>
-        </div>
       </form>
     </section>
   );
 }
 
 export function BranchReportsListPage() {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const history = params.get('history') === '1';
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState('');
   const reports = useQuery({
     queryKey: ['branch-reports-list', history],
     queryFn: () => listResource<BranchReport>('/branch-reports/?ordering=-created_at'),
@@ -231,26 +295,123 @@ export function BranchReportsListPage() {
     return <ErrorState message="Unable to load ATM information." onRetry={() => reports.refetch()} />;
   }
 
-  const rows = (reports.data || []).filter((report) =>
-    history ? ['CLOSED', 'DISMISSED', 'RESOLVED', 'VERIFIED'].includes(report.status) : true,
-  );
+  const all = reports.data || [];
+  const activeRows = all.filter((report) => !['CLOSED', 'DISMISSED', 'RESOLVED', 'VERIFIED'].includes(report.status));
+  const closedRows = all.filter((report) => ['CLOSED', 'DISMISSED', 'RESOLVED', 'VERIFIED'].includes(report.status));
+  const base = history ? closedRows : activeRows;
+
+  const filteredRows = base
+    .filter((report) => !status || report.status === status)
+    .filter((report) => {
+      if (!query.trim()) return true;
+      const q = query.toLowerCase();
+      return (
+        (report.report_id || '').toLowerCase().includes(q) ||
+        (report.atm_reference || '').toLowerCase().includes(q) ||
+        (report.problem_type || '').toLowerCase().includes(q)
+      );
+    });
+
+  const submitted = activeRows.filter((r) => r.status === 'SUBMITTED').length;
+  const inReview = activeRows.filter((r) => ['RECEIVED', 'REVIEWING'].includes(r.status)).length;
+  const converted = all.filter((r) => r.status === 'CONVERTED_TO_INCIDENT').length;
+  const dismissed = all.filter((r) => r.status === 'DISMISSED').length;
+
+  const ACTIVE_CHIPS = [
+    { key: '', label: 'All open' },
+    { key: 'SUBMITTED', label: 'Submitted' },
+    { key: 'RECEIVED', label: 'Received' },
+    { key: 'REVIEWING', label: 'In review' },
+    { key: 'CONVERTED_TO_INCIDENT', label: 'Incident created' },
+  ];
+  const HISTORY_CHIPS = [
+    { key: '', label: 'All closed' },
+    { key: 'CLOSED', label: 'Closed' },
+    { key: 'RESOLVED', label: 'Resolved' },
+    { key: 'DISMISSED', label: 'Dismissed' },
+    { key: 'VERIFIED', label: 'Verified' },
+  ];
+  const CHIPS = history ? HISTORY_CHIPS : ACTIVE_CHIPS;
 
   return (
     <section className="page-content">
-      <div className="page-header">
+      <Link className="breadcrumb-back" to="/branch">
+        <ArrowLeft size={13} /> Back to Dashboard
+      </Link>
+
+      <div className="portal-hero">
         <div>
-          <p className="page-kicker">Reporting</p>
+          <p className="page-kicker">Branch Reporting</p>
           <h1>{history ? 'Report History' : 'My Reports'}</h1>
-          <p className="page-copy">Track submitted ATM fault reports and resolution status.</p>
+          <p className="page-copy">
+            {history
+              ? 'Completed and closed ATM fault reports for your branch.'
+              : 'Track your submitted ATM fault reports and what happens next.'}
+          </p>
+          <span className="live-updated">
+            <span className="live-dot" />
+            {activeRows.length} active · {closedRows.length} on record
+          </span>
         </div>
-        <Link className="button primary" to="/branch/report">
-          Report ATM Problem
+        <div className="page-actions">
+          <Link className="button primary" to="/branch/report">
+            <AlertTriangle size={16} /> Report ATM Problem
+          </Link>
+        </div>
+      </div>
+
+      <div className="tab-strip" style={{ marginBottom: 18 }}>
+        <Link className={`tab-strip-btn ${!history ? 'active' : ''}`} to="/branch/reports">
+          <ClipboardList size={13} /> Active Reports
+        </Link>
+        <Link className={`tab-strip-btn ${history ? 'active' : ''}`} to="/branch/reports?history=1">
+          <History size={13} /> Report History
         </Link>
       </div>
-      {rows.length === 0 ? (
+
+      <div className="kpi-grid reports-kpi-grid" aria-label="Branch reports summary">
+        <MetricCard label="Awaiting review" value={submitted} icon={<Clock size={18} />} tone={submitted > 0 ? 'warning' : 'default'} hint="just submitted" />
+        <MetricCard label="In review" value={inReview} icon={<FileSearch size={18} />} tone={inReview > 0 ? 'info' : 'default'} hint="being assessed" />
+        <MetricCard label="Incident created" value={converted} icon={<CheckCircle2 size={18} />} tone="success" hint="converted by ops" />
+        <MetricCard label="Dismissed" value={dismissed} icon={<FileWarning size={18} />} hint="closed as non-issue" />
+      </div>
+
+      <div className="filter-bar" style={{ marginBottom: 14 }}>
+        <div className="page-search-bar" style={{ flex: 1, minWidth: 220, maxWidth: 380, margin: 0 }}>
+          <Search size={15} />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search by report ID, ATM, or problem..."
+          />
+        </div>
+        {(query || status) ? (
+          <button
+            className="button secondary small"
+            onClick={() => { setQuery(''); setStatus(''); }}
+          >
+            Clear
+          </button>
+        ) : null}
+      </div>
+
+      <div className="filter-chips" aria-label="Report status filters">
+        {CHIPS.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            className={`chip ${status === item.key ? 'active' : ''}`}
+            onClick={() => setStatus(item.key)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      {filteredRows.length === 0 ? (
         <EmptyState
-          title={history ? 'No completed report history' : 'No branch reports'}
-          description={history ? 'Closed and resolved reports will appear here.' : 'Submitted ATM problem reports will appear here.'}
+          title={query || status ? 'No reports match your filters' : history ? 'No completed report history' : 'No active branch reports'}
+          description={query || status ? 'Try a different search term or status filter.' : history ? 'Closed and resolved reports will appear here.' : 'Submitted ATM problem reports will appear here.'}
         />
       ) : (
         <div className="table-wrap panel">
@@ -268,7 +429,7 @@ export function BranchReportsListPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((report) => (
+              {filteredRows.map((report) => (
                 <tr key={report.id}>
                   <td>
                     <strong>{report.report_id}</strong>

@@ -117,7 +117,7 @@ function WorkflowDialog({ kind, incident, onClose }: { kind: Exclude<DialogKind,
           approved_test_completed: checked('approved_test_completed'),
           notes: value('notes'),
         });
-        if (kind === 'close') mutation.mutate({});
+        if (kind === 'close') mutation.mutate({ final_result: value('final_result') });
       }}
       footer={
         <>
@@ -255,10 +255,15 @@ function WorkflowDialog({ kind, incident, onClose }: { kind: Exclude<DialogKind,
         </>
       ) : null}
       {kind === 'close' ? (
-        <div className="readonly-card">
-          <span>Close Incident</span>
-          <small>{incident.incident_id} has been verified. This action will close the incident.</small>
-        </div>
+        <>
+          <div className="readonly-card">
+            <span>Close Incident</span>
+            <small>{incident.incident_id} has been verified. This action will close the incident.</small>
+          </div>
+          <Field label="Final Result" hint="Required before closure. Pre-filled if already recorded.">
+            <TextArea name="final_result" rows={3} defaultValue={incident.final_result || ''} placeholder="Record the final outcome of this incident" />
+          </Field>
+        </>
       ) : null}
       {error ? <div className="error-banner"><strong>{error}</strong></div> : null}
     </Dialog>

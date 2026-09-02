@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Activity, LayoutGrid, List, Search, ShieldAlert, Wifi, Zap } from 'lucide-react';
 
@@ -34,6 +34,7 @@ const FILTERS = [
 ];
 
 export default function ATMsPage() {
+  const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [params, setParams] = useSearchParams();
   const [search, setSearch] = useState('');
@@ -243,7 +244,17 @@ export default function ATMsPage() {
         {!atms.isLoading && !atms.isError && fleet.length > 0 && viewMode === 'grid' ? (
           <div className="monitor-grid" style={{ padding: '4px 0' }}>
             {fleet.map((atm) => (
-              <Link className="monitor-card" key={atm.id} to={`/atms/${atm.id}`}>
+              <div
+                className="monitor-card"
+                key={atm.id}
+                role="link"
+                tabIndex={0}
+                onClick={() => navigate(`/atms/${atm.id}`)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') navigate(`/atms/${atm.id}`);
+                }}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="monitor-card-head">
                   <strong>{atm.reference}</strong>
                   <DualStatus active={atm.is_active !== false} technical={atm.status} />
@@ -263,12 +274,24 @@ export default function ATMsPage() {
                   ) : null}
                 </div>
                 <div className="row-actions" style={{ marginTop: 'auto' }}>
-                  <span className="button secondary small">View</span>
+                  <Link
+                    className="button secondary small"
+                    to={`/atms/${atm.id}`}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    View
+                  </Link>
                   {hasPermission(currentUser, 'incident.create') && (
-                    <span className="button ghost small">+ Incident</span>
+                    <Link
+                      className="button ghost small"
+                      to={`/incidents?atm=${atm.id}&new=1`}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      + Incident
+                    </Link>
                   )}
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         ) : null}

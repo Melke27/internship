@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Activity, AlertTriangle, CalendarClock, CheckCircle2, CircleAlert, ClipboardList, Wrench } from 'lucide-react';
 
-import { hasPermission, useAuth } from '../context/AuthContext';
+import { hasPermission, isTechnicianUser, useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import { extractError, listResource } from '../lib/utils';
 import { showToast } from '../lib/toast';
@@ -127,6 +127,77 @@ function CreateMaintenanceDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
+function CompleteJobDialog({ job, onClose }: { job: Maintenance; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [error, setError] = useState('');
+  const [result, setResult] = useState('PASSED');
+  const complete = useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      api
+        .post(`/maintenance/${job.id}/status/`, { status: 'COMPLETED', ...payload })
+        .then((r) => r.data),
+    onSuccess: async () => {
+      showToast('Maintenance job completed');
+      await queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+      await queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
+      await queryClient.invalidateQueries({ queryKey: ['atms'] });
+      onClose();
+    },
+    onError: (err) => setError(extractError(err, 'Action could not be completed.')),
+  });
+
+  return (
+    <Dialog
+      title="Complete Maintenance"
+      description={`${job.maintenance_id || `MJ-${job.id}`} · ${job.atm_reference} — record the result of this job before closing it.`}
+      onClose={onClose}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const value = (name: string) =>
+          (form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null)?.value ?? '';
+        complete.mutate({
+          test_result: result,
+          work_performed: value('work_performed'),
+          result: value('result'),
+          remarks: value('remarks'),
+        });
+      }}
+      footer={
+        <>
+          <button type="button" className="button secondary" onClick={onClose}>
+            Cancel
+          </button>
+          <button className="button primary" disabled={complete.isPending}>
+            {complete.isPending ? 'Saving…' : 'Complete Job'}
+          </button>
+        </>
+      }
+    >
+      <Field label="Test Result" required hint="Was the ATM restored to full service after testing?">
+        <SelectInput name="test_result" value={result} onChange={(event) => setResult(event.target.value)} required>
+          <option value="PASSED">PASSED — ATM is fully operational</option>
+          <option value="PARTIAL">PARTIAL — service restored with known limitations</option>
+        </SelectInput>
+      </Field>
+      <Field label="Work Performed" required hint="Summarise the repair work you carried out">
+        <TextArea name="work_performed" rows={3} required placeholder="e.g. Replaced cash dispenser half-plate, ran test withdrawals OK." />
+      </Field>
+      <Field label="Result / Outcome" hint="Optional — outcome notes for the record">
+        <TextArea name="result" rows={2} placeholder="e.g. ATM returned to operational status." />
+      </Field>
+      <Field label="Remarks" hint="Optional — additional remarks">
+        <TextArea name="remarks" rows={2} placeholder="Optional notes" />
+      </Field>
+      {error ? (
+        <div className="error-banner">
+          <strong>{error}</strong>
+        </div>
+      ) : null}
+    </Dialog>
+  );
+}
+
 function AssignDialog({ job, onClose }: { job: Maintenance; onClose: () => void }) {
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
@@ -189,6 +260,7 @@ export default function MaintenancePage() {
   const [params, setParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [assignJob, setAssignJob] = useState<Maintenance | null>(null);
+  const [completeJob, setCompleteJob] = useState<Maintenance | null>(null);
   const [actionError, setActionError] = useState('');
   const [confirm, setConfirm] = useState<null | {
     record: Maintenance;
@@ -204,19 +276,23 @@ export default function MaintenancePage() {
   const typeFilter = params.get('type') || '';
   const mine = params.get('mine') === '1';
   const tab = params.get('tab') || '';
+  const focusedId = params.get('id');
 
+  const isTechnician = isTechnicianUser(currentUser);
   const FILTERS = [
+    ...(isTechnician ? [{ label: 'My Jobs', key: 'mine' }] : []),
     { label: 'All', key: '' },
     { label: 'Requests', key: 'requests' },
     { label: 'Assigned', key: 'assigned' },
     { label: 'Active', key: 'active' },
     { label: 'Completed', key: 'completed' },
   ];
-  const activeChip = tab === 'requests' ? 'requests' : tab === 'assigned' ? 'assigned' : tab === 'active' ? 'active' : statusFilter === 'COMPLETED' ? 'completed' : '';
+  const activeChip = mine ? 'mine' : tab === 'requests' ? 'requests' : tab === 'assigned' ? 'assigned' : tab === 'active' ? 'active' : statusFilter === 'COMPLETED' ? 'completed' : '';
 
   function applyFilter(key: string) {
     const next = new URLSearchParams();
-    if (key === 'requests') next.set('tab', 'requests');
+    if (key === 'mine') next.set('mine', '1');
+    else if (key === 'requests') next.set('tab', 'requests');
     else if (key === 'assigned') next.set('tab', 'assigned');
     else if (key === 'active') next.set('tab', 'active');
     else if (key === 'completed') next.set('status', 'COMPLETED');
@@ -224,10 +300,11 @@ export default function MaintenancePage() {
   }
 
   const maintenance = useQuery({
-    queryKey: ['maintenance', statusFilter, typeFilter, mine, tab],
+    queryKey: ['maintenance', statusFilter, typeFilter, mine, tab, focusedId],
     queryFn: () => {
       const query = new URLSearchParams();
       query.set('ordering', '-created_at');
+      if (focusedId) query.set('id', focusedId);
       if (statusFilter) query.set('status', statusFilter);
       if (typeFilter) query.set('maintenance_type', typeFilter);
       if (mine) query.set('mine', '1');
@@ -323,6 +400,15 @@ export default function MaintenancePage() {
         ))}
       </div>
 
+      {focusedId ? (
+        <div className="editable-banner" style={{ marginBottom: 12 }}>
+          <span>Showing maintenance job opened from the operations dashboard.</span>
+          <button className="button secondary small" onClick={() => setParams(new URLSearchParams())}>
+            Show all jobs
+          </button>
+        </div>
+      ) : null}
+
       <div className="panel">
         {maintenance.isLoading ? <LoadingState label="Loading maintenance records..." /> : null}
         {maintenance.isError ? (
@@ -350,8 +436,9 @@ export default function MaintenancePage() {
               <tbody>
                 {rows.map((record) => {
                   const actions = NEXT[record.status] || [];
+                  const isFocused = focusedId && String(record.id) === focusedId;
                   return (
-                    <tr key={record.id}>
+                    <tr key={record.id} className={isFocused ? 'table-row-focused' : undefined}>
                       <td>
                         <strong>{record.maintenance_id || `MJ-${record.id}`}</strong>
                       </td>
@@ -383,6 +470,10 @@ export default function MaintenancePage() {
                                   className="button secondary small"
                                   disabled={updateStatus.isPending}
                                   onClick={() => {
+                                    if (action.status === 'COMPLETED' && action.needsTest) {
+                                      setCompleteJob(record);
+                                      return;
+                                    }
                                     if (action.needsTest) {
                                       setConfirm({
                                         record,
@@ -435,6 +526,7 @@ export default function MaintenancePage() {
       </div>
       {open ? <CreateMaintenanceDialog onClose={() => setOpen(false)} /> : null}
       {assignJob ? <AssignDialog job={assignJob} onClose={() => setAssignJob(null)} /> : null}
+      {completeJob ? <CompleteJobDialog job={completeJob} onClose={() => setCompleteJob(null)} /> : null}
       {confirm ? (
         <ConfirmDialog
           open
@@ -523,7 +615,18 @@ export function MaintenanceOpsPage() {
   ].filter((s) => s.value > 0);
   const pipelineTotal = pipelineSegments.reduce((a, s) => a + s.value, 0);
   const trend = summary.data.trends?.maintenance || [];
-  const workload = summary.data.technician_workload || [];
+  const openStatuses = ['REQUESTED', 'APPROVED', 'SCHEDULED', 'IN_PROGRESS', 'UNDER_REPAIR', 'TESTING'];
+  const mainWorkload = useMemo(() => {
+    const byTech = new Map<string, { active: number; completed: number }>();
+    for (const j of all) {
+      const name = j.technician_name || 'Unassigned';
+      const entry = byTech.get(name) || { active: 0, completed: 0 };
+      if (openStatuses.includes(j.status)) entry.active += 1;
+      else if (['COMPLETED', 'VERIFIED'].includes(j.status)) entry.completed += 1;
+      byTech.set(name, entry);
+    }
+    return Array.from(byTech.entries()).map(([name, counts]) => ({ name, ...counts }));
+  }, [all]);
   const today = new Date();
   const overdue = all.filter(
     (j) =>
@@ -620,19 +723,18 @@ export function MaintenanceOpsPage() {
         <JobSection title="My Active Jobs" rows={active} empty="No active maintenance jobs" />
         <JobSection title="Pending Requests" rows={pending} empty="No pending maintenance requests" />
 
-        {(workload.length > 0) ? (
-          <Panel title="Team Workload" subtitle="Assigned jobs per technician.">
-            {workload.length === 0 ? (
-              <EmptyState title="No assigned load" description="Assignments appear once technicians take on jobs." />
-            ) : (
-              <BarList
-                rows={workload.slice(0, 6).map((t) => ({
-                  label: t.name,
-                  value: t.assigned_incidents,
-                  color: t.critical_incidents > 0 ? '#dc2626' : '#3b4fd8',
-                }))}
-              />
-            )}
+        {(mainWorkload.some((t) => t.active > 0)) ? (
+          <Panel title="Team Workload" subtitle="Current maintenance jobs per technician.">
+            <BarList
+              rows={mainWorkload.slice(0, 6).map((t) => ({
+                label: t.name,
+                value: t.active,
+                color: t.active > 5 ? '#dc2626' : '#3b4fd8',
+              }))}
+            />
+            <p style={{ marginTop: 10, fontSize: 12, color: 'var(--text-3)' }}>
+              Active jobs now; {mainWorkload.reduce((a, t) => a + t.completed, 0)} completed by the team.
+            </p>
           </Panel>
         ) : null}
 

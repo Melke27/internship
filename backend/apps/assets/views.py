@@ -187,7 +187,7 @@ class MaintenanceViewSet(ScopedQuerysetMixin, viewsets.ModelViewSet):
         "atm", "atm__branch", "atm__branch__district", "technician", "requested_by", "incident"
     ).order_by("-created_at")
     serializer_class = MaintenanceSerializer
-    filterset_fields = ["status", "maintenance_type", "priority", "atm", "technician", "atm__branch__district"]
+    filterset_fields = ["id", "status", "maintenance_type", "priority", "atm", "technician", "atm__branch__district"]
     search_fields = ["atm__reference", "reason", "remarks", "result"]
     ordering_fields = ["created_at", "start_date", "end_date", "status", "scheduled_date"]
 

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -10,24 +10,33 @@ import {
   CheckCircle2,
   ClipboardList,
   Cpu,
+  FileText,
   Globe,
   HardDrive,
+  History,
   MapPin,
   RefreshCw,
   Server,
   ShieldAlert,
+  TrendingUp,
   Wrench,
   Zap,
 } from 'lucide-react';
 
 import { api } from '../lib/api';
 import { hasPermission, useAuth } from '../context/AuthContext';
-import { formatDuration, formatIncidentDuration } from '../lib/utils';
+import {
+  formatDuration,
+  formatIncidentDuration,
+  incidentDurationMinutes,
+  mediaUrl,
+} from '../lib/utils';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { StatusBadge, PriorityBadge } from '../components/ui/StatusBadge';
+import { EvidenceThumb, EvidenceLightbox } from '../components/ui/Evidence';
 import ATMDialog from '../components/atms/ATMDialog';
 import SetATMStatusDialog from '../components/atms/SetATMStatusDialog';
-import type { ATM, Incident, Maintenance } from '../types/api';
+import type { ATM, BranchReport, Incident, Maintenance } from '../types/api';
 
 function list<T>(path: string) {
   return api
@@ -87,6 +96,7 @@ export default function ATMDetailsPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [photoOpen, setPhotoOpen] = useState(false);
 
   const atm = useQuery({
     queryKey: ['atm', id],
@@ -108,6 +118,11 @@ export default function ATMDetailsPage() {
     queryFn: () => list<Maintenance>(`/atms/${id}/maintenance/`),
     enabled: Boolean(id),
   });
+  const reports = useQuery({
+    queryKey: ['atm-reports', id],
+    queryFn: () => list<BranchReport>(`/branch-reports/?atm=${id}&ordering=-created_at`),
+    enabled: Boolean(id),
+  });
 
   async function refreshAll() {
     setRefreshing(true);
@@ -116,17 +131,13 @@ export default function ATMDetailsPage() {
       queryClient.invalidateQueries({ queryKey: ['atm-incidents', id] }),
       queryClient.invalidateQueries({ queryKey: ['atm-history', id] }),
       queryClient.invalidateQueries({ queryKey: ['atm-maintenance', id] }),
+      queryClient.invalidateQueries({ queryKey: ['atm-reports', id] }),
     ]);
     setRefreshing(false);
   }
 
-  if (atm.isLoading) return <LoadingState label="Loading ATM detail..." />;
-  if (atm.isError || !atm.data)
-    return <ErrorState message="Unable to load ATM detail. Please try again." onRetry={() => atm.refetch()} />;
-
-  const record = atm.data;
-
   /* ── derived values ─────────────────────────────── */
+  const rawRecord = atm.data;
   const openIncidents = (incidents.data || []).filter(
     (i) => !['RESOLVED', 'VERIFIED', 'CLOSED'].includes(i.status),
   );
@@ -136,8 +147,114 @@ export default function ATMDetailsPage() {
   );
 
   const overallHealthy = ['OPERATIONAL', 'AVAILABLE', 'NORMAL', 'ONLINE'].includes(
-    (record.status || '').toUpperCase(),
+    (rawRecord?.status || '').toUpperCase(),
   );
+
+  /* Powered-down or fault minutes contributed by each source */
+  const incidentDownMinutes = (incidents.data || []).reduce((sum, i) => {
+    const closed = ['RESOLVED', 'VERIFIED', 'CLOSED'].includes(i.status);
+    if (closed && i.duration_minutes != null) return sum + i.duration_minutes;
+    if (closed && !i.duration_minutes) return sum + (incidentDurationMinutes(i) ?? 0);
+    // Open incidents count from creation to now while the ATM is non-operational
+    if (!closed) return sum + (incidentDurationMinutes(i) ?? 0);
+    return sum;
+  }, 0);
+  const maintenanceDownMinutes = (maintenance.data || []).reduce((sum, m) => {
+    // Only mutually exclusive, closed jobs with real bounds count toward downtime
+    if (!m.start_date || !m.end_date) return sum;
+    if (!['COMPLETED', 'VERIFIED'].includes(m.status)) return sum;
+    const start = new Date(m.start_date).getTime();
+    const end = new Date(m.end_date).getTime();
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return sum;
+    return sum + Math.round((end - start) / 60000);
+  }, 0);
+
+  /* Approximate uptime over the last 30 days, excluding fully-open gaps */
+  const downMinutes = incidentDownMinutes + maintenanceDownMinutes;
+  const availability = Math.max(
+    0,
+    Math.round((1 - Math.min(downMinutes, 30 * 24 * 60) / (30 * 24 * 60)) * 1000) / 10,
+  );
+
+  const photoHref = mediaUrl(rawRecord?.photo);
+  const activity = useMemo(() => {
+    type Line = { ts: number; key: string; kind: 'status' | 'incident' | 'maintenance' | 'report'; node: ReactNode };
+    const lines: Line[] = [];
+
+    (history.data || []).forEach((row) => {
+      const ts = new Date(row.created_at).getTime();
+      if (Number.isFinite(ts)) {
+        lines.push({
+          ts,
+          key: `s-${row.id}`,
+          kind: 'status',
+          node: (
+            <div className="timeline-transition">
+              <StatusBadge value={row.old_status} />
+              <ArrowRight size={12} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
+              <StatusBadge value={row.new_status} />
+            </div>
+          ),
+        });
+      }
+    });
+    (incidents.data || []).forEach((i) => {
+      const ts = new Date(i.created_at).getTime();
+      if (Number.isFinite(ts)) {
+        lines.push({
+          ts,
+          key: `i-${i.id}`,
+          kind: 'incident',
+          node: (
+            <Link className="text-link" to={`/incidents/${i.id}`}>
+              {i.incident_id} — {i.title || i.category?.replaceAll('_', ' ') || 'Incident'}
+            </Link>
+          ),
+        });
+      }
+    });
+    (maintenance.data || []).forEach((m) => {
+      const ts = new Date(m.created_at).getTime();
+      if (Number.isFinite(ts)) {
+        lines.push({
+          ts,
+          key: `m-${m.id}`,
+          kind: 'maintenance',
+          node: (
+            <>
+              <strong>{m.maintenance_id || `MJ-${m.id}`}</strong>
+              <span className="muted-inline">{m.maintenance_type?.replaceAll('_', ' ')} maintenance</span>
+            </>
+          ),
+        });
+      }
+    });
+    (reports.data || []).forEach((r) => {
+      const ts = new Date(r.created_at).getTime();
+      if (Number.isFinite(ts)) {
+        lines.push({
+          ts,
+          key: `r-${r.id}`,
+          kind: 'report',
+          node: (
+            <Link className="text-link" to={`/branch-reports/${r.id}`}>
+              {r.report_id} — {r.problem_type?.replaceAll('_', ' ')}
+            </Link>
+          ),
+        });
+      }
+    });
+
+    return lines
+      .map((l) => ({ ...l, time: new Date(l.ts).toLocaleString() }))
+      .sort((a, b) => b.ts - a.ts);
+  }, [history.data, incidents.data, maintenance.data, reports.data]);
+
+  if (atm.isLoading) return <LoadingState label="Loading ATM detail..." />;
+  if (atm.isError || !atm.data)
+    return <ErrorState message="Unable to load ATM detail. Please try again." onRetry={() => atm.refetch()} />;
+
+  const record = atm.data;
 
   return (
     <section className="page-content">
@@ -182,6 +299,11 @@ export default function ATMDetailsPage() {
             <Wrench size={16} />
             <strong>{activeMaint.length}</strong>
             <span>Active maintenance</span>
+          </div>
+          <div className={`atm-hero-kpi ${availability >= 98 ? 'ok' : 'danger'}`}>
+            <TrendingUp size={16} />
+            <strong>{availability}%</strong>
+            <span>Uptime · 30d</span>
           </div>
         </div>
       </div>
@@ -255,6 +377,18 @@ export default function ATMDetailsPage() {
             <Field label="Installation Date" value={record.installation_date} />
             <Field label="IP Address" value={record.ip_address} icon={<Globe size={11} />} />
           </dl>
+          {photoHref && (
+            <div className="atm-photo-strip">
+              <EvidenceThumb url={photoHref} label={`Photo of ${record.reference}`} onOpen={() => setPhotoOpen(true)} />
+              <div className="atm-photo-note">
+                <strong>Unit photo</strong>
+                <small>Photo of the installed ATM at the branch.</small>
+              </div>
+              <button type="button" className="button secondary small" onClick={() => setPhotoOpen(true)}>
+                View full size
+              </button>
+            </div>
+          )}
         </article>
 
         {/* Technical Status */}
@@ -430,6 +564,95 @@ export default function ATMDetailsPage() {
         </article>
       </div>
 
+      {/* ── Activity feed + Branch reports ──────────── */}
+      <div className="content-grid" style={{ marginBottom: 20 }}>
+        <article className="panel">
+          <div className="panel-header">
+            <div>
+              <h2><History size={15} style={{ marginRight: 6, verticalAlign: 'middle' }} />Activity Feed</h2>
+              <p>Chronological record of status, incidents, maintenance and reports.</p>
+            </div>
+            {activity.length > 0 && (
+              <span className="helper-text">{activity.length} events</span>
+            )}
+          </div>
+          {history.isLoading && <LoadingState label="Building activity feed..." />}
+          {!history.isLoading && activity.length === 0 && (
+            <EmptyState title="No activity yet" description="Status changes, incidents, maintenance and branch reports will appear here." />
+          )}
+          {!history.isLoading && activity.length > 0 && (
+            <div className="timeline compact-timeline">
+              {activity.map(({ key, kind, node, time }) => (
+                <div className="timeline-item" key={key}>
+                  <div className={`timeline-dot feed-${kind}`} />
+                  <div style={{ minWidth: 0 }}>
+                    <div className="timeline-transition">{node}</div>
+                    <small className="activity-meta">
+                      {kind === 'report' ? 'Branch report' : `ATM ${kind}`} · {time}
+                    </small>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </article>
+
+        <article className="panel">
+          <div className="panel-header">
+            <div>
+              <h2><FileText size={15} style={{ marginRight: 6, verticalAlign: 'middle' }} />Branch Reports</h2>
+              <p>Faults and observations reported from the branch for this ATM.</p>
+            </div>
+            {(reports.data || []).length > 0 && (
+              <span className="helper-text">{(reports.data || []).length} reports</span>
+            )}
+          </div>
+          {reports.isLoading && <LoadingState label="Loading branch reports..." />}
+          {reports.isError && <ErrorState message="Unable to load branch reports." />}
+          {!reports.isLoading && !reports.isError && (reports.data || []).length === 0 && (
+            <EmptyState title="No branch reports" description="Branch-reported faults for this ATM will appear here." />
+          )}
+          {!reports.isLoading && !reports.isError && (reports.data || []).length > 0 && (
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Report</th>
+                    <th>Problem</th>
+                    <th>Severity</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(reports.data || []).map((report) => (
+                    <tr key={report.id}>
+                      <td><strong>{report.report_id}</strong></td>
+                      <td style={{ textTransform: 'capitalize' }}>
+                        {report.problem_type?.replaceAll('_', ' ') || '—'}
+                      </td>
+                      <td>
+                        {report.severity ? <PriorityBadge value={report.severity} /> : '—'}
+                      </td>
+                      <td>
+                        <StatusBadge value={report.status} />
+                      </td>
+                      <td>{new Date(report.created_at).toLocaleDateString()}</td>
+                      <td>
+                        <Link className="button secondary small" to={`/branch-reports/${report.id}`}>
+                          Open
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </article>
+      </div>
+
       {/* ── Incident History + Maintenance ──────────── */}
       <div className="content-grid">
         <article className="panel">
@@ -566,6 +789,9 @@ export default function ATMDetailsPage() {
       ) : null}
       {statusOpen && atm.data ? (
         <SetATMStatusDialog atm={atm.data} onClose={() => setStatusOpen(false)} />
+      ) : null}
+      {photoOpen && photoHref ? (
+        <EvidenceLightbox url={photoHref} onClose={() => setPhotoOpen(false)} />
       ) : null}
     </section>
   );

@@ -111,20 +111,13 @@ export default function BranchReportDetailPage() {
               'RECEIVED',
               'REVIEWING',
               'CONVERTED_TO_INCIDENT',
-              'ASSIGNED',
-              'RESOLVED',
-              'VERIFIED',
-              'CLOSED',
             ].map((step) => {
-              const reached =
-                data.status === step ||
-                (data.status === 'DISMISSED' && ['SUBMITTED', 'RECEIVED', 'REVIEWING', 'REVIEWED'].includes(step)) ||
-                rank(data.status) >= rank(step);
+              const reached = rank(data.status) >= rank(step);
               return (
                 <div className={`timeline-item ${reached ? 'done' : ''}`} key={step}>
                   <div className="timeline-dot" />
                   <div>
-                    <strong>{step.replaceAll('_', ' ')}</strong>
+                    <strong>{step === 'CONVERTED_TO_INCIDENT' ? 'Converted to Incident' : step.replaceAll('_', ' ')}</strong>
                     {data.status === step ? <small>Current status</small> : null}
                   </div>
                 </div>
@@ -140,6 +133,12 @@ export default function BranchReportDetailPage() {
               </div>
             ) : null}
           </div>
+          {data.status === 'CONVERTED_TO_INCIDENT' && data.linked_incident_id ? (
+            <p className="empty-inline" style={{ marginTop: 12 }}>
+              This report was converted to an incident. Resolution and verification are tracked on the
+              linked incident, not on the report itself.
+            </p>
+          ) : null}
           <div className="row-actions" style={{ marginTop: 16 }}>
             <Link className="button secondary" to="/branch/reports">
               Back to reports

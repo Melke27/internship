@@ -86,6 +86,7 @@ export function FormGrid({ cols, className, style, ...props }: FormGridProps) {
 
 interface DialogProps {
   title: ReactNode;
+  kicker?: ReactNode;
   description?: ReactNode;
   onClose: () => void;
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
@@ -97,6 +98,7 @@ interface DialogProps {
 
 export function Dialog({
   title,
+  kicker,
   description,
   onClose,
   onSubmit,
@@ -118,7 +120,7 @@ export function Dialog({
     <>
       <header className="dialog-header">
         <div>
-          {description ? <p className="dialog-kicker">Description</p> : null}
+          {kicker ? <p className="dialog-kicker">{kicker}</p> : null}
           <h2>{title}</h2>
           {description ? <p className="dialog-description">{description}</p> : null}
         </div>

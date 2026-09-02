@@ -7,6 +7,7 @@ import { showToast } from '../../lib/toast';
 import type { ATM } from '../../types/api';
 import type { BranchRow } from '../../pages/BranchesPage';
 import { CheckField, Dialog, Field, FormGrid, SelectInput, TextInput } from '../ui/form';
+import { EvidenceUpload } from '../ui/Evidence';
 
 const STATUS_OPTIONS = ['OPERATIONAL', 'DEGRADED', 'WARNING', 'FAULT', 'CRITICAL', 'MAINTENANCE', 'UNDER_REPAIR', 'OFFLINE'];
 const HEALTH_OPTIONS = ['HEALTHY', 'GOOD', 'WARNING', 'DEGRADED', 'CRITICAL', 'MAINTENANCE', 'OFFLINE'];
@@ -28,6 +29,7 @@ function optionLabel(value: string) {
 export default function ATMDialog({ onClose, atm, initialBranchId }: ATMDialogProps) {
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const editing = Boolean(atm);
 
   const branches = useQuery({
@@ -37,9 +39,21 @@ export default function ATMDialog({ onClose, atm, initialBranchId }: ATMDialogPr
 
   const defaultBranchValue = atm?.branch || initialBranchId || '';
 
-  const save = useMutation({
-    mutationFn: (payload: Record<string, unknown>) =>
-      editing ? api.patch(`/atms/${atm!.id}/`, payload) : api.post('/atms/', payload),
+  const save = useMutation<unknown, unknown, Record<string, unknown>>({
+    mutationFn: (base: Record<string, unknown>): Promise<unknown> => {
+      const photo = photoFile;
+      if (!photo) {
+        return editing ? api.patch(`/atms/${atm!.id}/`, base) : api.post('/atms/', base);
+      }
+      const form = new FormData();
+      Object.entries(base).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) form.append(key, String(value));
+      });
+      form.append('photo', photo);
+      return editing
+        ? api.patch(`/atms/${atm!.id}/`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
+        : api.post('/atms/', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+    },
     onSuccess: async () => {
       showToast(editing ? 'ATM updated' : 'ATM registered successfully', 'success');
       await Promise.all([
@@ -158,6 +172,10 @@ export default function ATMDialog({ onClose, atm, initialBranchId }: ATMDialogPr
           <TextInput name="address" defaultValue={atm?.address || ''} placeholder="Street / Building address" />
         </Field>
       </FormGrid>
+
+      <Field label="ATM Photo" hint="Optional photo of the unit. Used on the ATM detail page.">
+        <EvidenceUpload file={photoFile} onChange={setPhotoFile} hint="JPG, PNG or WEBP up to 8 MB." />
+      </Field>
 
       <CheckField label="Active in district operations" hint="Disabled ATMs are hidden from standard operations views.">
         <input name="is_active" type="checkbox" defaultChecked={atm?.is_active !== false} />

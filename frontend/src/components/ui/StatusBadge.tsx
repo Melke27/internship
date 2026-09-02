@@ -76,10 +76,18 @@ export function statusLabel(value?: string | null) {
 }
 
 export function StatusBadge({ value, showIcon = true }: { value: string; showIcon?: boolean }) {
-  const Icon = icons[value?.toUpperCase()];
+  const upper = (value || '').toUpperCase();
+  const Icon = icons[upper];
+  
+  let pulseTone = '';
+  if (['OPERATIONAL', 'HEALTHY', 'ONLINE', 'PASSED'].includes(upper)) pulseTone = 'green';
+  else if (['CRITICAL', 'FAULT', 'FAILED'].includes(upper)) pulseTone = 'red';
+  else if (['WARNING', 'DEGRADED', 'MAINTENANCE', 'UNDER_REPAIR', 'ESCALATED'].includes(upper)) pulseTone = 'amber';
+
   return (
     <span className={`status-badge status-${(value || '').toLowerCase()}`}>
-      {showIcon && Icon ? <Icon size={12} style={{ flexShrink: 0 }} aria-hidden /> : null}
+      {pulseTone ? <span className={`pulse-dot ${pulseTone}`} aria-hidden /> : null}
+      {showIcon && Icon != null && !pulseTone ? <Icon size={12} style={{ flexShrink: 0 }} aria-hidden /> : null}
       {statusLabel(value)}
     </span>
   );
@@ -147,9 +155,10 @@ export function DualStatus({
   technical: string;
 }) {
   const critical = technical === 'CRITICAL';
+  const tone = critical ? 'red' : active ? 'green' : 'amber';
   return (
     <div className={`dual-status ${critical ? 'is-critical' : ''}`}>
-      <span className={`live-dot tone-${(critical ? 'CRITICAL' : technical).toLowerCase()}`} />
+      <span className={`pulse-dot ${tone}`} />
       <div>
         <strong>{critical ? 'Critical' : active ? 'Active' : 'Inactive'}</strong>
         <small>{critical ? 'Immediate Attention' : statusLabel(technical)}</small>
@@ -157,3 +166,4 @@ export function DualStatus({
     </div>
   );
 }
+

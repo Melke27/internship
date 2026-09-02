@@ -7,6 +7,7 @@ import { FIXED_DISTRICT_NAME } from '../lib/navigation';
 import { api } from '../lib/api';
 import { extractError, listResource } from '../lib/utils';
 import { showToast } from '../lib/toast';
+import { useRoles, type RoleOption } from '../hooks/useRoles';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { MetricCard } from '../components/ui/MetricCard';
@@ -26,16 +27,6 @@ interface UserRow {
   branch_name: string | null;
   is_active: boolean;
 }
-
-const ROLES = [
-  'DISTRICT_ADMIN',
-  'OPERATIONS_OFFICER',
-  'MAINTENANCE_SUPERVISOR',
-  'TECHNICIAN',
-  'BRANCH_MANAGER',
-  'BRANCH_USER',
-  'AUDITOR',
-];
 
 /** Pick avatar color class by role family */
 function avatarClass(role: string) {
@@ -76,6 +67,8 @@ export default function UsersPage() {
     queryKey: ['users'],
     queryFn: () => listResource<UserRow>('/users/'),
   });
+  const roles = useRoles();
+  const roleOptions = roles.data || [];
 
   const toggleActive = useMutation({
     mutationFn: (user: UserRow) => api.patch(`/users/${user.id}/`, { is_active: !user.is_active }),
@@ -170,8 +163,8 @@ export default function UsersPage() {
           onChange={(event) => setRoleFilter(event.target.value)}
         >
           <option value="">All roles</option>
-          {ROLES.map((r) => (
-            <option key={r} value={r}>{roleLabel(r)}</option>
+          {roleOptions.map((r) => (
+            <option key={r.value} value={r.value}>{r.label}</option>
           ))}
         </select>
         {(searchInput || roleFilter) && (
@@ -247,13 +240,34 @@ export default function UsersPage() {
         </div>
       )}
 
-      {open ? <CreateUserDialog onClose={() => setOpen(false)} /> : null}
-      {editing ? <EditUserDialog user={editing} onClose={() => setEditing(null)} /> : null}
+      {open ? <CreateUserDialog roles={roleOptions} onClose={() => setOpen(false)} /> : null}
+      {editing ? <EditUserDialog user={editing} roles={roleOptions} onClose={() => setEditing(null)} /> : null}
     </section>
   );
 }
 
-function CreateUserDialog({ onClose }: { onClose: () => void }) {
+function roleDescription(role: string) {
+  switch (role) {
+    case 'DISTRICT_ADMIN':
+      return 'Full administrative access across all district ATMs, user accounts, and system configurations.';
+    case 'OPERATIONS_OFFICER':
+      return 'Full oversight of ATM health monitoring, incident management, maintenance jobs, and reporting.';
+    case 'MAINTENANCE_SUPERVISOR':
+      return 'Dispatches maintenance jobs, assigns field technicians, and verifies completion of repairs.';
+    case 'TECHNICIAN':
+      return 'Field engineer access to assigned incidents, technical status updates, and repair logs.';
+    case 'BRANCH_MANAGER':
+      return 'Manages branch ATM issues, monitors local uptime, and reviews branch fault submissions.';
+    case 'BRANCH_USER':
+      return 'Submits branch ATM fault reports and monitors status for assigned branch units.';
+    case 'AUDITOR':
+      return 'Read-only compliance access to audit logs, incident histories, and operational reports.';
+    default:
+      return 'Controls system access and operational capabilities.';
+  }
+}
+
+function CreateUserDialog({ roles, onClose }: { roles: RoleOption[]; onClose: () => void }) {
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
   const [role, setRole] = useState('BRANCH_USER');
@@ -264,7 +278,7 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
   const create = useMutation({
     mutationFn: (payload: Record<string, unknown>) => api.post('/users/', payload),
     onSuccess: async () => {
-      showToast('User created for Yeka District');
+      showToast(`User created for ${FIXED_DISTRICT_NAME}`);
       await queryClient.invalidateQueries({ queryKey: ['users'] });
       onClose();
     },
@@ -275,8 +289,9 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Dialog
-      title="Create User"
-      description={`Create an account for ${FIXED_DISTRICT_NAME} operations.`}
+      kicker="USER MANAGEMENT"
+      title="Create User Account"
+      description={`Create an operational account for ${FIXED_DISTRICT_NAME}.`}
       onClose={onClose}
       onSubmit={(event) => {
         event.preventDefault();
@@ -305,36 +320,43 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
         </>
       }
     >
-      <Field label="Full Name" required hint={`District is fixed: ${FIXED_DISTRICT_NAME}`}>
+      <Field label="Full Name" required>
         <TextInput name="full_name" required placeholder="e.g. Abebe Kebede" />
       </Field>
       <FormGrid>
         <Field label="Username" required>
           <TextInput name="username" required placeholder="e.g. abebe.k" />
         </Field>
-        <Field label="Email" required>
+        <Field label="Email Address" required>
           <TextInput name="email" type="email" required placeholder="user@example.com" />
         </Field>
       </FormGrid>
       <FormGrid>
-        <Field label="Phone">
+        <Field label="Phone Number">
           <TextInput name="phone" type="tel" placeholder="+251 9..." />
         </Field>
-        <Field label="Temporary Password" required hint="Min 8 characters — user will be asked to change it later">
+        <Field label="Temporary Password" required hint="Min 8 characters — required on first sign in">
           <TextInput name="password" type="password" required minLength={8} autoComplete="new-password" placeholder="••••••••" />
         </Field>
       </FormGrid>
-      <Field label="Role" required hint="The role controls which portal and actions this user can access">
+      <Field label="Assigned Role" required>
         <SelectInput name="role" value={role} onChange={(event) => setRole(event.target.value)} required>
-          {ROLES.map((value) => (
-            <option key={value} value={value}>
-              {roleLabel(value)}
+          {roles.map((r) => (
+            <option key={r.value} value={r.value}>
+              {r.label}
             </option>
           ))}
         </SelectInput>
       </Field>
+      <div className="readonly-card" style={{ marginTop: 4, marginBottom: 12 }}>
+        <span>Role Permissions & Scope</span>
+        <div style={{ marginTop: 4, marginBottom: 6 }}>
+          <RoleBadge role={role} />
+        </div>
+        <small>{roleDescription(role)}</small>
+      </div>
       {needsBranch ? (
-        <Field label="Branch" required hint="Required for branch-level roles">
+        <Field label="Assigned Branch" required hint="Required for branch-level roles">
           <SelectInput name="branch" required>
             <option value="">Select branch</option>
             {(branches.data || []).map((branch) => (
@@ -356,7 +378,7 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
-function EditUserDialog({ user, onClose }: { user: UserRow; onClose: () => void }) {
+function EditUserDialog({ user, roles, onClose }: { user: UserRow; roles: RoleOption[]; onClose: () => void }) {
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
   const [role, setRole] = useState(user.role);
@@ -367,7 +389,7 @@ function EditUserDialog({ user, onClose }: { user: UserRow; onClose: () => void 
   const update = useMutation({
     mutationFn: (payload: Record<string, unknown>) => api.patch(`/users/${user.id}/`, payload),
     onSuccess: async () => {
-      showToast('User updated');
+      showToast('User profile updated');
       await queryClient.invalidateQueries({ queryKey: ['users'] });
       onClose();
     },
@@ -378,8 +400,9 @@ function EditUserDialog({ user, onClose }: { user: UserRow; onClose: () => void 
 
   return (
     <Dialog
+      kicker="USER MANAGEMENT"
       title={`Edit ${user.full_name || user.username}`}
-      description="Update profile details. Username is fixed; leave the password blank to keep it unchanged."
+      description="Update user credentials and role assignments. Username cannot be modified."
       onClose={onClose}
       onSubmit={(event) => {
         event.preventDefault();
@@ -408,28 +431,35 @@ function EditUserDialog({ user, onClose }: { user: UserRow; onClose: () => void 
         </>
       }
     >
-      <Field label="Full Name" required hint={`District is fixed: ${FIXED_DISTRICT_NAME}`}>
+      <Field label="Full Name" required>
         <TextInput name="full_name" required defaultValue={user.full_name || ''} />
       </Field>
       <FormGrid>
-        <Field label="Email" required>
+        <Field label="Email Address" required>
           <TextInput name="email" type="email" required defaultValue={user.email || ''} />
         </Field>
-        <Field label="Phone">
+        <Field label="Phone Number">
           <TextInput name="phone" defaultValue={user.phone || ''} />
         </Field>
       </FormGrid>
-      <Field label="Role" required>
+      <Field label="Assigned Role" required>
         <SelectInput name="role" value={role} onChange={(event) => setRole(event.target.value)} required>
-          {ROLES.map((value) => (
-            <option key={value} value={value}>
-              {roleLabel(value)}
+          {roles.map((r) => (
+            <option key={r.value} value={r.value}>
+              {r.label}
             </option>
           ))}
         </SelectInput>
       </Field>
+      <div className="readonly-card" style={{ marginTop: 4, marginBottom: 12 }}>
+        <span>Role Permissions & Scope</span>
+        <div style={{ marginTop: 4, marginBottom: 6 }}>
+          <RoleBadge role={role} />
+        </div>
+        <small>{roleDescription(role)}</small>
+      </div>
       {needsBranch ? (
-        <Field label="Branch" required>
+        <Field label="Assigned Branch" required>
           <SelectInput name="branch" defaultValue={user.branch || ''} required>
             <option value="">Select branch</option>
             {(branches.data || []).map((branch) => (
@@ -440,7 +470,7 @@ function EditUserDialog({ user, onClose }: { user: UserRow; onClose: () => void 
           </SelectInput>
         </Field>
       ) : null}
-      <Field label="New Password" hint="Leave blank to keep the current password">
+      <Field label="New Password" hint="Leave blank to keep current password unchanged">
         <TextInput name="password" type="password" minLength={8} autoComplete="new-password" placeholder="••••••••" />
       </Field>
       {error ? (

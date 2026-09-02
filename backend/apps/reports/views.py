@@ -158,6 +158,18 @@ class DashboardSummaryView(APIView):
                 "last_updated": timezone.now(),
                 "districts": 1,
                 "branches": branches.count(),
+                "branch_summary_list": [
+                    {
+                        "id": b.id,
+                        "name": b.name,
+                        "code": b.code,
+                        "status": b.status,
+                        "total_atms": b.atms.count(),
+                        "operational": b.atms.filter(status=ATM.Status.OPERATIONAL, is_active=True).count(),
+                        "faults": b.atms.filter(status__in=[ATM.Status.FAULT, ATM.Status.WARNING, ATM.Status.DEGRADED, ATM.Status.CRITICAL, ATM.Status.OFFLINE], is_active=True).count(),
+                    }
+                    for b in branches.order_by("name")
+                ],
                 "atms": atms.count(),
                 "total_atms": atms.count(),
                 "active_atms": atms.filter(is_active=True).count(),
@@ -177,6 +189,7 @@ class DashboardSummaryView(APIView):
                 ),
                 "attention_atms": attention_rows,
                 "active_faults": active_faults,
+                "active_fault_total": fault_atms.count(),
                 "recent_branch_reports": [
                     {
                         "id": report.id,

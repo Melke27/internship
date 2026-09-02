@@ -490,6 +490,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .kpi-grid-8 { grid-template-columns: repeat(8, minmax(0, 1fr)); }
 .branch-kpi-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.monitoring-kpi-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.faults-kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.reports-kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
 .metric-card {
   position: relative;
@@ -645,6 +648,16 @@ a.metric-card:hover {
 .data-table tbody tr { transition: background .12s; }
 .data-table tbody tr:hover { background: var(--surface-2); }
 .data-table strong { color: var(--text); font-weight: 600; }
+.data-table tbody tr.row-aging { background: rgba(217, 119, 6, .05); }
+.data-table tbody tr.table-row-focused { background: rgba(59, 79, 216, .08); box-shadow: inset 3px 0 0 var(--brand); }
+.editable-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border: 1px solid var(--line-soft); border-radius: var(--radius); background: var(--brand-soft); color: var(--text-2); font-size: 13px; }
+.aging-duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--warning);
+  font-weight: 700;
+}
 
 .row-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
@@ -833,6 +846,36 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #a5b0f0
 .error-banner { display: flex; align-items: center; gap: 8px; border: 1px solid rgba(225, 29, 72, .2); }
 .info-banner { padding: 10px 14px; border-radius: 10px; background: var(--info-soft); color: var(--info); font-size: 13px; margin: 12px 0; }
 .form-panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 22px; }
+
+/* ---------- Branch report form sections ---------- */
+.hr-section { border-top: 1px solid var(--line-soft); padding-top: 18px; margin-top: 18px; display: flex; flex-direction: column; gap: 14px; }
+.hr-section:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+.hr-section-head { display: flex; align-items: flex-start; gap: 12px; }
+.hr-section-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.hr-section-step { display: block; font-size: 10px; font-weight: 800; letter-spacing: .14em; color: var(--text-3); text-transform: uppercase; margin-bottom: 2px; }
+.hr-section-head h2 { font-size: 15px; margin: 0; color: var(--ink); }
+.hr-section-head p { font-size: 12.5px; color: var(--text-3); margin: 2px 0 0; }
+.atm-context-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid #c3cbf5;
+  border-radius: var(--radius);
+  background: var(--brand-soft);
+}
+.atm-context-card.muted { border-color: var(--line); background: var(--surface-2, #f6f8fc); color: var(--text-3); flex-direction: row; align-items: center; font-size: 13px; }
+.atm-context-copy { display: flex; flex-wrap: wrap; gap: 8px; }
+.desktop-submit { display: none; }
 .checkbox-row { display: flex; align-items: center; gap: 10px; font-weight: 500; }
 .checkbox-row input, .check-row input { width: auto; margin: 0; accent-color: var(--brand); }
 .check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; }
@@ -856,6 +899,23 @@ a.list-card:hover, .list-card:hover { border-color: #c3cbf5; background: var(--b
 .list-card strong { display: block; font-size: 13px; color: var(--text); }
 .list-card small { display: block; color: var(--text-3); font-size: 12px; margin-top: 2px; }
 .list-card .badge-group { flex-shrink: 0; }
+.list-card.role-upgrade { border-color: #3d9a5f; background: linear-gradient(180deg, rgba(61,154,95,.10), rgba(255,255,255,0)); }
+.list-card.role-upgrade:hover { background: rgba(61,154,95,.14); }
+.list-card.role-upgrade strong { color: #2c7a48; }
+.list-card .kind-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
+.list-card .kind-tag.kind-role { background: rgba(61,154,95,.14); color: #2c7a48; border: 1px solid rgba(61,154,95,.35); }
+.list-card .kind-tag.kind-inci { background: rgba(214,73,73,.12); color: #c0392b; border: 1px solid rgba(214,73,73,.3); }
+.list-card .kind-tag.kind-info { background: rgba(59,79,216,.12); color: #3b4fd8; border: 1px solid rgba(59,79,216,.3); }
+.list-card .kind-tag.kind-ann { background: rgba(214,151,42,.14); color: #a86a12; border: 1px solid rgba(214,151,42,.4); }
+.list-card .kind-tag.kind-maint { background: rgba(109,40,217,.12); color: #6d28d9; border: 1px solid rgba(109,40,217,.35); }
+.list-card .kind-tag.kind-atm { background: rgba(8,145,178,.12); color: #0e7490; border: 1px solid rgba(8,145,178,.35); }
+.list-card .kind-tag.kind-critical { background: rgba(214,73,73,.2); color: #b91c1c; border: 1px solid rgba(214,73,73,.45); }
+.select-list { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow: auto; border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 8px; background: var(--surface); }
+.select-list-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer; }
+.select-list-row:hover { background: var(--brand-soft); }
+.select-list-row input { accent-color: var(--brand); }
+.select-list-row strong { display: block; font-size: 13px; color: var(--text); }
+.select-list-row small { display: block; color: var(--text-3); font-size: 11.5px; }
 
 .monitor-grid {
   display: grid;
@@ -877,6 +937,95 @@ a.monitor-card:hover { border-color: #c3cbf5; box-shadow: var(--shadow); transfo
 .monitor-card-head > strong { font-size: 13.5px; color: var(--ink); }
 .monitor-card > small { color: var(--text-3); font-size: 12px; }
 .monitor-card .meta-grid { margin-top: 2px; }
+
+/* ---------- Branch ATM fleet (My ATMs) ---------- */
+.breadcrumb-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 12px;
+  text-decoration: none;
+}
+.breadcrumb-back:hover { color: var(--brand); }
+.atm-fleet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 14px;
+}
+.atm-fleet-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color .14s, box-shadow .14s, transform .14s;
+}
+.atm-fleet-card:hover { border-color: #c3cbf5; box-shadow: var(--shadow); transform: translateY(-2px); }
+.atm-fleet-main { display: flex; flex-direction: column; gap: 10px; padding: 14px 14px 10px; text-decoration: none; flex: 1; }
+.atm-fleet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.atm-fleet-ref { display: block; font-size: 14px; color: var(--ink); }
+.atm-fleet-name { display: block; font-size: 11.5px; color: var(--text-3); margin-top: 1px; }
+.atm-fleet-location { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
+.atm-signal-strip { display: flex; flex-wrap: wrap; gap: 6px; }
+.atm-signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-3);
+  padding: 4px 7px;
+  border-radius: 7px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-soft);
+}
+.atm-fleet-meta { display: flex; flex-direction: column; gap: 4px; margin-top: 2px; }
+.meta-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11.5px; }
+.meta-row > span { color: var(--text-3); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; font-size: 10px; }
+.meta-row > strong { color: var(--text-2); font-size: 12px; }
+.atm-incident-chip-critical {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid rgba(225, 29, 72, .18);
+  padding: 7px 9px;
+  border-radius: 8px;
+}
+.atm-incident-chip-clear {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--success);
+  background: var(--success-soft);
+  border: 1px solid rgba(22, 163, 74, .18);
+  padding: 6px 9px;
+  border-radius: 8px;
+}
+.atm-fleet-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--surface-2);
+}
+.atm-fleet-actions .button { flex: 1; justify-content: center; }
+
+@media (max-width: 560px) {
+  .atm-fleet-grid { grid-template-columns: 1fr; }
+}
 
 .empty-inline { color: var(--text-3); font-size: 12.5px; font-style: italic; }
 .auth-loading { display: grid; place-items: center; min-height: 100vh; }
@@ -1395,12 +1544,6 @@ a.monitor-card:hover { border-color: #c3cbf5; box-shadow: var(--shadow); transfo
 .auth-submit:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.07); box-shadow: 0 16px 34px -12px rgba(59, 79, 216, .85), inset 0 1px 0 rgba(255, 255, 255, .22), 0 0 0 1px rgba(109, 123, 255, .5); }
 .auth-submit:active:not(:disabled) { transform: translateY(0); }
 .auth-submit:disabled { opacity: .6; cursor: not-allowed; }
-
-.demo-hint { margin-top: 16px; color: #8fa0c6; font-size: 12px; text-align: center; font-family: inherit; }
-.demo-hint button { background: none; border: 0; color: #8ea0ff; font-weight: 600; cursor: pointer; padding: 0; font-size: 12px; font-family: inherit; }
-.demo-hint button:hover { color: #c2cbff; text-decoration: underline; }
-.demo-list { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(4, 7, 18, .55); border: 1px solid rgba(255, 255, 255, .1); color: #9fb0d1; font-size: 11.5px; text-align: left; }
-.demo-list code { display: inline-block; background: rgba(59, 79, 216, .25); border: 1px solid rgba(109, 123, 255, .3); border-radius: 5px; padding: 1px 6px; color: #aab4ff; font-size: 11px; }
 
 .auth-help { margin-top: 14px; color: #8fa0c6; font-size: 12px; text-align: center; }
 .security-note { display: flex; align-items: center; gap: 8px; margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, .08); color: #7483a8; font-size: 11.5px; line-height: 1.5; }
@@ -1946,6 +2089,43 @@ input.check-field { width: auto; }
   flex-wrap: wrap;
   margin-bottom: 4px;
 }
+
+/* Activity feed timeline dots + meta */
+.timeline.compact-timeline .timeline-item { padding: 11px 0; }
+.timeline.compact-timeline .timeline-dot {
+  width: 11px;
+  height: 11px;
+}
+.feed-status { background: var(--info); }
+.feed-incident { background: var(--danger); }
+.feed-maintenance { background: var(--warning); }
+.feed-report { background: var(--success); }
+.activity-meta {
+  display: block;
+  color: var(--text-3);
+  font-size: 11.5px;
+  margin-top: 2px;
+}
+.muted-inline { color: var(--text-3); margin-left: 6px; }
+
+/* ATM photo strip inside the ATM Information panel */
+.atm-photo-strip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+}
+.atm-photo-note {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.atm-photo-note strong { font-size: 13px; }
+.atm-photo-note small { color: var(--text-3); }
 
 /* Responsive overrides */
 @media (max-width: 1024px) {

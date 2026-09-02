@@ -4,7 +4,8 @@ import { Download, Printer } from 'lucide-react';
 import { api } from '../lib/api';
 import { showToast } from '../lib/toast';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
-import type { DashboardSummary, Maintenance } from '../types/api';
+import { MetricCard } from '../components/ui/MetricCard';
+import type { DashboardSummary } from '../types/api';
 
 interface DistrictReport {
   district: string;
@@ -37,12 +38,6 @@ interface TechnicianReport {
   avg_resolution_hours: number | null;
 }
 
-function list<T>(path: string) {
-  return api.get<T[] | { results: T[] }>(path).then((response) =>
-    Array.isArray(response.data) ? response.data : response.data.results,
-  );
-}
-
 export default function ReportsPage() {
   const summary = useQuery({
     queryKey: ['dashboard-summary'],
@@ -59,10 +54,6 @@ export default function ReportsPage() {
   const technicians = useQuery({
     queryKey: ['reports', 'technicians'],
     queryFn: () => api.get<TechnicianReport[]>('/reports/technicians/').then((response) => response.data),
-  });
-  const maintenance = useQuery({
-    queryKey: ['maintenance-report'],
-    queryFn: () => list<Maintenance>('/maintenance/'),
   });
 
   function exportCSV() {
@@ -102,13 +93,15 @@ export default function ReportsPage() {
   if (districts.isError) return <ErrorState message="Unable to load reports." />;
 
   const data = summary.data;
-  const maintenanceRows = maintenance.data || [];
-  const maintenanceStats = {
-    scheduled: maintenanceRows.filter((row) => row.status === 'SCHEDULED').length,
-    inProgress: maintenanceRows.filter((row) => ['STARTED', 'IN_PROGRESS'].includes(row.status)).length,
-    completed: maintenanceRows.filter((row) => row.status === 'COMPLETED').length,
-    emergency: maintenanceRows.filter((row) => row.maintenance_type === 'EMERGENCY').length,
-  };
+  const maintenanceKpis = data?.maintenance_kpis;
+  const maintenanceStats = maintenanceKpis
+    ? {
+        pending: maintenanceKpis.pending,
+        inProgress: maintenanceKpis.in_progress + (maintenanceKpis.under_repair || 0) + (maintenanceKpis.testing || 0),
+        completed: maintenanceKpis.completed,
+        emergency: maintenanceKpis.emergency,
+      }
+    : { pending: 0, inProgress: 0, completed: 0, emergency: 0 };
 
   return (
     <section className="page-content">
@@ -130,12 +123,12 @@ export default function ReportsPage() {
 
       {data ? (
         <div className="kpi-grid compact">
-          <article className="metric-card"><span>Total ATMs</span><strong>{data.atms}</strong></article>
-          <article className="metric-card success"><span>Operational</span><strong>{(data.atm_status.OPERATIONAL || 0) + (data.atm_status.AVAILABLE || 0)}</strong></article>
-          <article className="metric-card danger"><span>Offline</span><strong>{data.atm_status.OFFLINE || 0}</strong></article>
-          <article className="metric-card danger"><span>Fault</span><strong>{data.atm_status.FAULT || 0}</strong></article>
-          <article className="metric-card warning"><span>Open Incidents</span><strong>{data.open_incidents}</strong></article>
-          <article className="metric-card"><span>Escalated</span><strong>{data.escalated_incidents}</strong></article>
+          <MetricCard label="Total ATMs" value={data.atms} hint="in district" />
+          <MetricCard label="Operational" value={(data.atm_status.OPERATIONAL || 0) + (data.atm_status.AVAILABLE || 0)} tone="success" hint="healthy units" />
+          <MetricCard label="Offline" value={data.atm_status.OFFLINE || 0} tone="danger" hint="no connectivity" />
+          <MetricCard label="Fault" value={data.atm_status.FAULT || 0} tone="danger" hint="requires attention" />
+          <MetricCard label="Open Incidents" value={data.open_incidents} tone="warning" hint="in progress" />
+          <MetricCard label="Escalated" value={data.escalated_incidents} hint="raised to management" />
         </div>
       ) : null}
 
@@ -242,10 +235,10 @@ export default function ReportsPage() {
       <div className="panel">
         <h2>Maintenance Summary</h2>
         <div className="kpi-grid compact">
-          <article className="metric-card"><span>Scheduled</span><strong>{maintenanceStats.scheduled}</strong></article>
-          <article className="metric-card warning"><span>In Progress</span><strong>{maintenanceStats.inProgress}</strong></article>
-          <article className="metric-card success"><span>Completed</span><strong>{maintenanceStats.completed}</strong></article>
-          <article className="metric-card danger"><span>Emergency</span><strong>{maintenanceStats.emergency}</strong></article>
+          <MetricCard label="Pending" value={maintenanceStats.pending} hint="requested / approved" />
+          <MetricCard label="In Progress" value={maintenanceStats.inProgress} tone="warning" hint="active work" />
+          <MetricCard label="Completed" value={maintenanceStats.completed} tone="success" hint="finished & verified" />
+          <MetricCard label="Emergency" value={maintenanceStats.emergency} tone="danger" hint="urgent jobs" />
         </div>
       </div>
     </section>

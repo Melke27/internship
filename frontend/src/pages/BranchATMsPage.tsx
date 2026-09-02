@@ -1,10 +1,14 @@
+import { useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, CircleAlert, Landmark, Search, ShieldCheck, Wifi, Wrench } from 'lucide-react';
 
 import { api } from '../lib/api';
 import { listResource } from '../lib/utils';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { DualStatus, StatusBadge } from '../components/ui/StatusBadge';
+import { MetricCard } from '../components/ui/MetricCard';
+import ATMFleetCard from '../components/atms/FleetCard';
 import type { ATM } from '../types/api';
 
 type StatusHistoryRow = {
@@ -77,60 +81,154 @@ export default function StatusHistoryPage() {
   );
 }
 
-export function BranchATMsPage() {
-  const [params] = useSearchParams();
+const PAGE_FILTERS = [
+  { key: '', label: 'All ATMs' },
+  { key: 'OPERATIONAL', label: 'Operational' },
+  { key: 'WARNING', label: 'Warning' },
+  { key: 'DEGRADED', label: 'Degraded' },
+  { key: 'FAULT', label: 'Fault' },
+  { key: 'OFFLINE', label: 'Offline' },
+  { key: 'CRITICAL', label: 'Critical' },
+  { key: 'UNDER_REPAIR', label: 'Under Repair' },
+];
+
+function BranchATMStatusPage() {
+  const [params, setParams] = useSearchParams();
+  const [query, setQuery] = useState('');
   const filter = params.get('status') || '';
   const atms = useQuery({
     queryKey: ['branch-atms-page'],
     queryFn: () => listResource<ATM>('/atms/?ordering=reference'),
   });
 
+  const fleet = atms.data || [];
+
+  const operational = fleet.filter((a) => a.status === 'OPERATIONAL').length;
+  const attention = fleet.filter((a) => ['FAULT', 'CRITICAL', 'OFFLINE', 'WARNING', 'DEGRADED'].includes(a.status)).length;
+  const offline = fleet.filter((a) => a.status === 'OFFLINE').length;
+  const withIncident = fleet.filter((a) => a.active_incident).length;
+
+  const rows = useMemo(() => {
+    let out = fleet;
+    if (filter) out = out.filter((atm) => atm.status === filter);
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      out = out.filter(
+        (atm) =>
+          atm.reference.toLowerCase().includes(q) ||
+          (atm.location || '').toLowerCase().includes(q) ||
+          (atm.name || '').toLowerCase().includes(q),
+      );
+    }
+    const danger = ['CRITICAL', 'FAULT', 'OFFLINE'];
+    return [...out].sort((a, b) => {
+      const rank = (x: ATM) => (danger.includes(x.status) ? 0 : x.status === 'OPERATIONAL' ? 2 : 1);
+      return rank(a) - rank(b);
+    });
+  }, [fleet, filter, query]);
+
   if (atms.isLoading) return <LoadingState label="Loading branch ATMs..." />;
   if (atms.isError) return <ErrorState message="Unable to load ATM information." onRetry={() => atms.refetch()} />;
 
-  const rows = (atms.data || []).filter((atm) => !filter || atm.status === filter);
-
   return (
     <section className="page-content">
-      <div className="page-header">
+      <Link className="breadcrumb-back" to="/branch">
+        <ArrowLeft size={13} /> Back to Dashboard
+      </Link>
+
+      <div className="portal-hero">
         <div>
-          <p className="page-kicker">Branch ATMs</p>
+          <p className="page-kicker">Branch ATMs · Live Fleet Supply</p>
           <h1>My ATMs</h1>
-          <p className="page-copy">View ATM status for your branch only.</p>
+          <p className="page-copy">Live status of the ATM units at your branch with network, power and hardware signals.</p>
+          <span className="live-updated">
+            <span className="live-dot" />
+            {fleet.length} ATM{fleet.length === 1 ? '' : 's'} · Updated {atms.dataUpdatedAt ? new Date(atms.dataUpdatedAt).toLocaleTimeString() : '—'}
+          </span>
         </div>
-        <Link className="button primary" to="/branch/report">
-          Report ATM Problem
-        </Link>
+        <div className="page-actions">
+          <Link className="button primary" to="/branch/report">
+            <CircleAlert size={16} /> Report ATM Problem
+          </Link>
+        </div>
       </div>
+
+      <div className="kpi-grid branch-kpi-grid" aria-label="Branch ATM summary">
+        <MetricCard label="Total ATMs" value={fleet.length} to="/branch/atms" icon={<Landmark size={18} />} hint="assigned to branch" />
+        <MetricCard label="Operational" value={operational} tone="success" icon={<ShieldCheck size={18} />} hint="serving normally" />
+        <MetricCard label="Need attention" value={attention} tone={attention > 0 ? 'danger' : 'default'} icon={<CircleAlert size={18} />} hint="warnings & faults" />
+        <MetricCard label="Offline" value={offline} tone={offline > 0 ? 'warning' : 'default'} icon={<Wifi size={18} />} hint="no communication" />
+        <MetricCard label="Open incidents" value={withIncident} tone="info" icon={<Wrench size={18} />} hint="linked incidents" />
+      </div>
+
+      <div className="filter-bar" style={{ marginBottom: 16 }}>
+        <div className="page-search-bar" style={{ flex: 1, minWidth: 220, maxWidth: 380, margin: 0 }}>
+          <Search size={15} />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search by reference, name, or location..."
+          />
+        </div>
+        {(query || filter) ? (
+          <button
+            className="button secondary small"
+            onClick={() => { setQuery(''); setParams(new URLSearchParams()); }}
+          >
+            Clear
+          </button>
+        ) : null}
+      </div>
+
+      <div className="filter-chips" aria-label="ATM status filters">
+        {PAGE_FILTERS.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            className={`chip ${filter === item.key ? 'active' : ''}`}
+            onClick={() => {
+              const next = new URLSearchParams();
+              if (item.key) next.set('status', item.key);
+              setParams(next);
+            }}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
       {rows.length === 0 ? (
-        <EmptyState title="No ATMs found" description="No ATMs match the current filters." />
+        <EmptyState
+          title={filter || query ? 'No ATMs match your filters' : 'No ATMs found'}
+          description={filter || query ? 'Try a different status filter or search term.' : 'No ATMs are registered for your branch yet.'}
+        />
       ) : (
-        <div className="monitor-grid">
+        <div className="atm-fleet-grid">
           {rows.map((atm) => (
-            <Link className="monitor-card" key={atm.id} to={`/branch/atms/${atm.id}`}>
-              <div className="monitor-card-head">
-                <strong>{atm.reference}</strong>
-                <DualStatus active={atm.is_active !== false} technical={atm.status} />
-              </div>
-              <small>{atm.location || atm.branch_name}</small>
-              <div className="row-actions">
-                <span className="button secondary small">
-                  View Status
-                </span>
-                <Link
-                  className="button primary small"
-                  to={`/branch/report?atm=${atm.id}`}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Report Problem
-                </Link>
-              </div>
-            </Link>
+            <ATMFleetCard
+              key={atm.id}
+              atm={atm}
+              to={`/branch/atms/${atm.id}`}
+              actions={
+                <>
+                  <Link className="button secondary small" to={`/branch/atms/${atm.id}`}>
+                    View Status
+                  </Link>
+                  <Link className="button primary small" to={`/branch/report?atm=${atm.id}`}>
+                    Report Problem
+                  </Link>
+                </>
+              }
+            />
           ))}
         </div>
       )}
     </section>
   );
+}
+
+export function BranchATMsPage() {
+  return <BranchATMStatusPage />;
 }
 
 export function BranchATMDetailPage() {
@@ -155,6 +253,9 @@ export function BranchATMDetailPage() {
 
   return (
     <section className="page-content">
+      <Link className="breadcrumb-back" to="/branch/atms">
+        <ArrowLeft size={13} /> Back to My ATMs
+      </Link>
       <div className="page-header">
         <div>
           <p className="page-kicker">ATM Status</p>

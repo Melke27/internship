@@ -78,7 +78,7 @@ export default function BranchesPage() {
       </div>
 
       {rows.length === 0 ? (
-        <EmptyState title="No branches yet" description="Create the first branch for Yeka District." />
+        <EmptyState title="No branches yet" description={`Create the first branch for ${FIXED_DISTRICT_NAME}.`} />
       ) : (
         <div className="table-wrap panel">
           <table className="data-table">
@@ -149,7 +149,7 @@ function CreateBranchDialog({ onClose }: { onClose: () => void }) {
   const create = useMutation({
     mutationFn: (payload: Record<string, unknown>) => api.post('/branches/', payload),
     onSuccess: async (response) => {
-      showToast('Branch created for Yeka District', 'success');
+      showToast(`Branch created for ${FIXED_DISTRICT_NAME}`, 'success');
       await queryClient.invalidateQueries({ queryKey: ['branches'] });
       onClose();
       navigate(`/branches/${response.data.id}`);

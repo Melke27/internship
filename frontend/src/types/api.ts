@@ -265,6 +265,15 @@ export interface DashboardSummary {
   district_name: string;
   last_updated: string;
   branches: number;
+  branch_summary_list?: Array<{
+    id: number;
+    name: string;
+    code: string;
+    status: string;
+    total_atms: number;
+    operational: number;
+    faults: number;
+  }>;
   atms: number;
   total_atms?: number;
   active_atms?: number;
@@ -282,6 +291,7 @@ export interface DashboardSummary {
   atm_health: Record<string, number>;
   attention_atms: AttentionATM[];
   active_faults?: ActiveFault[];
+  active_fault_total?: number;
   recent_branch_reports?: Array<{
     id: number;
     report_id: string;

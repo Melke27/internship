@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { CircleAlert, Cpu, MapPin, ShieldCheck, Wifi, Zap } from 'lucide-react';
+import { CircleAlert, Clock, Cpu, MapPin, ShieldCheck, Wifi, Zap } from 'lucide-react';
 
 import { DualStatus, StatusBadge } from '../ui/StatusBadge';
 import type { ATM } from '../../types/api';
@@ -60,6 +60,11 @@ export default function ATMFleetCard({
             Hardware
             <span className="sr-only">: {atm.hardware_status || 'unknown'}</span>
           </span>
+          <span className="atm-signal">
+            <Clock size={12} style={{ color: signalTone(atm.communication_status) }} aria-hidden />
+            Comm
+            <span className="sr-only">: {atm.communication_status || 'unknown'}</span>
+          </span>
         </div>
 
         <div className="atm-fleet-meta">
@@ -71,12 +76,16 @@ export default function ATMFleetCard({
             <span>Last check</span>
             <strong>{atm.last_checked ? new Date(atm.last_checked).toLocaleTimeString() : '—'}</strong>
           </div>
+          <div className="meta-row">
+            <span>Status since</span>
+            <strong>{atm.last_status_change ? new Date(atm.last_status_change).toLocaleDateString() : '—'}</strong>
+          </div>
         </div>
 
         {atm.active_incident ? (
           <div className="atm-incident-chip-critical">
             <CircleAlert size={13} />
-            <span>Incident {atm.active_incident.incident_number} · {atm.active_incident.title}</span>
+            <span>Incident {atm.active_incident.incident_number} · {atm.active_incident.priority} priority</span>
           </div>
         ) : (
           <div className="atm-incident-chip-clear">

@@ -202,7 +202,30 @@ export default function DashboardPage() {
         <MetricCard label="Inactive" value={inactive} to="/atms?active=0" icon={<Activity size={18} />} hint="currently offline" />
         <MetricCard label="Critical" value={critical} to="/active-faults?priority=CRITICAL" tone="danger" icon={<ShieldAlert size={18} />} hint="need attention" />
         <MetricCard label="Open incidents" value={data.open_incidents} to="/incidents?open=1" tone="warning" icon={<AlertTriangle size={18} />} hint={`${data.critical_incidents} critical`} />
-        <MetricCard label="Resolved today" value={data.resolved_today} to="/incidents?status=RESOLVED" tone="success" icon={<CheckCircle2 size={18} />} hint="incidents closed" />
+        <MetricCard
+          label="Escalated"
+          value={data.escalated_incidents}
+          to="/escalations"
+          tone="info"
+          icon={<ShieldAlert size={18} />}
+          hint="awaiting supervision"
+        />
+        <MetricCard
+          label="Resolved today"
+          value={data.resolved_today}
+          to="/incidents?status=RESOLVED"
+          tone="success"
+          icon={<CheckCircle2 size={18} />}
+          hint="incidents closed"
+          delta={
+            data.open_incidents > 0
+              ? {
+                  label: `${Math.round((data.resolved_today / Math.max(1, data.resolved_today + data.open_incidents)) * 100)}% resolved`,
+                  up: data.resolved_today >= data.open_incidents,
+                }
+              : undefined
+          }
+        />
         <MetricCard label="Pending reports" value={pendingReports} to="/branch-reports?pending=1" tone="warning" icon={<ClipboardList size={18} />} hint="awaiting review" />
         <MetricCard label="Under repair" value={underRepair} to="/maintenance?status=UNDER_REPAIR" tone="danger" icon={<Wrench size={18} />} hint="being serviced" />
       </div>

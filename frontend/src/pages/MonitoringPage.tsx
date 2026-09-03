@@ -90,6 +90,13 @@ export default function MonitoringPage() {
 
   const operationalCount = data.atm_status?.OPERATIONAL || 0;
 
+  const statusBreakdown = PAGE_FILTERS.filter((f) => f.key).map((f) => ({
+    key: f.key,
+    label: f.label,
+    count: fleet.filter((atm) => atm.status === f.key).length,
+  }));
+  const distributionTotal = statusBreakdown.reduce((sum, s) => sum + s.count, 0) || 1;
+
   return (
     <section className="page-content">
       <div className="portal-hero">
@@ -148,6 +155,28 @@ export default function MonitoringPage() {
               {item.label}
             </button>
           ))}
+        </div>
+
+        <div className="status-distribution" aria-label="ATM status distribution">
+          <div className="status-distribution-bar" role="img" aria-label="Proportion of ATMs by status">
+            {statusBreakdown.map((s) => (
+              <span
+                key={s.key}
+                className={`status-distribution-seg seg-${s.key.toLowerCase().replace('_', '-')}`}
+                style={{ width: `${(s.count / distributionTotal) * 100}%` }}
+                title={`${s.label}: ${s.count}`}
+              />
+            ))}
+          </div>
+          <div className="status-distribution-legend">
+            {statusBreakdown.map((s) => (
+              <span className="status-distribution-item" key={s.key}>
+                <i className={`seg-${s.key.toLowerCase().replace('_', '-')}`} aria-hidden />
+                <span>{s.label}</span>
+                <strong>{s.count}</strong>
+              </span>
+            ))}
+          </div>
         </div>
 
         {rows.length === 0 ? (

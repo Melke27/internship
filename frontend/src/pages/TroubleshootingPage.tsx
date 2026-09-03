@@ -81,7 +81,7 @@ export default function TroubleshootingPage() {
   );
 
   const selected = useMemo(
-    () => rows.find((incident) => incident.id === selectedId) || rows[0] || null,
+    () => rows.find((incident) => Number(incident.id) === Number(selectedId)) || rows[0] || null,
     [rows, selectedId],
   );
 
@@ -146,7 +146,7 @@ export default function TroubleshootingPage() {
                 <button
                   key={incident.id}
                   type="button"
-                  className={`list-card button-card ${selected?.id === incident.id ? 'selected' : ''}`}
+                  className={`list-card button-card ${Number(selected?.id) === Number(incident.id) ? 'selected' : ''}`}
                   onClick={() => {
                     setSelectedId(incident.id);
                     setShowActionForm(false);
@@ -203,7 +203,7 @@ export default function TroubleshootingPage() {
                 {hasPermission(currentUser, 'troubleshooting.create') &&
                 ['ASSIGNED', 'INVESTIGATING', 'TROUBLESHOOTING', 'WAITING', 'ESCALATED'].includes(detail.data.status) ? (
                   <div className="page-actions" style={{ marginTop: 16 }}>
-                    <button className="button primary" onClick={() => setShowActionForm((value) => !value)}>
+                    <button type="button" className="button primary" onClick={() => setShowActionForm((value) => !value)}>
                       {showActionForm ? 'Hide Action Form' : 'Record Technical Action'}
                     </button>
                     <Link className="button secondary" to={`/incidents/${detail.data.id}`}>

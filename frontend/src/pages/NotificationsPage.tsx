@@ -94,12 +94,12 @@ export default function NotificationsPage() {
         </div>
         <div className="page-actions">
           {canAnnounce ? (
-            <button className="button primary" onClick={() => setComposeOpen(true)}>
+            <button type="button" className="button primary" onClick={() => setComposeOpen(true)}>
               <Megaphone size={16} /> Send Announcement
             </button>
           ) : null}
           {rows.some((notification) => !notification.is_read) ? (
-            <button className="button secondary" onClick={() => markAll.mutate()}>
+            <button type="button" className="button secondary" onClick={() => markAll.mutate()}>
               Mark all read
             </button>
           ) : null}
@@ -137,7 +137,7 @@ export default function NotificationsPage() {
                   <div className="row-actions">
                     {notification.incident ? <Link className="button secondary small" to={`/incidents/${notification.incident}`}>Open</Link> : null}
                     {!notification.is_read ? (
-                      <button className="button secondary small" onClick={() => markRead.mutate(notification.id)}>Mark read</button>
+                      <button type="button" className="button secondary small" onClick={() => markRead.mutate(notification.id)}>Mark read</button>
                     ) : null}
                   </div>
                 </div>

@@ -1,8 +1,8 @@
 import type { PropsWithChildren } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, BellOff, LogOut, Menu, RefreshCw, Search, ShieldCheck, Wifi } from 'lucide-react';
+import { Bell, BellOff, LogOut, Menu, PanelLeftClose, PanelLeftOpen, RefreshCw, Search, ShieldCheck, Wifi } from 'lucide-react';
 
 import { api } from '../lib/api';
 import { showToast } from '../lib/toast';
@@ -38,6 +38,9 @@ type NotificationRow = {
 
 export default function AppLayout({ children }: PropsWithChildren) {
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(
+    () => typeof window !== 'undefined' && localStorage.getItem('cbe_sidebar_collapsed') === 'true',
+  );
   const [search, setSearch] = useState('');
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -49,6 +52,14 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const brand = portalBrand(portal);
   const groups = navForPortal(portal);
   const branchName = currentUser?.branch_name || 'Branch not assigned';
+
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('cbe_sidebar_collapsed', String(next));
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -149,48 +160,66 @@ export default function AppLayout({ children }: PropsWithChildren) {
     return query ? location.search === `?${query}` : !location.search;
   }
 
-  async function handleLogout() {
+  const handleLogout = useCallback(async () => {
     await logout();
     queryClient.clear();
     if (location.pathname !== '/login') window.location.assign('/login');
-  }
+  }, [logout]);
 
-  async function markNotificationRead(id: number) {
-    await api.post(`/notifications/${id}/mark_read/`);
-    queryClient.invalidateQueries({ queryKey: ['notifications'] });
-  }
+  const markNotificationRead = useCallback(
+    async (id: number) => {
+      await api.post(`/notifications/${id}/mark_read/`);
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+    [queryClient],
+  );
 
-  async function handleRefresh() {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await queryClient.invalidateQueries();
     district.refetch();
     unread.refetch();
     notifications.refetch();
     setTimeout(() => setRefreshing(false), 700);
-  }
+  }, [queryClient]);
 
   return (
-    <div className="shell">
-      <aside className={`sidebar ${open ? 'open' : ''}`}>
+    <div className={`shell ${collapsed ? 'sidebar-collapsed' : ''}`}>
+      <aside className={`sidebar ${open ? 'open' : ''} ${collapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-header">
-          <div className="brand-mark brand-logo">
-            <img src="/logo.jpg" alt="Commercial Bank of Ethiopia" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+            <div className="brand-mark brand-logo">
+              <img src="/logo.jpg" alt="Commercial Bank of Ethiopia" />
+            </div>
+            {!collapsed && (
+              <div>
+                <strong>{brand.title}</strong>
+                <span>{portal === 'branch' && currentUser?.branch_name ? currentUser.branch_name : FIXED_DISTRICT_NAME}</span>
+              </div>
+            )}
           </div>
-          <div>
-            <strong>{brand.title}</strong>
-            <span>{portal === 'branch' && currentUser?.branch_name ? currentUser.branch_name : FIXED_DISTRICT_NAME}</span>
-          </div>
+          <button
+            type="button"
+            className="sidebar-collapse-btn icon-button desktop-only"
+            onClick={toggleCollapsed}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+          </button>
         </div>
-        <div className="system-status">
-          <span className="live-dot" />
-          <div>
-            <strong>{portal === 'branch' ? 'Branch portal connected' : 'System operational'}</strong>
-            <small>
-              {portal === 'branch' ? 'Live ATM reporting and service status' : 'One district · shared operations data'}
-            </small>
+        {!collapsed && (
+          <div className="system-status">
+            <span className="live-dot" />
+            <div>
+              <strong>{portal === 'branch' ? 'Branch portal connected' : 'System operational'}</strong>
+              <small>
+                {portal === 'branch' ? 'Live ATM reporting and service status' : 'One district · shared operations data'}
+              </small>
+            </div>
           </div>
-        </div>
-        {portal === 'branch' ? (
+        )}
+        {portal === 'branch' && !collapsed ? (
           <div className="branch-context" aria-label="Current branch context">
             <span>YOUR BRANCH</span>
             <strong>{branchName}</strong>
@@ -205,7 +234,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
             if (!items.length) return null;
             return (
               <div key={group.title} className="nav-group">
-                <p>{group.title}</p>
+                {!collapsed && <p>{group.title}</p>}
                 {items.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -214,10 +243,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
                       to={item.to}
                       end={item.to === '/dashboard' || item.to === '/branch' || item.to === '/maintenance-ops'}
                       onClick={() => setOpen(false)}
+                      title={collapsed ? item.label : undefined}
                       className={() => `nav-link ${isCurrentNavItem(item) ? 'active' : ''}`}
                     >
                       <Icon size={18} />
-                      <span>{item.label}</span>
+                      {!collapsed && <span>{item.label}</span>}
                     </NavLink>
                   );
                 })}
@@ -229,11 +259,13 @@ export default function AppLayout({ children }: PropsWithChildren) {
           <div className="avatar">
             {(currentUser?.full_name || currentUser?.username || 'U').slice(0, 2).toUpperCase()}
           </div>
-          <div>
-            <strong>{currentUser?.full_name || currentUser?.username}</strong>
-            <small>{label}</small>
-          </div>
-          <button className="icon-button" onClick={handleLogout} aria-label="Logout">
+          {!collapsed && (
+            <div>
+              <strong>{currentUser?.full_name || currentUser?.username}</strong>
+              <small>{label}</small>
+            </div>
+          )}
+          <button type="button" className="icon-button" onClick={handleLogout} aria-label="Logout" title="Logout">
             <LogOut size={18} />
           </button>
         </div>
@@ -243,11 +275,22 @@ export default function AppLayout({ children }: PropsWithChildren) {
         <header className="topbar">
           <div className="topbar-left">
             <button
+              type="button"
               className="icon-button mobile-only"
               onClick={() => setOpen((value) => !value)}
               aria-label="Open menu"
             >
               <Menu size={18} />
+            </button>
+            <button
+              type="button"
+              className="topbar-collapse-btn icon-button desktop-only"
+              onClick={toggleCollapsed}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              style={{ marginRight: 8 }}
+            >
+              {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
             </button>
             <div>
               <span className="topbar-kicker">{currentNav ? `${brand.kicker} / ${currentNav.group}` : brand.kicker}</span>
@@ -335,7 +378,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
               </span>
             )}
             <span className="last-updated">
-              Updated {district.data?.last_updated ? new Date(district.data.last_updated).toLocaleTimeString() : new Date().toLocaleTimeString()}
+              Updated {district.data?.last_updated ? new Date(district.data.last_updated).toLocaleTimeString() : '—'}
             </span>
             <button
               className={`icon-button ${refreshing ? 'is-spinning' : ''}`}
@@ -349,7 +392,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
               onClick={() => setNotificationsOpen((value) => !value)}
               aria-label="Notifications"
             >
-              <Bell size={18} />
+              <Bell size={18} aria-hidden />
               {Boolean(unread.data) && <em>{unread.data}</em>}
             </button>
             {notificationsOpen && (
@@ -363,7 +406,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 </div>
                 {(notifications.data || []).length === 0 ? (
                   <div className="notification-panel-empty">
-                    <BellOff size={28} />
+                    <BellOff size={28} aria-hidden />
                     <span>You're all caught up!</span>
                   </div>
                 ) : null}
@@ -373,7 +416,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     className={`notification-item ${notification.is_read ? '' : 'unread'}`}
                   >
                     <div className="notification-item-icon">
-                      <Bell size={14} />
+                      <Bell size={14} aria-hidden />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <strong>{notification.title}</strong>

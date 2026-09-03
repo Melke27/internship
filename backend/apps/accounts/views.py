@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -76,10 +77,12 @@ class UserViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticated()]
         return super().get_permissions()
 
+    @transaction.atomic
     def perform_create(self, serializer):
         user = serializer.save()
         AuditLog.objects.create(user=self.request.user, action="USER_CREATED", entity="User", entity_id=user.username, new_value={"role": user.role})
 
+    @transaction.atomic
     def perform_update(self, serializer):
         user = self.get_object()
         previous = {"role": user.role, "is_active": user.is_active, "branch_id": user.branch_id}
@@ -135,6 +138,7 @@ class MeView(APIView):
     def get(self, request):
         return Response(self._serialize(request))
 
+    @transaction.atomic
     def patch(self, request):
         serializer = ProfileSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)

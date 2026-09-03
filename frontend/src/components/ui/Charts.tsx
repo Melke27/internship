@@ -57,6 +57,23 @@ export function Sparkline({
   const id = useId();
   const width = 200;
   if (!values.length) return null;
+  if (values.length === 1) {
+    const y = height - 4 - ((values[0] - Math.min(values[0], 0)) / (Math.max(values[0], 1) - Math.min(values[0], 0) || 1)) * (height - 10);
+    return (
+      <svg
+        className="sparkline"
+        width={width}
+        height={height}
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
+        role="img"
+        aria-label="Trend"
+      >
+        <line x1={0} x2={width} y1={height - 4} y2={height - 4} stroke="#e5e9f2" strokeWidth={1} />
+        <circle cx={width / 2} cy={y} r={3} fill="#fff" stroke={color} strokeWidth={2.2} />
+      </svg>
+    );
+  }
   const max = Math.max(...values, 1);
   const min = Math.min(...values, 0);
   const range = max - min || 1;
@@ -178,7 +195,8 @@ export function ChartLegend({
 }) {
   const shown = segments.filter((s) => s.value > 0).slice(0, limit);
   if (!shown.length) return null;
-  const sum = total ?? (shown.reduce((acc, s) => acc + s.value, 0) || 1);
+  const allSegments = segments.filter((s) => s.value > 0);
+  const sum = total ?? (allSegments.reduce((acc, s) => acc + s.value, 0) || 1);
   return (
     <div className="chart-legend">
       {shown.map((s) => (

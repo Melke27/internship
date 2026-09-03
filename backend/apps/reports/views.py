@@ -151,6 +151,26 @@ class DashboardSummaryView(APIView):
         recent_branch_reports = reports.select_related("atm", "branch").prefetch_related("incident").order_by("-created_at")[:8]
         technicians = User.objects.filter(assigned_incidents__in=open_incidents).distinct()
 
+        annotated_branches = branches.annotate(
+            annotated_total=Count("atms"),
+            annotated_operational=Count(
+                "atms", filter=Q(atms__status=ATM.Status.OPERATIONAL, atms__is_active=True)
+            ),
+            annotated_faults=Count(
+                "atms",
+                filter=Q(
+                    atms__status__in=[
+                        ATM.Status.FAULT,
+                        ATM.Status.WARNING,
+                        ATM.Status.DEGRADED,
+                        ATM.Status.CRITICAL,
+                        ATM.Status.OFFLINE,
+                    ],
+                    atms__is_active=True,
+                ),
+            ),
+        ).order_by("name")
+
         return Response(
             {
                 "scope": {"district": user.district_id, "branch": user.branch_id},
@@ -164,11 +184,11 @@ class DashboardSummaryView(APIView):
                         "name": b.name,
                         "code": b.code,
                         "status": b.status,
-                        "total_atms": b.atms.count(),
-                        "operational": b.atms.filter(status=ATM.Status.OPERATIONAL, is_active=True).count(),
-                        "faults": b.atms.filter(status__in=[ATM.Status.FAULT, ATM.Status.WARNING, ATM.Status.DEGRADED, ATM.Status.CRITICAL, ATM.Status.OFFLINE], is_active=True).count(),
+                        "total_atms": b.annotated_total,
+                        "operational": b.annotated_operational,
+                        "faults": b.annotated_faults,
                     }
-                    for b in branches.order_by("name")
+                    for b in annotated_branches
                 ],
                 "atms": atms.count(),
                 "total_atms": atms.count(),
@@ -344,16 +364,20 @@ class BranchReportView(APIView):
             top_categories = list(
                 branch_incidents.values("category").annotate(total=Count("id")).order_by("-total")[:5]
             )
+            atm_counts = dict(
+                ATM.objects.filter(branch=branch)
+                .values("status")
+                .annotate(total=Count("id"))
+                .values_list("status", "total")
+            )
+            atm_status_map = {st: atm_counts.get(st, 0) for st, _ in ATM.Status.choices}
             rows.append(
                 {
                     "branch": branch.name,
                     "district": branch.district.name,
                     "code": branch.code,
-                    "atms": ATM.objects.filter(branch=branch).count(),
-                    "atm_status": {
-                        status: ATM.objects.filter(branch=branch, status=status).count()
-                        for status, _ in ATM.Status.choices
-                    },
+                    "atms": sum(atm_status_map.values()),
+                    "atm_status": atm_status_map,
                     "incidents": branch_incidents.count(),
                     "reports_submitted": branch_reports.count(),
                     "reports_converted": branch_reports.filter(

@@ -12,7 +12,7 @@ return {districts,branches,atms,isLoading:districts.isLoading||branches.isLoadin
 
 function TreeSection({label,count,children}:{label:string;count?:number;children?:React.ReactNode}){
 const [open,setOpen]=useState(true);
-return <div className="tree-node"><button className="tree-toggle" onClick={()=>setOpen(o=>!o)}>{open?'▾':'▸'} <strong>{label}</strong>{count!==undefined&&<small> ({count})</small>}</button>{open&&children}</div>}
+return <div className="tree-node"><button type="button" className="tree-toggle" onClick={()=>setOpen(o=>!o)}>{open?'▾':'▸'} <strong>{label}</strong>{count!==undefined&&<small> ({count})</small>}</button>{open&&children}</div>}
 
 export default function OrganizationTreePage(){
 const {districts,branches,atms,isLoading,isError}=useOrgData();

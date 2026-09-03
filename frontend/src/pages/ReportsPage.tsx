@@ -112,10 +112,10 @@ export default function ReportsPage() {
           <p className="page-copy">District ATM availability, incident activity, technician performance and maintenance summaries.</p>
         </div>
         <div className="page-actions">
-          <button className="button secondary" onClick={exportCSV}>
+          <button type="button" className="button secondary" onClick={exportCSV}>
             <Download size={14} style={{ marginRight: 6 }} /> Export CSV
           </button>
-          <button className="button primary" onClick={() => window.print()}>
+          <button type="button" className="button primary" onClick={() => window.print()}>
             <Printer size={14} style={{ marginRight: 6 }} /> Print / Save PDF
           </button>
         </div>
@@ -124,9 +124,9 @@ export default function ReportsPage() {
       {data ? (
         <div className="kpi-grid compact">
           <MetricCard label="Total ATMs" value={data.atms} hint="in district" />
-          <MetricCard label="Operational" value={(data.atm_status.OPERATIONAL || 0) + (data.atm_status.AVAILABLE || 0)} tone="success" hint="healthy units" />
-          <MetricCard label="Offline" value={data.atm_status.OFFLINE || 0} tone="danger" hint="no connectivity" />
-          <MetricCard label="Fault" value={data.atm_status.FAULT || 0} tone="danger" hint="requires attention" />
+          <MetricCard label="Operational" value={(data.atm_status?.OPERATIONAL || 0) + (data.atm_status?.AVAILABLE || 0)} tone="success" hint="healthy units" />
+          <MetricCard label="Offline" value={data.atm_status?.OFFLINE || 0} tone="danger" hint="no connectivity" />
+          <MetricCard label="Fault" value={data.atm_status?.FAULT || 0} tone="danger" hint="requires attention" />
           <MetricCard label="Open Incidents" value={data.open_incidents} tone="warning" hint="in progress" />
           <MetricCard label="Escalated" value={data.escalated_incidents} hint="raised to management" />
         </div>

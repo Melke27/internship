@@ -70,7 +70,7 @@ export default function ActiveFaultsPage() {
           </span>
         </div>
         <div className="page-actions">
-          <button className="button secondary" onClick={() => summary.refetch()}>
+          <button type="button" className="button secondary" onClick={() => summary.refetch()}>
             Refresh
           </button>
         </div>

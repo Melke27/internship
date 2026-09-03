@@ -106,7 +106,7 @@ export default function BranchReportsPage() {
           />
         </div>
         {search && (
-          <button className="button secondary small" onClick={() => setSearch('')}>Clear</button>
+          <button type="button" className="button secondary small" onClick={() => setSearch('')}>Clear</button>
         )}
       </div>
 
@@ -331,19 +331,19 @@ export function DistrictBranchReportDetailPage() {
           </p>
           <div className="stack-actions">
             {canReview && data.status === 'SUBMITTED' ? (
-              <button className="button secondary" onClick={() => receive.mutate()} disabled={receive.isPending}>
+              <button type="button" className="button secondary" onClick={() => receive.mutate()} disabled={receive.isPending}>
                 Mark Received
               </button>
             ) : null}
             {canReview && ['SUBMITTED', 'RECEIVED'].includes(data.status) ? (
-              <button className="button secondary" onClick={() => review.mutate()} disabled={review.isPending}>
+              <button type="button" className="button secondary" onClick={() => review.mutate()} disabled={review.isPending}>
                 Start Review
               </button>
             ) : null}
             {canConvert &&
             !['CONVERTED_TO_INCIDENT', 'DISMISSED', 'CLOSED'].includes(data.status) &&
             !data.linked_incident_id ? (
-              <button className="button primary" onClick={() => setConvertOpen(true)}>
+              <button type="button" className="button primary" onClick={() => setConvertOpen(true)}>
                 Create Incident
               </button>
             ) : null}
@@ -353,7 +353,7 @@ export function DistrictBranchReportDetailPage() {
               </Link>
             ) : null}
             {canDismiss && !['CONVERTED_TO_INCIDENT', 'DISMISSED', 'CLOSED'].includes(data.status) ? (
-              <button className="button danger-outline" onClick={() => setDismissOpen(true)}>
+              <button type="button" className="button danger-outline" onClick={() => setDismissOpen(true)}>
                 Dismiss Report
               </button>
             ) : null}

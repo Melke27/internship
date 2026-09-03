@@ -50,7 +50,7 @@ export default function SettingsPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2>User Profile</h2>
             {!editing ? (
-              <button className="button secondary small" onClick={() => setEditing(true)}>Edit Profile</button>
+              <button type="button" className="button secondary small" onClick={() => setEditing(true)}>Edit Profile</button>
             ) : null}
           </div>
           {editing ? (

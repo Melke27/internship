@@ -214,7 +214,7 @@ export default function IncidentsPage() {
         </div>
         <div className="page-actions">
           {hasPermission(currentUser, 'incident.create') ? (
-            <button className="button primary" onClick={() => setSearchParams((params) => { params.set('new', '1'); return params; })}>
+            <button type="button" className="button primary" onClick={() => setSearchParams((params) => { params.set('new', '1'); return params; })}>
               <AlertTriangle size={14} /> Create Incident
             </button>
           ) : null}
@@ -265,13 +265,14 @@ export default function IncidentsPage() {
         </select>
         {hasFilters && (
           <button
+            type="button"
             className="button secondary small"
             onClick={() => { setSearchInput(''); setStatus(''); setPriority(''); }}
           >
             Clear filters
           </button>
         )}
-        <button className="button secondary" onClick={() => incidents.refetch()}>
+        <button type="button" className="button secondary" onClick={() => incidents.refetch()}>
           <Filter size={14} /> Refresh
         </button>
       </div>
@@ -321,7 +322,7 @@ export default function IncidentsPage() {
                       {incident.assigned_to_name ? (
                         <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                           <span style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--brand-soft)', color: 'var(--brand)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
-                            {incident.assigned_to_name.slice(0, 2).toUpperCase()}
+                            {(incident.assigned_to_name || '').trim().slice(0, 2).toUpperCase()}
                           </span>
                           {incident.assigned_to_name}
                         </span>

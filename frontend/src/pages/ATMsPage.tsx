@@ -142,7 +142,7 @@ export default function ATMsPage() {
             </button>
           </div>
           {hasPermission(currentUser, 'atm.create') ? (
-            <button className="button primary" onClick={() => setRegisterOpen(true)}>
+            <button type="button" className="button primary" onClick={() => setRegisterOpen(true)}>
               + Register ATM
             </button>
           ) : null}
@@ -204,7 +204,7 @@ export default function ATMsPage() {
             Clear Filters
           </button>
         )}
-        <button className="button secondary" onClick={() => atms.refetch()}>
+        <button type="button" className="button secondary" onClick={() => atms.refetch()}>
           Refresh
         </button>
       </div>

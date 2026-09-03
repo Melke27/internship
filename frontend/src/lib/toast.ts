@@ -11,7 +11,7 @@ export function showToast(message: string, tone: ToastTone = 'success') {
   const existing = document.querySelector('.app-toast');
   if (existing) {
     existing.classList.add('toast-hide');
-    existing.remove();
+    window.setTimeout(() => existing.remove(), 220);
   }
 
   const toast = document.createElement('div');

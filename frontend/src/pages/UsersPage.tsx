@@ -121,11 +121,11 @@ export default function UsersPage() {
           <p className="page-copy">{FIXED_DISTRICT_NAME} — assign roles for ATM operations.</p>
         </div>
         <div className="page-actions">
-          <button className="button secondary" onClick={() => users.refetch()}>
+          <button type="button" className="button secondary" onClick={() => users.refetch()}>
             Refresh
           </button>
           {hasPermission(currentUser, 'user.create') ? (
-            <button className="button primary" onClick={() => setOpen(true)}>
+            <button type="button" className="button primary" onClick={() => setOpen(true)}>
               + Create User
             </button>
           ) : null}
@@ -170,7 +170,7 @@ export default function UsersPage() {
           ))}
         </select>
         {(searchInput || roleFilter) && (
-          <button className="button secondary small" onClick={() => { setSearchInput(''); setRoleFilter(''); }}>
+          <button type="button" className="button secondary small" onClick={() => { setSearchInput(''); setRoleFilter(''); }}>
             Clear
           </button>
         )}
@@ -217,7 +217,7 @@ export default function UsersPage() {
                   <td>
                     {canEdit && currentUser?.id !== user.id ? (
                       <div className="table-actions" style={{ display: 'flex', gap: 6 }}>
-                        <button className="button secondary small" onClick={() => setEditing(user)}>
+                        <button type="button" className="button secondary small" onClick={() => setEditing(user)}>
                           Edit
                         </button>
                         <button

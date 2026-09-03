@@ -86,6 +86,7 @@ class IncidentViewSet(ScopedQuerysetMixin, viewsets.ModelViewSet):
             notify({incident.reported_by,incident.assigned_to},title=f"Incident {incident.incident_id} closed",body=incident.title,kind="INCIDENT_CLOSED",incident=incident)
         return Response(self.get_serializer(incident).data)
     @action(detail=True,methods=["get","post"],url_path="troubleshooting")
+    @transaction.atomic
     def troubleshooting(self,request,pk=None):
         incident=self.get_object()
         if request.method=="GET":return Response(TroubleshootingActionSerializer(incident.actions.all(),many=True).data)

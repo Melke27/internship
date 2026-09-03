@@ -98,6 +98,14 @@ export default function DashboardPage() {
     });
   }, [summary.data]);
 
+  const trendSeries = useMemo(() => {
+    const incidentTrend = summary.data?.trends?.incidents || [];
+    return {
+      created: incidentTrend.map((d) => ({ date: d.date, label: d.label, value: d.created })),
+      resolved: incidentTrend.map((d) => ({ date: d.date, label: d.label, value: d.resolved })),
+    };
+  }, [summary.data?.trends?.incidents]);
+
   if (summary.isLoading) return <LoadingState label="Loading ATM district dashboard..." />;
   if (summary.isError || !summary.data) {
     return (
@@ -113,13 +121,12 @@ export default function DashboardPage() {
   const total = Number(data.total_atms ?? data.atms ?? 0);
   const active = Number(data.active_atms ?? total);
   const inactive = Number(data.inactive_atms ?? 0);
-  const critical = data.critical_atms ?? data.atm_status.CRITICAL ?? 0;
+  const critical = data.critical_atms ?? data.atm_status?.CRITICAL ?? 0;
   const pendingReports = data.pending_branch_reports ?? 0;
-  const underRepair = data.under_repair ?? data.atm_status.UNDER_REPAIR ?? 0;
+  const underRepair = data.under_repair ?? data.atm_status?.UNDER_REPAIR ?? 0;
   const fleet = atms.data || [];
   const faults = data.active_faults || [];
   const availability = total > 0 ? Math.round((active / total) * 100) : 0;
-  const incidentTrend = data.trends?.incidents || [];
   const workload = data.technician_workload || [];
   const maintenance = data.maintenance_kpis;
   const priorityBars = [
@@ -251,11 +258,11 @@ export default function DashboardPage() {
         >
           <div className="trend-duo">
             <TrendChart
-              series={incidentTrend.map((d) => ({ date: d.date, label: d.label, value: d.created }))}
+              series={trendSeries.created}
               color="#3b4fd8"
             />
             <TrendChart
-              series={incidentTrend.map((d) => ({ date: d.date, label: d.label, value: d.resolved }))}
+              series={trendSeries.resolved}
               color="#16a34a"
             />
           </div>

@@ -143,7 +143,7 @@ const icons: Record<string, LucideIcon> = {
 };
 
 export function StatusIcon({ value, size = 16 }: { value: string; size?: number }) {
-  const Icon = icons[value] || CircleAlert;
+  const Icon = icons[(value || '').toUpperCase()] || CircleAlert;
   return <Icon size={size} aria-hidden />;
 }
 

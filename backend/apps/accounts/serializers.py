@@ -49,6 +49,9 @@ class UserSerializer(serializers.ModelSerializer):
 
         return attrs
 
+    from django.db import transaction
+
+    @transaction.atomic
     def create(self, validated_data):
         password = validated_data.pop("password")
         validated_data["district"] = get_yeka_district()

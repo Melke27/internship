@@ -348,33 +348,33 @@ export default function IncidentDetailPage() {
           <h2>Workflow Actions</h2>
           <div className="action-grid">
             {hasPermission(currentUser, 'incident.assign') && incident.status === 'REPORTED' ? (
-              <button className="button primary" onClick={() => transition.mutate({ status: 'ACKNOWLEDGED' })}>Acknowledge</button>
+              <button type="button" className="button primary" onClick={() => transition.mutate({ status: 'ACKNOWLEDGED' })}>Acknowledge</button>
             ) : null}
             {hasPermission(currentUser, 'incident.assign') && ['REPORTED', 'ACKNOWLEDGED', 'ASSIGNED', 'INVESTIGATING', 'TROUBLESHOOTING', 'WAITING', 'ESCALATED'].includes(incident.status) ? (
-              <button className="button primary" onClick={() => setDialog('assign')}>
+              <button type="button" className="button primary" onClick={() => setDialog('assign')}>
                 {incident.assigned_to ? 'Reassign Technician' : 'Assign Technician'}
               </button>
             ) : null}
             {hasPermission(currentUser, 'troubleshooting.create') && canInvestigate ? (
-              <button className="button secondary" onClick={() => transition.mutate({ status: 'INVESTIGATING' })}>Start Investigation</button>
+              <button type="button" className="button secondary" onClick={() => transition.mutate({ status: 'INVESTIGATING' })}>Start Investigation</button>
             ) : null}
             {hasPermission(currentUser, 'troubleshooting.create') && canTroubleshoot ? (
-              <button className="button secondary" onClick={() => setDialog('action')}>Add Technical Action</button>
+              <button type="button" className="button secondary" onClick={() => setDialog('action')}>Add Technical Action</button>
             ) : null}
             {hasPermission(currentUser, 'incident.retest') && canTroubleshoot ? (
-              <button className="button secondary" onClick={() => setDialog('retest')}>Retest ATM</button>
+              <button type="button" className="button secondary" onClick={() => setDialog('retest')}>Retest ATM</button>
             ) : null}
             {hasPermission(currentUser, 'incident.escalate') && canTroubleshoot ? (
-              <button className="button secondary" onClick={() => setDialog('escalate')}>Escalate Incident</button>
+              <button type="button" className="button secondary" onClick={() => setDialog('escalate')}>Escalate Incident</button>
             ) : null}
             {hasPermission(currentUser, 'incident.resolve') && canTroubleshoot ? (
-              <button className="button secondary" onClick={() => setDialog('resolve')}>Record Resolution</button>
+              <button type="button" className="button secondary" onClick={() => setDialog('resolve')}>Record Resolution</button>
             ) : null}
             {hasPermission(currentUser, 'incident.verify') && incident.status === 'RESOLVED' ? (
-              <button className="button primary" onClick={() => setDialog('verify')}>Verify Resolution</button>
+              <button type="button" className="button primary" onClick={() => setDialog('verify')}>Verify Resolution</button>
             ) : null}
             {hasPermission(currentUser, 'incident.close') && incident.status === 'VERIFIED' ? (
-              <button className="button primary" onClick={() => setDialog('close')}>Close Incident</button>
+              <button type="button" className="button primary" onClick={() => setDialog('close')}>Close Incident</button>
             ) : null}
           </div>
           {error ? <div className="error-banner" role="alert"><strong>{error}</strong></div> : null}

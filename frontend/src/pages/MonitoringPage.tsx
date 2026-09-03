@@ -49,24 +49,7 @@ export default function MonitoringPage() {
     refetchInterval: 30000,
   });
 
-  const refreshAll = () => {
-    summary.refetch();
-    atms.refetch();
-    incidents.refetch();
-  };
-
-  if (summary.isLoading || atms.isLoading) {
-    return <LoadingState label="Loading live ATM monitoring..." />;
-  }
-  if (summary.isError || atms.isError) {
-    return <ErrorState message="Unable to load monitoring data. Please try again." onRetry={refreshAll} />;
-  }
-
-  const data = summary.data!;
   const fleet = atms.data || [];
-  const openIncidents = (incidents.data || []).filter((incident) => incident.status !== 'CLOSED');
-  const criticalAtms = fleet.filter((atm) => CRITICAL_STATUSES.includes(atm.status));
-  const offlineAtms = fleet.filter((atm) => atm.status === 'OFFLINE');
 
   const rows = useMemo(() => {
     let out = fleet;
@@ -87,7 +70,25 @@ export default function MonitoringPage() {
     );
   }, [fleet, filter, query]);
 
-  const operationalCount = (data.atm_status.OPERATIONAL || 0) + (data.atm_status.AVAILABLE || 0);
+  const refreshAll = () => {
+    summary.refetch();
+    atms.refetch();
+    incidents.refetch();
+  };
+
+  if (summary.isLoading || atms.isLoading) {
+    return <LoadingState label="Loading live ATM monitoring..." />;
+  }
+  if (summary.isError || atms.isError) {
+    return <ErrorState message="Unable to load monitoring data. Please try again." onRetry={refreshAll} />;
+  }
+
+  const data = summary.data!;
+  const openIncidents = (incidents.data || []).filter((incident) => incident.status !== 'CLOSED');
+  const criticalAtms = fleet.filter((atm) => CRITICAL_STATUSES.includes(atm.status));
+  const offlineAtms = fleet.filter((atm) => atm.status === 'OFFLINE');
+
+  const operationalCount = data.atm_status?.OPERATIONAL || 0;
 
   return (
     <section className="page-content">
@@ -104,7 +105,7 @@ export default function MonitoringPage() {
           </span>
         </div>
         <div className="page-actions">
-          <button className="button secondary" onClick={refreshAll}>
+          <button type="button" className="button secondary" onClick={refreshAll}>
             <RefreshCw size={16} /> Refresh
           </button>
         </div>
@@ -113,8 +114,8 @@ export default function MonitoringPage() {
       <div className="kpi-grid monitoring-kpi-grid" aria-label="District ATM summary">
         <MetricCard label="Total ATMs" value={data.atms} icon={<Landmark size={18} />} hint="in district" />
         <MetricCard label="Operational" value={operationalCount} tone="success" icon={<ShieldCheck size={18} />} hint="serving normally" />
-        <MetricCard label="Offline" value={data.atm_status.OFFLINE || 0} tone={(data.atm_status.OFFLINE || 0) > 0 ? 'warning' : 'default'} icon={<Wifi size={18} />} hint="no communication" />
-        <MetricCard label="Fault" value={data.atm_status.FAULT || 0} tone={(data.atm_status.FAULT || 0) > 0 ? 'danger' : 'default'} icon={<CircleAlert size={18} />} hint="needs repair" />
+        <MetricCard label="Offline" value={data.atm_status?.OFFLINE || 0} tone={(data.atm_status?.OFFLINE || 0) > 0 ? 'warning' : 'default'} icon={<Wifi size={18} />} hint="no communication" />
+        <MetricCard label="Fault" value={data.atm_status?.FAULT || 0} tone={(data.atm_status?.FAULT || 0) > 0 ? 'danger' : 'default'} icon={<CircleAlert size={18} />} hint="needs repair" />
         <MetricCard label="Open Incidents" value={data.open_incidents} tone="info" icon={<Wrench size={18} />} hint="active incidents" to="/incidents" />
       </div>
 

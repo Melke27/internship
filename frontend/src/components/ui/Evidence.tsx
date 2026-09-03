@@ -57,7 +57,10 @@ export function EvidenceUpload({
             type="file"
             accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
             aria-label="Upload ATM evidence photo"
-            onChange={(event) => pick(event.target.files?.[0] || null)}
+            onChange={(event) => {
+              pick(event.target.files?.[0] || null);
+              event.target.value = '';
+            }}
           />
         </label>
       ) : (

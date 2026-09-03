@@ -10,6 +10,8 @@ import {
   type TextareaHTMLAttributes,
 } from 'react';
 
+import { X } from 'lucide-react';
+
 export function cx(...parts: Array<string | false | null | undefined | number>) {
   return parts.filter(Boolean).join(' ');
 }
@@ -169,7 +171,7 @@ export function Dialog({
           {description ? <p className="dialog-description">{description}</p> : null}
         </div>
         <button type="button" className="icon-button dialog-close" onClick={onClose} aria-label="Close dialog">
-          ×
+          <X size={18} />
         </button>
       </header>
       {children ? <div className="dialog-body">{children}</div> : null}

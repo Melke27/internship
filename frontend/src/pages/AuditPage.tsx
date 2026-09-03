@@ -60,7 +60,7 @@ export default function AuditPage() {
           <h1>Audit Logs</h1>
           <p className="page-copy">Immutable record of who did what, to which ATM or incident, when, and with what result.</p>
         </div>
-        <button className="button secondary" onClick={() => audit.refetch()}>Refresh</button>
+        <button type="button" className="button secondary" onClick={() => audit.refetch()}>Refresh</button>
       </div>
 
       <div className="filter-bar">
@@ -86,7 +86,7 @@ export default function AuditPage() {
           ))}
         </select>
         {(search || entity || action) ? (
-          <button className="button secondary small" onClick={() => { setSearch(''); setEntity(''); setAction(''); }}>Clear</button>
+          <button type="button" className="button secondary small" onClick={() => { setSearch(''); setEntity(''); setAction(''); }}>Clear</button>
         ) : null}
       </div>
 

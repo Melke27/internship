@@ -371,11 +371,11 @@ export default function MaintenancePage() {
           <p className="page-copy">Manage ATM maintenance requests, repair jobs, testing and verification.</p>
         </div>
         <div className="page-actions">
-          <button className="button secondary" onClick={() => maintenance.refetch()}>
+          <button type="button" className="button secondary" onClick={() => maintenance.refetch()}>
             Refresh
           </button>
           {hasPermission(currentUser, 'maintenance.create') ? (
-            <button className="button primary" onClick={() => setOpen(true)}>
+            <button type="button" className="button primary" onClick={() => setOpen(true)}>
               Create Maintenance
             </button>
           ) : null}
@@ -404,7 +404,7 @@ export default function MaintenancePage() {
       {focusedId ? (
         <div className="editable-banner" style={{ marginBottom: 12 }}>
           <span>Showing maintenance job opened from the operations dashboard.</span>
-          <button className="button secondary small" onClick={() => setParams(new URLSearchParams())}>
+          <button type="button" className="button secondary small" onClick={() => setParams(new URLSearchParams())}>
             Show all jobs
           </button>
         </div>
@@ -460,7 +460,7 @@ export default function MaintenancePage() {
                         <div className="row-actions">
                           {hasPermission(currentUser, 'maintenance.assign') &&
                           ['REQUESTED', 'APPROVED', 'SCHEDULED', 'ASSIGNED'].includes(record.status) ? (
-                            <button className="button secondary small" onClick={() => setAssignJob(record)}>
+                            <button type="button" className="button secondary small" onClick={() => setAssignJob(record)}>
                               Assign
                             </button>
                           ) : null}
@@ -581,6 +581,20 @@ export function MaintenanceOpsPage() {
     return order.filter((t) => counts[t]).map((t) => ({ label: t, value: counts[t], color: colors[t] }));
   }, [jobs.data]);
 
+  const mainWorkload = useMemo(() => {
+    const allJobs = jobs.data || [];
+    const openStatuses = ['REQUESTED', 'APPROVED', 'SCHEDULED', 'IN_PROGRESS', 'UNDER_REPAIR', 'TESTING'];
+    const byTech = new Map<string, { active: number; completed: number }>();
+    for (const j of allJobs) {
+      const name = j.technician_name || 'Unassigned';
+      const entry = byTech.get(name) || { active: 0, completed: 0 };
+      if (openStatuses.includes(j.status)) entry.active += 1;
+      else if (['COMPLETED', 'VERIFIED'].includes(j.status)) entry.completed += 1;
+      byTech.set(name, entry);
+    }
+    return Array.from(byTech.entries()).map(([name, counts]) => ({ name, ...counts }));
+  }, [jobs.data]);
+
   if (summary.isLoading || jobs.isLoading) return <LoadingState label="Loading maintenance operations..." />;
   if (summary.isError || jobs.isError || !summary.data) {
     return <ErrorState message="Unable to load maintenance operations. Please try again." onRetry={refetchDashboard} />;
@@ -615,18 +629,6 @@ export function MaintenanceOpsPage() {
   ].filter((s) => s.value > 0);
   const pipelineTotal = pipelineSegments.reduce((a, s) => a + s.value, 0);
   const trend = summary.data.trends?.maintenance || [];
-  const openStatuses = ['REQUESTED', 'APPROVED', 'SCHEDULED', 'IN_PROGRESS', 'UNDER_REPAIR', 'TESTING'];
-  const mainWorkload = useMemo(() => {
-    const byTech = new Map<string, { active: number; completed: number }>();
-    for (const j of all) {
-      const name = j.technician_name || 'Unassigned';
-      const entry = byTech.get(name) || { active: 0, completed: 0 };
-      if (openStatuses.includes(j.status)) entry.active += 1;
-      else if (['COMPLETED', 'VERIFIED'].includes(j.status)) entry.completed += 1;
-      byTech.set(name, entry);
-    }
-    return Array.from(byTech.entries()).map(([name, counts]) => ({ name, ...counts }));
-  }, [all]);
   const today = new Date();
   const overdue = all.filter(
     (j) =>

@@ -58,11 +58,11 @@ export default function BranchesPage() {
           <p className="page-copy">{FIXED_DISTRICT_NAME} — manage branches and ATM coverage.</p>
         </div>
         <div className="page-actions">
-          <button className="button secondary" onClick={() => branches.refetch()}>
+          <button type="button" className="button secondary" onClick={() => branches.refetch()}>
             Refresh
           </button>
           {hasPermission(currentUser, 'branch.create') ? (
-            <button className="button primary" onClick={() => setOpen(true)}>
+            <button type="button" className="button primary" onClick={() => setOpen(true)}>
               + Create Branch
             </button>
           ) : null}
@@ -293,12 +293,12 @@ export function BranchDetailPage() {
         <div className="page-actions">
           <StatusBadge value={data.status} />
           {hasPermission(currentUser, 'atm.create') ? (
-            <button className="button primary" onClick={() => setRegisterATMOpen(true)}>
+            <button type="button" className="button primary" onClick={() => setRegisterATMOpen(true)}>
               + Register ATM
             </button>
           ) : null}
           {hasPermission(currentUser, 'branch.deactivate') && data.status !== 'INACTIVE' ? (
-            <button className="button danger-outline" onClick={() => setDeactivateOpen(true)}>
+            <button type="button" className="button danger-outline" onClick={() => setDeactivateOpen(true)}>
               Deactivate
             </button>
           ) : null}
@@ -348,7 +348,7 @@ export function BranchDetailPage() {
             <p>All registered ATMs physically located or assigned to this branch.</p>
           </div>
           {hasPermission(currentUser, 'atm.create') && (
-            <button className="button secondary small" onClick={() => setRegisterATMOpen(true)}>
+            <button type="button" className="button secondary small" onClick={() => setRegisterATMOpen(true)}>
               + Add ATM to Branch
             </button>
           )}

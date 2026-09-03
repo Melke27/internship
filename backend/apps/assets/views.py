@@ -329,12 +329,12 @@ class MaintenanceViewSet(ScopedQuerysetMixin, viewsets.ModelViewSet):
                 kind="ATM_RESTORED",
             )
 
-        if request.data.get("work_performed"):
-            maintenance.work_performed = request.data["work_performed"]
-        if request.data.get("result"):
-            maintenance.result = request.data["result"]
-        if request.data.get("remarks"):
-            maintenance.remarks = request.data["remarks"]
+        if "work_performed" in request.data:
+            maintenance.work_performed = request.data.get("work_performed", maintenance.work_performed)
+        if "result" in request.data:
+            maintenance.result = request.data.get("result", maintenance.result)
+        if "remarks" in request.data:
+            maintenance.remarks = request.data.get("remarks", maintenance.remarks)
 
         maintenance.save()
         AuditLog.objects.create(

@@ -126,7 +126,7 @@ export default function DashboardPage() {
   const underRepair = data.under_repair ?? data.atm_status?.UNDER_REPAIR ?? 0;
   const fleet = atms.data || [];
   const faults = data.active_faults || [];
-  const availability = total > 0 ? Math.round((active / total) * 100) : 0;
+  const availability = total > 0 ? Math.round((active / total) * 100) : 100;
   const workload = data.technician_workload || [];
   const maintenance = data.maintenance_kpis;
   const priorityBars = [
@@ -159,7 +159,7 @@ export default function DashboardPage() {
         </div>
         <div className="page-actions">
           <span className={`health-pill ${availability >= 90 ? 'ok' : 'danger'}`}>
-            <Activity size={13} /> {availability}% availability
+            <Activity size={13} /> {total > 0 ? `${availability}% availability` : 'System Ready'}
           </span>
           <button
             className="button ghost light"
@@ -173,6 +173,59 @@ export default function DashboardPage() {
           </button>
         </div>
       </div>
+
+      {total === 0 && (
+        <div
+          className="clean-system-banner"
+          style={{
+            margin: '16px 0 20px',
+            padding: '18px 22px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, rgba(59, 79, 216, 0.08), rgba(22, 163, 74, 0.08))',
+            border: '1px solid rgba(59, 79, 216, 0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '10px',
+                background: 'var(--brand)',
+                color: '#fff',
+                display: 'grid',
+                placeItems: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <CheckCircle2 size={22} />
+            </div>
+            <div>
+              <strong style={{ fontSize: '15px', color: 'var(--text)' }}>Clean System & Ready for Operation</strong>
+              <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--text-2)' }}>
+                All demo data has been purged. Start by registering your first ATM or configuring branch structure.
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {hasPermission(currentUser, 'atm.add') && (
+              <Link to="/atms?register=1" className="button primary">
+                Register First ATM
+              </Link>
+            )}
+            {hasPermission(currentUser, 'branch.view') && (
+              <Link to="/branches" className="button secondary">
+                Manage Branches
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="quick-actions" aria-label="Quick actions">
         <Link className="quick-action qa-incident" to="/incidents?new=1"><AlertTriangle size={14} /> Create Incident</Link>

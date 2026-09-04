@@ -81,7 +81,7 @@ export default function BranchDashboardPage() {
   const faults = fleet.filter((a) => ['FAULT', 'CRITICAL', 'WARNING', 'DEGRADED'].includes(a.status)).length;
   const offline = fleet.filter((a) => a.status === 'OFFLINE').length;
   const activeIncidents = (incidents.data || []).filter((i) => i.status !== 'CLOSED').slice(0, 5);
-  const availability = fleet.length ? Math.round((operational / fleet.length) * 100) : 0;
+  const availability = fleet.length ? Math.round((operational / fleet.length) * 100) : 100;
 
   const branchName = currentUser?.branch_name || summary.data.district_name;
 
@@ -99,7 +99,7 @@ export default function BranchDashboardPage() {
         </div>
         <div className="page-actions">
           <span className={`health-pill ${availability >= 90 ? 'ok' : 'danger'}`}>
-            <Wifi size={13} /> {availability}% healthy
+            <Wifi size={13} /> {fleet.length > 0 ? `${availability}% healthy` : 'System Ready'}
           </span>
           <Link className="button primary" to="/branch/report">
             <AlertTriangle size={16} /> Report ATM Problem

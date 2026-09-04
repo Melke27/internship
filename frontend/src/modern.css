@@ -3215,6 +3215,167 @@ input.check-field { width: auto; }
   letter-spacing: 0.03em;
 }
 
+/* =====================================================================
+   UX POLISH & INTERACTIVE VISUAL ENHANCEMENTS
+   ===================================================================== */
+
+/* Subtle Glassmorphism Panel Elevation */
+.panel {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+.panel:hover {
+  border-color: rgba(59, 79, 216, 0.2);
+  box-shadow: 0 8px 24px -4px rgba(11, 21, 48, 0.08);
+}
+
+/* Interactive Metric Card Polish */
+.metric-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px -6px rgba(11, 21, 48, 0.12);
+}
+.metric-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--brand), #6366f1);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.metric-card:hover::after {
+  opacity: 1;
+}
+
+/* Sticky Data Table Headers & Row Polish */
+.table-wrapper {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+  background: var(--surface);
+}
+.table-wrapper table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.table-wrapper thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8fafc;
+  border-bottom: 2px solid var(--line);
+  color: var(--text-2);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 12px 14px;
+}
+.table-wrapper tbody tr {
+  transition: background-color 0.14s ease;
+}
+.table-wrapper tbody tr:hover {
+  background-color: #f1f5f9;
+}
+.table-wrapper tbody td {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  vertical-align: middle;
+}
+
+/* Enhanced Form Inputs & Select Focus Glows */
+.field-input, .search-input, input[type="text"], input[type="search"], select {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.field-input:focus, .search-input:focus, input[type="text"]:focus, input[type="search"]:focus, select:focus {
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 0 3px rgba(59, 79, 216, 0.16) !important;
+  background-color: #ffffff !important;
+}
+
+/* Quick Action Launchpad Buttons */
+.action-launchpad {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.launch-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+}
+.launch-btn:hover {
+  background: #f8fafc;
+  border-color: rgba(59, 79, 216, 0.3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  color: var(--brand);
+}
+.launch-btn svg {
+  color: var(--brand);
+  transition: transform 0.18s ease;
+}
+.launch-btn:hover svg {
+  transform: scale(1.1);
+}
+
+/* Step Tracker Timeline visual improvements */
+.step-tracker-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  padding: 16px 0;
+  margin-bottom: 20px;
+}
+.step-tracker-bar {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #e2e8f0;
+  z-index: 1;
+  transform: translateY(-50%);
+  border-radius: 999px;
+}
+.step-tracker-bar-active {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand), #10b981);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* Badge Glow Effects */
+.status-pill-glow-active {
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+.status-pill-glow-danger {
+  box-shadow: 0 0 10px rgba(225, 29, 72, 0.3);
+}
+.status-pill-glow-warning {
+  box-shadow: 0 0 10px rgba(217, 119, 6, 0.3);
+}
+
+
 
 
 

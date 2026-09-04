@@ -164,3 +164,44 @@ class LogoutView(APIView):
         if request.user and request.user.is_authenticated:
             AuditLog.objects.create(user=request.user, action="LOGOUT", entity="User", entity_id=request.user.username)
         return Response(status=status.HTTP_205_RESET_CONTENT)
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        user = request.user
+        current_password = request.data.get("current_password")
+        new_password = request.data.get("new_password")
+
+        if not current_password or not new_password:
+            return Response(
+                {"detail": "Both current_password and new_password are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not user.check_password(current_password):
+            return Response(
+                {"current_password": ["Current password is incorrect."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(new_password) < 6:
+            return Response(
+                {"new_password": ["Password must be at least 6 characters long."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.set_password(new_password)
+        user.save()
+
+        AuditLog.objects.create(
+            user=user,
+            action="PASSWORD_CHANGED",
+            entity="User",
+            entity_id=user.username,
+        )
+
+        return Response({"detail": "Password changed successfully."})
+

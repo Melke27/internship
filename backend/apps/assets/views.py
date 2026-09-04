@@ -140,6 +140,62 @@ class ATMViewSet(AuditMixin, ScopedQuerysetMixin, viewsets.ModelViewSet):
             atm.save(update_fields=["last_checked", "updated_at"])
         return Response({"changed": changed, "atm": ATMSerializer(atm).data})
 
+    @action(detail=False, methods=["post"], url_path="bulk-status")
+    @transaction.atomic
+    def bulk_status(self, request):
+        require(is_operations(request.user), "Only operations staff may perform bulk ATM status updates.")
+        ids = request.data.get("ids", [])
+        new_status = request.data.get("status")
+        reason = request.data.get("reason", "Bulk status update")
+        if not ids or not isinstance(ids, list):
+            return Response({"ids": ["List of ATM IDs is required."]}, status=http_status.HTTP_400_BAD_REQUEST)
+        if new_status not in dict(ATM.Status.choices):
+            return Response({"status": ["Invalid ATM status."]}, status=http_status.HTTP_400_BAD_REQUEST)
+
+        atms = self.get_queryset().filter(id__in=ids)
+        updated_count = 0
+        for atm in atms:
+            if record_atm_status_change(atm, new_status, request.user, reason):
+                updated_count += 1
+
+        return Response({
+            "total_requested": len(ids),
+            "updated_count": updated_count,
+            "status": new_status,
+            "reason": reason,
+        })
+
+    @action(detail=True, methods=["get"])
+    def analytics(self, request, pk=None):
+        from apps.incidents.models import Incident
+        from django.db.models import Avg, Count, DurationField, F
+        from django.db.models.functions import Cast
+
+        atm = self.get_object()
+        incidents = Incident.objects.filter(atm=atm)
+        total_incidents = incidents.count()
+        resolved = incidents.filter(resolved_at__isnull=False, created_at__isnull=False)
+        resolved_duration = Cast(F("resolved_at") - F("created_at"), output_field=DurationField())
+        avg_sec = resolved.aggregate(avg=Avg(resolved_duration))["avg"]
+        mttr_hours = round(avg_sec.total_seconds() / 3600, 1) if avg_sec else 0.0
+
+        categories = dict(incidents.values("category").annotate(total=Count("id")).values_list("category", "total"))
+        maintenance_count = atm.maintenance_records.count()
+        history_count = atm.status_history.count()
+
+        return Response({
+            "atm_id": atm.id,
+            "reference": atm.reference,
+            "name": atm.name,
+            "status": atm.status,
+            "total_incidents": total_incidents,
+            "resolved_incidents": resolved.count(),
+            "mttr_hours": mttr_hours,
+            "incident_categories": categories,
+            "total_maintenance_jobs": maintenance_count,
+            "status_changes_count": history_count,
+        })
+
     @action(detail=True, methods=["post"])
     @transaction.atomic
     def set_active(self, request, pk=None):

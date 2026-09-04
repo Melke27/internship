@@ -10,3 +10,17 @@ class Branch(TimeStamped):
     class Meta: constraints=[models.UniqueConstraint(fields=["district","code"],name="unique_branch_code_per_district")]
     def __str__(self): return f"{self.name} ({self.code})"
 
+class SystemSetting(TimeStamped):
+    key = models.CharField(max_length=100, unique=True)
+    value = models.TextField()
+    description = models.CharField(max_length=255, blank=True)
+    setting_type = models.CharField(
+        max_length=20,
+        choices=[("STRING", "String"), ("INT", "Integer"), ("BOOL", "Boolean"), ("JSON", "JSON")],
+        default="STRING",
+    )
+
+    def __str__(self):
+        return f"{self.key}: {self.value}"
+
+

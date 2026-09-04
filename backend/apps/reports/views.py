@@ -584,3 +584,120 @@ class GlobalSearchView(APIView):
                 ],
             }
         )
+
+
+class SLAMetricsReportView(APIView):
+    def get(self, request):
+        _, _, atms, incidents, _ = scoped(request.user)
+        resolved_incidents = incidents.filter(resolved_at__isnull=False, created_at__isnull=False)
+        resolved_duration = Cast(F("resolved_at") - F("created_at"), output_field=DurationField())
+
+        SLA_TARGETS = {
+            Incident.Priority.CRITICAL: 4.0,
+            Incident.Priority.HIGH: 8.0,
+            Incident.Priority.MEDIUM: 24.0,
+            Incident.Priority.LOW: 48.0,
+        }
+
+        priority_metrics = {}
+        total_in_sla = 0
+        total_resolved = resolved_incidents.count()
+
+        for priority, target_hours in SLA_TARGETS.items():
+            p_resolved = resolved_incidents.filter(priority=priority)
+            p_count = p_resolved.count()
+            avg_sec = p_resolved.aggregate(avg=Avg(resolved_duration))["avg"]
+            avg_hrs = round(avg_sec.total_seconds() / 3600, 1) if avg_sec else 0.0
+
+            in_sla_count = 0
+            for inc in p_resolved:
+                dur_hrs = (inc.resolved_at - inc.created_at).total_seconds() / 3600
+                if dur_hrs <= target_hours:
+                    in_sla_count += 1
+
+            total_in_sla += in_sla_count
+            compliance_pct = round((in_sla_count / p_count * 100)) if p_count else 100.0
+
+            priority_metrics[priority] = {
+                "total_resolved": p_count,
+                "target_sla_hours": target_hours,
+                "avg_resolution_hours": avg_hrs,
+                "met_sla_count": in_sla_count,
+                "compliance_percentage": compliance_pct,
+            }
+
+        overall_compliance = round((total_in_sla / total_resolved * 100)) if total_resolved else 100.0
+
+        return Response({
+            "overall_sla_compliance": overall_compliance,
+            "total_resolved": total_resolved,
+            "priority_breakdown": priority_metrics,
+            "total_atms_monitored": atms.count(),
+        })
+
+
+class SystemHealthView(APIView):
+    def get(self, request):
+        from django.db import connection
+        db_ok = True
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+        except Exception:
+            db_ok = False
+
+        user = request.user
+        _, _, atms, incidents, _ = scoped(user)
+        critical_count = atms.filter(status=ATM.Status.CRITICAL, is_active=True).count()
+        escalated_count = incidents.filter(status=Incident.Status.ESCALATED).count()
+
+        return Response({
+            "status": "HEALTHY" if db_ok and critical_count == 0 else ("DEGRADED" if db_ok else "UNHEALTHY"),
+            "database_status": "CONNECTED" if db_ok else "DISCONNECTED",
+            "server_time": timezone.now(),
+            "critical_atms": critical_count,
+            "escalated_incidents": escalated_count,
+            "district": YEKA_NAME,
+        })
+
+
+class SystemSettingsView(APIView):
+    DEFAULT_SETTINGS = {
+        "sla_critical_hours": "4",
+        "sla_high_hours": "8",
+        "sla_medium_hours": "24",
+        "sla_low_hours": "48",
+        "auto_escalate_enabled": "true",
+        "email_notifications": "true",
+        "maintenance_reminder_days": "7",
+    }
+
+    def get(self, request):
+        from apps.organization.models import SystemSetting
+        settings_dict = dict(self.DEFAULT_SETTINGS)
+        for setting in SystemSetting.objects.all():
+            settings_dict[setting.key] = setting.value
+        return Response(settings_dict)
+
+    def post(self, request):
+        from apps.organization.models import SystemSetting
+        data = request.data
+        if not isinstance(data, dict):
+            return Response({"detail": "Invalid payload format."}, status=400)
+
+        updated_keys = []
+        for key, value in data.items():
+            if key in self.DEFAULT_SETTINGS or key.startswith("custom_"):
+                SystemSetting.objects.update_or_create(
+                    key=key,
+                    defaults={"value": str(value), "setting_type": "STRING"}
+                )
+                updated_keys.append(key)
+
+        settings_dict = dict(self.DEFAULT_SETTINGS)
+        for setting in SystemSetting.objects.all():
+            settings_dict[setting.key] = setting.value
+
+        return Response({"detail": f"Updated {len(updated_keys)} settings.", "settings": settings_dict})
+
+

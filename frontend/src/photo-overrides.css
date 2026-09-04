@@ -444,7 +444,29 @@
   box-shadow: 0 4px 14px rgba(59, 79, 216, 0.4);
   transition: transform 0.15s ease, filter 0.15s ease;
 }
-.hero-action-btn:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.1);
+/* Sidebar user profile text truncation override */
+.sidebar .sidebar-user > div:not(.avatar) {
+  min-width: 0 !important;
+  flex: 1 !important;
+  overflow: hidden !important;
+}
+.sidebar .sidebar-user strong {
+  display: block !important;
+  color: #f1f4fb !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.sidebar .sidebar-user small {
+  display: block !important;
+  color: #7e8db0 !important;
+  font-size: 11px !important;
+  margin-top: 2px !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }

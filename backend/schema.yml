@@ -1,0 +1,4624 @@
+openapi: 3.0.3
+info:
+  title: CBE Enterprise ATM & ICT Support API
+  version: 1.0.0
+  description: Scoped internal technical-support API. No customer or banking transaction
+    data.
+paths:
+  /api/atms/:
+    get:
+      operationId: atms_list
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - in: query
+        name: assigned_technician
+        schema:
+          type: integer
+      - in: query
+        name: branch
+        schema:
+          type: integer
+      - in: query
+        name: branch__district
+        schema:
+          type: integer
+      - in: query
+        name: health
+        schema:
+          type: string
+          enum:
+          - CRITICAL
+          - DEGRADED
+          - HEALTHY
+          - MAINTENANCE
+          - OFFLINE
+          - UNKNOWN
+          - WARNING
+        description: |-
+          * `HEALTHY` - Healthy
+          * `WARNING` - Warning
+          * `DEGRADED` - Degraded
+          * `CRITICAL` - Critical
+          * `OFFLINE` - Offline
+          * `MAINTENANCE` - Maintenance
+          * `UNKNOWN` - Unknown
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - CRITICAL
+          - DEGRADED
+          - FAULT
+          - MAINTENANCE
+          - OFFLINE
+          - OPERATIONAL
+          - UNDER_REPAIR
+          - UNKNOWN
+          - WARNING
+        description: |-
+          Technical / operational condition of the ATM.
+
+          * `OPERATIONAL` - Operational
+          * `WARNING` - Warning
+          * `DEGRADED` - Degraded
+          * `FAULT` - Fault
+          * `OFFLINE` - Offline
+          * `CRITICAL` - Critical
+          * `MAINTENANCE` - Maintenance
+          * `UNDER_REPAIR` - Under Repair
+          * `UNKNOWN` - Unknown
+      tags:
+      - atms
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedATMList'
+          description: ''
+    post:
+      operationId: atms_create
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      tags:
+      - atms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ATM'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ATM'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ATM'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ATM'
+          description: ''
+  /api/atms/{id}/:
+    get:
+      operationId: atms_retrieve
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this atm.
+        required: true
+      tags:
+      - atms
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ATM'
+          description: ''
+    put:
+      operationId: atms_update
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this atm.
+        required: true
+      tags:
+      - atms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ATM'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ATM'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ATM'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ATM'
+          description: ''
+    patch:
+      operationId: atms_partial_update
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this atm.
+        required: true
+      tags:
+      - atms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedATM'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedATM'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedATM'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ATM'
+          description: ''
+    delete:
+      operationId: atms_destroy
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this atm.
+        required: true
+      tags:
+      - atms
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/atms/{id}/analytics/:
+    get:
+      operationId: atms_analytics_retrieve
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this atm.
+        required: true
+      tags:
+      - atms
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ATM'
+          description: ''
+  /api/atms/{id}/incidents/:
+    get:
+      operationId: atms_incidents_retrieve
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this atm.
+        required: true
+      tags:
+      - atms
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ATM'
+          description: ''
+  /api/atms/{id}/maintenance/:
+    get:
+      operationId: atms_maintenance_retrieve
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this atm.
+        required: true
+      tags:
+      - atms
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ATM'
+          description: ''
+  /api/atms/{id}/set_active/:
+    post:
+      operationId: atms_set_active_create
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this atm.
+        required: true
+      tags:
+      - atms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ATM'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ATM'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ATM'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ATM'
+          description: ''
+  /api/atms/{id}/set_status/:
+    post:
+      operationId: atms_set_status_create
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this atm.
+        required: true
+      tags:
+      - atms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ATM'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ATM'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ATM'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ATM'
+          description: ''
+  /api/atms/{id}/status_history/:
+    get:
+      operationId: atms_status_history_retrieve
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this atm.
+        required: true
+      tags:
+      - atms
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ATM'
+          description: ''
+  /api/atms/bulk-status/:
+    post:
+      operationId: atms_bulk_status_create
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      tags:
+      - atms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ATM'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ATM'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ATM'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ATM'
+          description: ''
+  /api/audit-logs/:
+    get:
+      operationId: audit_logs_list
+      parameters:
+      - in: query
+        name: action
+        schema:
+          type: string
+      - in: query
+        name: entity
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: user
+        schema:
+          type: integer
+      tags:
+      - audit-logs
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditLogList'
+          description: ''
+  /api/audit-logs/{id}/:
+    get:
+      operationId: audit_logs_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this audit log.
+        required: true
+      tags:
+      - audit-logs
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLog'
+          description: ''
+  /api/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/auth/me/:
+    get:
+      operationId: auth_me_retrieve
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: auth_me_partial_update
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/auth/token/:
+    post:
+      operationId: auth_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailOrUsernameToken'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailOrUsernameToken'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailOrUsernameToken'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailOrUsernameToken'
+          description: ''
+  /api/auth/token/refresh/:
+    post:
+      operationId: auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/branch-reports/:
+    get:
+      operationId: branch_reports_list
+      parameters:
+      - in: query
+        name: atm
+        schema:
+          type: integer
+      - in: query
+        name: branch
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: problem_type
+        schema:
+          type: string
+          enum:
+          - CARD_READER
+          - CASH_DISPENSER
+          - DISPLAY
+          - GENERAL
+          - HARDWARE
+          - NETWORK_COMMUNICATION
+          - POWER
+          - RECEIPT_PRINTER
+          - SECURITY
+          - SOFTWARE
+          - UNKNOWN
+        description: |-
+          * `NETWORK_COMMUNICATION` - Network / Communication
+          * `POWER` - Power
+          * `DISPLAY` - Display
+          * `CARD_READER` - Card Reader
+          * `CASH_DISPENSER` - Cash Dispenser
+          * `RECEIPT_PRINTER` - Receipt Printer
+          * `SOFTWARE` - Software / Application
+          * `HARDWARE` - Hardware
+          * `SECURITY` - Security-Related Technical Issue
+          * `GENERAL` - General ATM Error
+          * `UNKNOWN` - Unknown
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: severity
+        schema:
+          type: string
+          enum:
+          - CRITICAL
+          - HIGH
+          - LOW
+          - MEDIUM
+        description: |-
+          * `LOW` - Low
+          * `MEDIUM` - Medium
+          * `HIGH` - High
+          * `CRITICAL` - Critical
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - ASSIGNED
+          - CLOSED
+          - CONVERTED_TO_INCIDENT
+          - DISMISSED
+          - RECEIVED
+          - RESOLVED
+          - REVIEWED
+          - REVIEWING
+          - SUBMITTED
+          - VERIFIED
+        description: |-
+          * `SUBMITTED` - Submitted
+          * `RECEIVED` - Received
+          * `REVIEWING` - Reviewing
+          * `CONVERTED_TO_INCIDENT` - Converted to Incident
+          * `ASSIGNED` - Assigned
+          * `RESOLVED` - Resolved
+          * `VERIFIED` - Verified
+          * `CLOSED` - Closed
+          * `REVIEWED` - Reviewed
+          * `DISMISSED` - Dismissed
+      tags:
+      - branch-reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBranchReportList'
+          description: ''
+    post:
+      operationId: branch_reports_create
+      tags:
+      - branch-reports
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BranchReport'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BranchReport'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BranchReport'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchReport'
+          description: ''
+  /api/branch-reports/{id}/:
+    get:
+      operationId: branch_reports_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this branch report.
+        required: true
+      tags:
+      - branch-reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchReport'
+          description: ''
+    patch:
+      operationId: branch_reports_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this branch report.
+        required: true
+      tags:
+      - branch-reports
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBranchReport'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBranchReport'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBranchReport'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchReport'
+          description: ''
+  /api/branch-reports/{id}/create-incident/:
+    post:
+      operationId: branch_reports_create_incident_create
+      description: |-
+        Convert a valid branch report into an incident. Does not auto-mark ATM critical
+        until operations confirms severity.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this branch report.
+        required: true
+      tags:
+      - branch-reports
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BranchReport'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BranchReport'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BranchReport'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchReport'
+          description: ''
+  /api/branch-reports/{id}/dismiss/:
+    post:
+      operationId: branch_reports_dismiss_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this branch report.
+        required: true
+      tags:
+      - branch-reports
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BranchReport'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BranchReport'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BranchReport'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchReport'
+          description: ''
+  /api/branch-reports/{id}/receive/:
+    post:
+      operationId: branch_reports_receive_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this branch report.
+        required: true
+      tags:
+      - branch-reports
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BranchReport'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BranchReport'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BranchReport'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchReport'
+          description: ''
+  /api/branch-reports/{id}/review/:
+    post:
+      operationId: branch_reports_review_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this branch report.
+        required: true
+      tags:
+      - branch-reports
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BranchReport'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BranchReport'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BranchReport'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchReport'
+          description: ''
+  /api/branch-reports/pending/:
+    get:
+      operationId: branch_reports_pending_retrieve
+      tags:
+      - branch-reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchReport'
+          description: ''
+  /api/branches/:
+    get:
+      operationId: branches_list
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - CLOSED
+          - INACTIVE
+          - SETUP
+        description: |-
+          * `SETUP` - Under Setup
+          * `ACTIVE` - Active
+          * `CLOSED` - Temporarily Closed
+          * `INACTIVE` - Inactive
+      tags:
+      - branches
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBranchList'
+          description: ''
+    post:
+      operationId: branches_create
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      tags:
+      - branches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Branch'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Branch'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Branch'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+          description: ''
+  /api/branches/{id}/:
+    get:
+      operationId: branches_retrieve
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this branch.
+        required: true
+      tags:
+      - branches
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+          description: ''
+    put:
+      operationId: branches_update
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this branch.
+        required: true
+      tags:
+      - branches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Branch'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Branch'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Branch'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+          description: ''
+    patch:
+      operationId: branches_partial_update
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this branch.
+        required: true
+      tags:
+      - branches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBranch'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBranch'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBranch'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+          description: ''
+    delete:
+      operationId: branches_destroy
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this branch.
+        required: true
+      tags:
+      - branches
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/branches/{id}/deactivate/:
+    post:
+      operationId: branches_deactivate_create
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this branch.
+        required: true
+      tags:
+      - branches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Branch'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Branch'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Branch'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+          description: ''
+  /api/branches/{id}/summary/:
+    get:
+      operationId: branches_summary_retrieve
+      description: Writes audit log entries for create/update of a model-viewset resource.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this branch.
+        required: true
+      tags:
+      - branches
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+          description: ''
+  /api/districts/:
+    get:
+      operationId: districts_list
+      description: Yeka District is fixed. Create / update / delete are not allowed.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+        description: |-
+          * `ACTIVE` - Active
+          * `INACTIVE` - Inactive
+      tags:
+      - districts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDistrictList'
+          description: ''
+  /api/districts/{id}/:
+    get:
+      operationId: districts_retrieve
+      description: Yeka District is fixed. Create / update / delete are not allowed.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this district.
+        required: true
+      tags:
+      - districts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/District'
+          description: ''
+  /api/districts/current/:
+    get:
+      operationId: districts_current_retrieve
+      description: Yeka District is fixed. Create / update / delete are not allowed.
+      tags:
+      - districts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/District'
+          description: ''
+  /api/incidents/:
+    get:
+      operationId: incidents_list
+      parameters:
+      - in: query
+        name: assigned_to
+        schema:
+          type: integer
+      - in: query
+        name: atm
+        schema:
+          type: integer
+      - in: query
+        name: atm__branch__district
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: priority
+        schema:
+          type: string
+          enum:
+          - CRITICAL
+          - HIGH
+          - LOW
+          - MEDIUM
+        description: |-
+          * `LOW` - Low
+          * `MEDIUM` - Medium
+          * `HIGH` - High
+          * `CRITICAL` - Critical
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - ACKNOWLEDGED
+          - ASSIGNED
+          - CLOSED
+          - ESCALATED
+          - INVESTIGATING
+          - REPORTED
+          - RESOLVED
+          - TROUBLESHOOTING
+          - VERIFIED
+          - WAITING
+        description: |-
+          * `REPORTED` - Reported
+          * `ACKNOWLEDGED` - Acknowledged
+          * `ASSIGNED` - Assigned
+          * `INVESTIGATING` - Investigating
+          * `TROUBLESHOOTING` - Troubleshooting
+          * `WAITING` - Waiting
+          * `ESCALATED` - Escalated
+          * `RESOLVED` - Resolved
+          * `VERIFIED` - Verified
+          * `CLOSED` - Closed
+      tags:
+      - incidents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedIncidentList'
+          description: ''
+    post:
+      operationId: incidents_create
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Incident'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/:
+    get:
+      operationId: incidents_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this incident.
+        required: true
+      tags:
+      - incidents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+    put:
+      operationId: incidents_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Incident'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+    patch:
+      operationId: incidents_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedIncident'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedIncident'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedIncident'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+    delete:
+      operationId: incidents_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this incident.
+        required: true
+      tags:
+      - incidents
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/incidents/{id}/assign/:
+    post:
+      operationId: incidents_assign_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Incident'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/close/:
+    post:
+      operationId: incidents_close_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Incident'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/escalate/:
+    post:
+      operationId: incidents_escalate_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Incident'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/resolve/:
+    post:
+      operationId: incidents_resolve_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Incident'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/retest/:
+    post:
+      operationId: incidents_retest_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Incident'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/status/:
+    post:
+      operationId: incidents_status_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Incident'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/timeline/:
+    get:
+      operationId: incidents_timeline_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this incident.
+        required: true
+      tags:
+      - incidents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/troubleshooting/:
+    get:
+      operationId: incidents_troubleshooting_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this incident.
+        required: true
+      tags:
+      - incidents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+    post:
+      operationId: incidents_troubleshooting_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Incident'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/incidents/{id}/verify/:
+    post:
+      operationId: incidents_verify_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this incident.
+        required: true
+      tags:
+      - incidents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Incident'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Incident'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/maintenance/:
+    get:
+      operationId: maintenance_list
+      parameters:
+      - in: query
+        name: atm
+        schema:
+          type: integer
+      - in: query
+        name: atm__branch__district
+        schema:
+          type: integer
+      - in: query
+        name: id
+        schema:
+          type: integer
+      - in: query
+        name: maintenance_type
+        schema:
+          type: string
+          enum:
+          - CORRECTIVE
+          - EMERGENCY
+          - HARDWARE
+          - INSPECTION
+          - NETWORK
+          - PREVENTIVE
+          - SOFTWARE
+        description: |-
+          * `PREVENTIVE` - Preventive
+          * `CORRECTIVE` - Corrective
+          * `EMERGENCY` - Emergency
+          * `INSPECTION` - Inspection
+          * `NETWORK` - Network
+          * `HARDWARE` - Hardware
+          * `SOFTWARE` - Software
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: priority
+        schema:
+          type: string
+          enum:
+          - CRITICAL
+          - HIGH
+          - LOW
+          - MEDIUM
+        description: |-
+          * `LOW` - Low
+          * `MEDIUM` - Medium
+          * `HIGH` - High
+          * `CRITICAL` - Critical
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - APPROVED
+          - ASSIGNED
+          - CANCELLED
+          - COMPLETED
+          - IN_PROGRESS
+          - ON_HOLD
+          - REQUESTED
+          - SCHEDULED
+          - STARTED
+          - TESTING
+          - UNDER_REPAIR
+          - VERIFIED
+        description: |-
+          * `REQUESTED` - Requested
+          * `APPROVED` - Approved
+          * `SCHEDULED` - Scheduled
+          * `ASSIGNED` - Assigned
+          * `IN_PROGRESS` - In Progress
+          * `ON_HOLD` - On Hold
+          * `UNDER_REPAIR` - Under Repair
+          * `TESTING` - Testing
+          * `COMPLETED` - Completed
+          * `VERIFIED` - Verified
+          * `CANCELLED` - Cancelled
+          * `STARTED` - Started
+      - in: query
+        name: technician
+        schema:
+          type: integer
+      tags:
+      - maintenance
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMaintenanceList'
+          description: ''
+    post:
+      operationId: maintenance_create
+      tags:
+      - maintenance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Maintenance'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Maintenance'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Maintenance'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Maintenance'
+          description: ''
+  /api/maintenance/{id}/:
+    get:
+      operationId: maintenance_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this maintenance.
+        required: true
+      tags:
+      - maintenance
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Maintenance'
+          description: ''
+    put:
+      operationId: maintenance_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this maintenance.
+        required: true
+      tags:
+      - maintenance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Maintenance'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Maintenance'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Maintenance'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Maintenance'
+          description: ''
+    patch:
+      operationId: maintenance_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this maintenance.
+        required: true
+      tags:
+      - maintenance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMaintenance'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMaintenance'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMaintenance'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Maintenance'
+          description: ''
+    delete:
+      operationId: maintenance_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this maintenance.
+        required: true
+      tags:
+      - maintenance
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/maintenance/{id}/assign/:
+    post:
+      operationId: maintenance_assign_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this maintenance.
+        required: true
+      tags:
+      - maintenance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Maintenance'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Maintenance'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Maintenance'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Maintenance'
+          description: ''
+  /api/maintenance/{id}/status/:
+    post:
+      operationId: maintenance_status_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this maintenance.
+        required: true
+      tags:
+      - maintenance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Maintenance'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Maintenance'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Maintenance'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Maintenance'
+          description: ''
+  /api/notifications/:
+    get:
+      operationId: notifications_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationList'
+          description: ''
+  /api/notifications/{id}/:
+    get:
+      operationId: notifications_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/{id}/mark_read/:
+    post:
+      operationId: notifications_mark_read_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Notification'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/announce/:
+    post:
+      operationId: notifications_announce_create
+      description: Admin-composed notice delivered to selected recipients (by user
+        id and/or role).
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Notification'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/mark_all_read/:
+    post:
+      operationId: notifications_mark_all_read_create
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Notification'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/unread_count/:
+    get:
+      operationId: notifications_unread_count_retrieve
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/reports/atms/{id}/:
+    get:
+      operationId: reports_atms_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/branches/:
+    get:
+      operationId: reports_branches_retrieve
+      description: Aggregate branch performance reports (not BranchReport model list).
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/dashboard/:
+    get:
+      operationId: reports_dashboard_retrieve
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/districts/:
+    get:
+      operationId: reports_districts_retrieve
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/maintenance/:
+    get:
+      operationId: reports_maintenance_retrieve
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/sla/:
+    get:
+      operationId: reports_sla_retrieve
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/technicians/:
+    get:
+      operationId: reports_technicians_retrieve
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/search/:
+    get:
+      operationId: search_retrieve
+      tags:
+      - search
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/system/health/:
+    get:
+      operationId: system_health_retrieve
+      tags:
+      - system
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/:
+    get:
+      operationId: users_list
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+      - in: query
+        name: district
+        schema:
+          type: integer
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: role
+        schema:
+          type: string
+          enum:
+          - ADMINISTRATOR
+          - AUDITOR
+          - BRANCH_MANAGER
+          - BRANCH_USER
+          - DISTRICT_ADMIN
+          - MAINTENANCE_SUPERVISOR
+          - MONITORING_OFFICER
+          - OPERATIONS_OFFICER
+          - SUPERVISOR
+          - TECHNICIAN
+        description: |-
+          * `DISTRICT_ADMIN` - District Admin
+          * `OPERATIONS_OFFICER` - Operations Officer
+          * `MAINTENANCE_SUPERVISOR` - Maintenance Supervisor
+          * `TECHNICIAN` - Technician
+          * `BRANCH_MANAGER` - Branch Manager
+          * `BRANCH_USER` - Branch User
+          * `AUDITOR` - Auditor
+          * `ADMINISTRATOR` - Administrator
+          * `SUPERVISOR` - Supervisor
+          * `MONITORING_OFFICER` - Monitoring Officer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserList'
+          description: ''
+    post:
+      operationId: users_create
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/{id}/:
+    get:
+      operationId: users_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: users_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: users_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    delete:
+      operationId: users_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/users/roles/:
+    get:
+      operationId: users_roles_retrieve
+      description: Canonical assignable roles and their display labels (single source
+        of truth).
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/technicians/:
+    get:
+      operationId: users_technicians_retrieve
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+components:
+  schemas:
+    ATM:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        branch_name:
+          type: string
+          readOnly: true
+        district_name:
+          type: string
+          readOnly: true
+        assigned_technician_name:
+          type: string
+          readOnly: true
+        operational_state:
+          type: string
+          readOnly: true
+        active_incident:
+          type: string
+          readOnly: true
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/ATMComponent'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        reference:
+          type: string
+          maxLength: 50
+        name:
+          type: string
+          maxLength: 120
+        atm_type:
+          type: string
+          maxLength: 80
+        manufacturer:
+          type: string
+          maxLength: 120
+        model:
+          type: string
+          maxLength: 120
+        serial_number:
+          type: string
+          maxLength: 120
+        location:
+          type: string
+          maxLength: 255
+        address:
+          type: string
+          maxLength: 255
+        ip_address:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+          description: Whether the ATM is part of active district operations.
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ATMStatusEnum'
+          description: |-
+            Technical / operational condition of the ATM.
+
+            * `OPERATIONAL` - Operational
+            * `WARNING` - Warning
+            * `DEGRADED` - Degraded
+            * `FAULT` - Fault
+            * `OFFLINE` - Offline
+            * `CRITICAL` - Critical
+            * `MAINTENANCE` - Maintenance
+            * `UNDER_REPAIR` - Under Repair
+            * `UNKNOWN` - Unknown
+        health:
+          $ref: '#/components/schemas/HealthEnum'
+        network_status:
+          $ref: '#/components/schemas/CommunicationStatusEnum'
+        power_status:
+          $ref: '#/components/schemas/CommunicationStatusEnum'
+        hardware_status:
+          $ref: '#/components/schemas/CommunicationStatusEnum'
+        communication_status:
+          $ref: '#/components/schemas/CommunicationStatusEnum'
+        installation_date:
+          type: string
+          format: date
+          nullable: true
+        last_checked:
+          type: string
+          format: date-time
+          nullable: true
+        last_status_change:
+          type: string
+          format: date-time
+          nullable: true
+        last_maintenance:
+          type: string
+          format: date-time
+          nullable: true
+        next_maintenance:
+          type: string
+          format: date-time
+          nullable: true
+        assigned_team:
+          type: string
+          maxLength: 150
+        notes:
+          type: string
+        photo:
+          type: string
+          format: uri
+          nullable: true
+          description: Photo of the ATM unit (front view or signage).
+        branch:
+          type: integer
+        assigned_technician:
+          type: integer
+          nullable: true
+      required:
+      - active_incident
+      - assigned_technician_name
+      - branch
+      - branch_name
+      - components
+      - created_at
+      - district_name
+      - id
+      - operational_state
+      - reference
+      - updated_at
+    ATMComponent:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        component_type:
+          $ref: '#/components/schemas/ComponentTypeEnum'
+        status:
+          $ref: '#/components/schemas/CommunicationStatusEnum'
+        condition:
+          $ref: '#/components/schemas/ConditionEnum'
+        notes:
+          type: string
+        atm:
+          type: integer
+      required:
+      - atm
+      - component_type
+      - created_at
+      - id
+      - updated_at
+    ATMStatusEnum:
+      enum:
+      - OPERATIONAL
+      - WARNING
+      - DEGRADED
+      - FAULT
+      - OFFLINE
+      - CRITICAL
+      - MAINTENANCE
+      - UNDER_REPAIR
+      - UNKNOWN
+      type: string
+      description: |-
+        * `OPERATIONAL` - Operational
+        * `WARNING` - Warning
+        * `DEGRADED` - Degraded
+        * `FAULT` - Fault
+        * `OFFLINE` - Offline
+        * `CRITICAL` - Critical
+        * `MAINTENANCE` - Maintenance
+        * `UNDER_REPAIR` - Under Repair
+        * `UNKNOWN` - Unknown
+    ActionTypeEnum:
+      enum:
+      - CHECK_STATUS
+      - CHECK_ATM_STATUS
+      - PHYSICAL_INSPECTION
+      - CHECK_POWER
+      - CHECK_CONNECTION
+      - CHECK_NETWORK
+      - CHECK_COMMUNICATION
+      - CHECK_HARDWARE
+      - CHECK_DISPLAY
+      - CHECK_CARD_READER
+      - CHECK_CASH_DISPENSER
+      - CHECK_RECEIPT_PRINTER
+      - CHECK_SOFTWARE_ERROR
+      - RECORD_OBSERVATION
+      - RECORD_ERROR
+      - AUTHORIZED_TROUBLESHOOTING
+      - PERFORM_AUTHORIZED_ACTION
+      - RETEST_ATM
+      - VERIFY_SERVICE
+      - ESCALATE
+      - ESCALATE_INCIDENT
+      type: string
+      description: |-
+        * `CHECK_STATUS` - Check Status
+        * `CHECK_ATM_STATUS` - Check ATM Status
+        * `PHYSICAL_INSPECTION` - Physical Inspection
+        * `CHECK_POWER` - Check Power
+        * `CHECK_CONNECTION` - Check Connection
+        * `CHECK_NETWORK` - Check Network
+        * `CHECK_COMMUNICATION` - Check Communication
+        * `CHECK_HARDWARE` - Check Hardware
+        * `CHECK_DISPLAY` - Check Display
+        * `CHECK_CARD_READER` - Check Card Reader
+        * `CHECK_CASH_DISPENSER` - Check Cash Dispenser
+        * `CHECK_RECEIPT_PRINTER` - Check Receipt Printer
+        * `CHECK_SOFTWARE_ERROR` - Check Software Error
+        * `RECORD_OBSERVATION` - Record Observation
+        * `RECORD_ERROR` - Record Error
+        * `AUTHORIZED_TROUBLESHOOTING` - Authorized Troubleshooting
+        * `PERFORM_AUTHORIZED_ACTION` - Perform Authorized Action
+        * `RETEST_ATM` - Retest ATM
+        * `VERIFY_SERVICE` - Verify Service
+        * `ESCALATE` - Escalate
+        * `ESCALATE_INCIDENT` - Escalate Incident
+    AtmCurrentlyWorkingEnum:
+      enum:
+      - 'YES'
+      - 'NO'
+      - UNKNOWN
+      type: string
+      description: |-
+        * `YES` - Yes
+        * `NO` - No
+        * `UNKNOWN` - Unknown
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          nullable: true
+        user_name:
+          type: string
+          readOnly: true
+        action:
+          type: string
+          maxLength: 80
+        entity:
+          type: string
+          maxLength: 80
+        entity_id:
+          type: string
+          maxLength: 80
+        previous_value:
+          nullable: true
+        new_value:
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - action
+      - created_at
+      - entity
+      - entity_id
+      - id
+      - user_name
+    BlankEnum:
+      enum:
+      - ''
+    Branch:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        district_name:
+          type: string
+          readOnly: true
+        atm_count:
+          type: string
+          readOnly: true
+        operational_count:
+          type: string
+          readOnly: true
+        fault_count:
+          type: string
+          readOnly: true
+        critical_count:
+          type: string
+          readOnly: true
+        maintenance_count:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        code:
+          type: string
+          maxLength: 30
+        branch_type:
+          type: string
+          maxLength: 60
+        address:
+          type: string
+          maxLength: 255
+        phone:
+          type: string
+          maxLength: 32
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        status:
+          $ref: '#/components/schemas/BranchStatusEnum'
+        opening_date:
+          type: string
+          format: date
+          nullable: true
+        district:
+          type: integer
+          readOnly: true
+      required:
+      - atm_count
+      - code
+      - created_at
+      - critical_count
+      - district
+      - district_name
+      - fault_count
+      - id
+      - maintenance_count
+      - name
+      - operational_count
+      - updated_at
+    BranchReport:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        report_id:
+          type: string
+          readOnly: true
+        atm_reference:
+          type: string
+          readOnly: true
+        branch_name:
+          type: string
+          readOnly: true
+        reported_by_name:
+          type: string
+          readOnly: true
+        reviewed_by_name:
+          type: string
+          readOnly: true
+        linked_incident_id:
+          type: string
+          readOnly: true
+        linked_incident_number:
+          type: string
+          readOnly: true
+        active_incident:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        problem_type:
+          $ref: '#/components/schemas/ProblemTypeEnum'
+        severity:
+          $ref: '#/components/schemas/PriorityEnum'
+        confirmed_severity:
+          allOf:
+          - $ref: '#/components/schemas/PriorityEnum'
+          readOnly: true
+          description: |-
+            Severity confirmed by district operations (branch cannot force critical).
+
+            * `LOW` - Low
+            * `MEDIUM` - Medium
+            * `HIGH` - High
+            * `CRITICAL` - Critical
+        atm_currently_working:
+          $ref: '#/components/schemas/AtmCurrentlyWorkingEnum'
+        description:
+          type: string
+        observed_error:
+          type: string
+        problem_started_at:
+          type: string
+          format: date-time
+          nullable: true
+        customer_impact:
+          type: string
+          maxLength: 255
+        evidence:
+          type: string
+          format: uri
+          nullable: true
+          pattern: (?:jpg|jpeg|png|gif|pdf|mp4|mov)$
+        status:
+          allOf:
+          - $ref: '#/components/schemas/BranchReportStatusEnum'
+          readOnly: true
+        dismissal_reason:
+          type: string
+          readOnly: true
+        atm:
+          type: integer
+        branch:
+          type: integer
+          readOnly: true
+        reported_by:
+          type: integer
+          readOnly: true
+        reviewed_by:
+          type: integer
+          readOnly: true
+          nullable: true
+      required:
+      - active_incident
+      - atm
+      - atm_reference
+      - branch
+      - branch_name
+      - confirmed_severity
+      - created_at
+      - description
+      - dismissal_reason
+      - id
+      - linked_incident_id
+      - linked_incident_number
+      - report_id
+      - reported_by
+      - reported_by_name
+      - reviewed_by
+      - reviewed_by_name
+      - status
+      - updated_at
+    BranchReportStatusEnum:
+      enum:
+      - SUBMITTED
+      - RECEIVED
+      - REVIEWING
+      - CONVERTED_TO_INCIDENT
+      - ASSIGNED
+      - RESOLVED
+      - VERIFIED
+      - CLOSED
+      - REVIEWED
+      - DISMISSED
+      type: string
+      description: |-
+        * `SUBMITTED` - Submitted
+        * `RECEIVED` - Received
+        * `REVIEWING` - Reviewing
+        * `CONVERTED_TO_INCIDENT` - Converted to Incident
+        * `ASSIGNED` - Assigned
+        * `RESOLVED` - Resolved
+        * `VERIFIED` - Verified
+        * `CLOSED` - Closed
+        * `REVIEWED` - Reviewed
+        * `DISMISSED` - Dismissed
+    BranchStatusEnum:
+      enum:
+      - SETUP
+      - ACTIVE
+      - CLOSED
+      - INACTIVE
+      type: string
+      description: |-
+        * `SETUP` - Under Setup
+        * `ACTIVE` - Active
+        * `CLOSED` - Temporarily Closed
+        * `INACTIVE` - Inactive
+    CommunicationStatusEnum:
+      enum:
+      - ONLINE
+      - OFFLINE
+      - NORMAL
+      - WARNING
+      - FAULT
+      - AVAILABLE
+      - UNAVAILABLE
+      - MAINTENANCE
+      - ERROR
+      - UNKNOWN
+      - HEALTHY
+      type: string
+      description: |-
+        * `ONLINE` - Online
+        * `OFFLINE` - Offline
+        * `NORMAL` - Normal
+        * `WARNING` - Warning
+        * `FAULT` - Fault
+        * `AVAILABLE` - Available
+        * `UNAVAILABLE` - Unavailable
+        * `MAINTENANCE` - Maintenance
+        * `ERROR` - Error
+        * `UNKNOWN` - Unknown
+        * `HEALTHY` - Healthy
+    ComponentTypeEnum:
+      enum:
+      - DISPLAY
+      - CARD_READER
+      - CASH_DISPENSER
+      - RECEIPT_PRINTER
+      - NETWORK
+      - POWER
+      type: string
+      description: |-
+        * `DISPLAY` - Display
+        * `CARD_READER` - Card Reader
+        * `CASH_DISPENSER` - Cash Dispenser
+        * `RECEIPT_PRINTER` - Receipt Printer
+        * `NETWORK` - Network
+        * `POWER` - Power
+    ConditionEnum:
+      enum:
+      - HEALTHY
+      - NORMAL
+      - WARNING
+      - FAULT
+      - UNKNOWN
+      - DEGRADED
+      - OFFLINE
+      - MAINTENANCE
+      type: string
+      description: |-
+        * `HEALTHY` - Healthy
+        * `NORMAL` - Normal
+        * `WARNING` - Warning
+        * `FAULT` - Fault
+        * `UNKNOWN` - Unknown
+        * `DEGRADED` - Degraded
+        * `OFFLINE` - Offline
+        * `MAINTENANCE` - Maintenance
+    District:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        branch_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        address:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/DistrictStatusEnum'
+          readOnly: true
+      required:
+      - address
+      - branch_count
+      - code
+      - created_at
+      - description
+      - email
+      - id
+      - name
+      - phone
+      - status
+      - updated_at
+    DistrictStatusEnum:
+      enum:
+      - ACTIVE
+      - INACTIVE
+      type: string
+      description: |-
+        * `ACTIVE` - Active
+        * `INACTIVE` - Inactive
+    EmailOrUsernameToken:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - password
+      - username
+    Escalation:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        escalated_by_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        reason:
+          type: string
+        technical_findings:
+          type: string
+        troubleshooting_summary:
+          type: string
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+        required_team:
+          type: string
+          maxLength: 150
+        assigned_team:
+          type: string
+          maxLength: 150
+        status:
+          type: string
+          maxLength: 30
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        remarks:
+          type: string
+        incident:
+          type: integer
+        escalated_by:
+          type: integer
+      required:
+      - created_at
+      - escalated_by
+      - escalated_by_name
+      - id
+      - incident
+      - reason
+      - required_team
+      - updated_at
+    HealthEnum:
+      enum:
+      - HEALTHY
+      - WARNING
+      - DEGRADED
+      - CRITICAL
+      - OFFLINE
+      - MAINTENANCE
+      - UNKNOWN
+      type: string
+      description: |-
+        * `HEALTHY` - Healthy
+        * `WARNING` - Warning
+        * `DEGRADED` - Degraded
+        * `CRITICAL` - Critical
+        * `OFFLINE` - Offline
+        * `MAINTENANCE` - Maintenance
+        * `UNKNOWN` - Unknown
+    Incident:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        incident_id:
+          type: string
+          readOnly: true
+        atm_reference:
+          type: string
+          readOnly: true
+        branch_name:
+          type: string
+          readOnly: true
+        district_name:
+          type: string
+          readOnly: true
+        assigned_to_name:
+          type: string
+          readOnly: true
+        reported_by_name:
+          type: string
+          readOnly: true
+        branch_report_id:
+          type: string
+          readOnly: true
+        branch_report_number:
+          type: string
+          readOnly: true
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TroubleshootingAction'
+          readOnly: true
+        escalations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Escalation'
+          readOnly: true
+        resolution:
+          allOf:
+          - $ref: '#/components/schemas/Resolution'
+          readOnly: true
+        verification:
+          type: string
+          readOnly: true
+        duration_minutes:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        category:
+          type: string
+          maxLength: 60
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+        status:
+          allOf:
+          - $ref: '#/components/schemas/IncidentStatusEnum'
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        error_message:
+          type: string
+          maxLength: 255
+        service_impact:
+          type: string
+        final_result:
+          type: string
+          readOnly: true
+        escalation_status:
+          type: string
+          maxLength: 30
+        resolved_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        closed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        atm:
+          type: integer
+        reported_by:
+          type: integer
+          readOnly: true
+        assigned_to:
+          type: integer
+          nullable: true
+        branch_report:
+          type: integer
+          nullable: true
+      required:
+      - actions
+      - assigned_to_name
+      - atm
+      - atm_reference
+      - branch_name
+      - branch_report_id
+      - branch_report_number
+      - category
+      - closed_at
+      - created_at
+      - description
+      - district_name
+      - duration_minutes
+      - escalations
+      - final_result
+      - id
+      - incident_id
+      - reported_by
+      - reported_by_name
+      - resolution
+      - resolved_at
+      - status
+      - title
+      - updated_at
+      - verification
+    IncidentStatusEnum:
+      enum:
+      - REPORTED
+      - ACKNOWLEDGED
+      - ASSIGNED
+      - INVESTIGATING
+      - TROUBLESHOOTING
+      - WAITING
+      - ESCALATED
+      - RESOLVED
+      - VERIFIED
+      - CLOSED
+      type: string
+      description: |-
+        * `REPORTED` - Reported
+        * `ACKNOWLEDGED` - Acknowledged
+        * `ASSIGNED` - Assigned
+        * `INVESTIGATING` - Investigating
+        * `TROUBLESHOOTING` - Troubleshooting
+        * `WAITING` - Waiting
+        * `ESCALATED` - Escalated
+        * `RESOLVED` - Resolved
+        * `VERIFIED` - Verified
+        * `CLOSED` - Closed
+    Maintenance:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        maintenance_id:
+          type: string
+          readOnly: true
+        atm_reference:
+          type: string
+          readOnly: true
+        branch_name:
+          type: string
+          readOnly: true
+        district_name:
+          type: string
+          readOnly: true
+        technician_name:
+          type: string
+          readOnly: true
+        requested_by_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        maintenance_type:
+          $ref: '#/components/schemas/MaintenanceTypeEnum'
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+        reason:
+          type: string
+        work_performed:
+          type: string
+        scheduled_date:
+          type: string
+          format: date-time
+          nullable: true
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+        result:
+          type: string
+        test_result:
+          oneOf:
+          - $ref: '#/components/schemas/TestResultEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        status:
+          $ref: '#/components/schemas/MaintenanceStatusEnum'
+        remarks:
+          type: string
+        atm:
+          type: integer
+        technician:
+          type: integer
+          nullable: true
+        requested_by:
+          type: integer
+          nullable: true
+        incident:
+          type: integer
+          nullable: true
+      required:
+      - atm
+      - atm_reference
+      - branch_name
+      - created_at
+      - district_name
+      - id
+      - maintenance_id
+      - maintenance_type
+      - reason
+      - requested_by_name
+      - technician_name
+      - updated_at
+    MaintenanceStatusEnum:
+      enum:
+      - REQUESTED
+      - APPROVED
+      - SCHEDULED
+      - ASSIGNED
+      - IN_PROGRESS
+      - ON_HOLD
+      - UNDER_REPAIR
+      - TESTING
+      - COMPLETED
+      - VERIFIED
+      - CANCELLED
+      - STARTED
+      type: string
+      description: |-
+        * `REQUESTED` - Requested
+        * `APPROVED` - Approved
+        * `SCHEDULED` - Scheduled
+        * `ASSIGNED` - Assigned
+        * `IN_PROGRESS` - In Progress
+        * `ON_HOLD` - On Hold
+        * `UNDER_REPAIR` - Under Repair
+        * `TESTING` - Testing
+        * `COMPLETED` - Completed
+        * `VERIFIED` - Verified
+        * `CANCELLED` - Cancelled
+        * `STARTED` - Started
+    MaintenanceTypeEnum:
+      enum:
+      - PREVENTIVE
+      - CORRECTIVE
+      - EMERGENCY
+      - INSPECTION
+      - NETWORK
+      - HARDWARE
+      - SOFTWARE
+      type: string
+      description: |-
+        * `PREVENTIVE` - Preventive
+        * `CORRECTIVE` - Corrective
+        * `EMERGENCY` - Emergency
+        * `INSPECTION` - Inspection
+        * `NETWORK` - Network
+        * `HARDWARE` - Hardware
+        * `SOFTWARE` - Software
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        recipient:
+          type: integer
+          readOnly: true
+        incident:
+          type: integer
+          nullable: true
+        incident_ref:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        body:
+          type: string
+        kind:
+          type: string
+          maxLength: 40
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - incident_ref
+      - recipient
+      - title
+    PaginatedATMList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ATM'
+    PaginatedAuditLogList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLog'
+    PaginatedBranchList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Branch'
+    PaginatedBranchReportList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BranchReport'
+    PaginatedDistrictList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/District'
+    PaginatedIncidentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Incident'
+    PaginatedMaintenanceList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Maintenance'
+    PaginatedNotificationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+    PaginatedUserList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    PatchedATM:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        branch_name:
+          type: string
+          readOnly: true
+        district_name:
+          type: string
+          readOnly: true
+        assigned_technician_name:
+          type: string
+          readOnly: true
+        operational_state:
+          type: string
+          readOnly: true
+        active_incident:
+          type: string
+          readOnly: true
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/ATMComponent'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        reference:
+          type: string
+          maxLength: 50
+        name:
+          type: string
+          maxLength: 120
+        atm_type:
+          type: string
+          maxLength: 80
+        manufacturer:
+          type: string
+          maxLength: 120
+        model:
+          type: string
+          maxLength: 120
+        serial_number:
+          type: string
+          maxLength: 120
+        location:
+          type: string
+          maxLength: 255
+        address:
+          type: string
+          maxLength: 255
+        ip_address:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+          description: Whether the ATM is part of active district operations.
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ATMStatusEnum'
+          description: |-
+            Technical / operational condition of the ATM.
+
+            * `OPERATIONAL` - Operational
+            * `WARNING` - Warning
+            * `DEGRADED` - Degraded
+            * `FAULT` - Fault
+            * `OFFLINE` - Offline
+            * `CRITICAL` - Critical
+            * `MAINTENANCE` - Maintenance
+            * `UNDER_REPAIR` - Under Repair
+            * `UNKNOWN` - Unknown
+        health:
+          $ref: '#/components/schemas/HealthEnum'
+        network_status:
+          $ref: '#/components/schemas/CommunicationStatusEnum'
+        power_status:
+          $ref: '#/components/schemas/CommunicationStatusEnum'
+        hardware_status:
+          $ref: '#/components/schemas/CommunicationStatusEnum'
+        communication_status:
+          $ref: '#/components/schemas/CommunicationStatusEnum'
+        installation_date:
+          type: string
+          format: date
+          nullable: true
+        last_checked:
+          type: string
+          format: date-time
+          nullable: true
+        last_status_change:
+          type: string
+          format: date-time
+          nullable: true
+        last_maintenance:
+          type: string
+          format: date-time
+          nullable: true
+        next_maintenance:
+          type: string
+          format: date-time
+          nullable: true
+        assigned_team:
+          type: string
+          maxLength: 150
+        notes:
+          type: string
+        photo:
+          type: string
+          format: uri
+          nullable: true
+          description: Photo of the ATM unit (front view or signage).
+        branch:
+          type: integer
+        assigned_technician:
+          type: integer
+          nullable: true
+    PatchedBranch:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        district_name:
+          type: string
+          readOnly: true
+        atm_count:
+          type: string
+          readOnly: true
+        operational_count:
+          type: string
+          readOnly: true
+        fault_count:
+          type: string
+          readOnly: true
+        critical_count:
+          type: string
+          readOnly: true
+        maintenance_count:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        code:
+          type: string
+          maxLength: 30
+        branch_type:
+          type: string
+          maxLength: 60
+        address:
+          type: string
+          maxLength: 255
+        phone:
+          type: string
+          maxLength: 32
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        status:
+          $ref: '#/components/schemas/BranchStatusEnum'
+        opening_date:
+          type: string
+          format: date
+          nullable: true
+        district:
+          type: integer
+          readOnly: true
+    PatchedBranchReport:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        report_id:
+          type: string
+          readOnly: true
+        atm_reference:
+          type: string
+          readOnly: true
+        branch_name:
+          type: string
+          readOnly: true
+        reported_by_name:
+          type: string
+          readOnly: true
+        reviewed_by_name:
+          type: string
+          readOnly: true
+        linked_incident_id:
+          type: string
+          readOnly: true
+        linked_incident_number:
+          type: string
+          readOnly: true
+        active_incident:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        problem_type:
+          $ref: '#/components/schemas/ProblemTypeEnum'
+        severity:
+          $ref: '#/components/schemas/PriorityEnum'
+        confirmed_severity:
+          allOf:
+          - $ref: '#/components/schemas/PriorityEnum'
+          readOnly: true
+          description: |-
+            Severity confirmed by district operations (branch cannot force critical).
+
+            * `LOW` - Low
+            * `MEDIUM` - Medium
+            * `HIGH` - High
+            * `CRITICAL` - Critical
+        atm_currently_working:
+          $ref: '#/components/schemas/AtmCurrentlyWorkingEnum'
+        description:
+          type: string
+        observed_error:
+          type: string
+        problem_started_at:
+          type: string
+          format: date-time
+          nullable: true
+        customer_impact:
+          type: string
+          maxLength: 255
+        evidence:
+          type: string
+          format: uri
+          nullable: true
+          pattern: (?:jpg|jpeg|png|gif|pdf|mp4|mov)$
+        status:
+          allOf:
+          - $ref: '#/components/schemas/BranchReportStatusEnum'
+          readOnly: true
+        dismissal_reason:
+          type: string
+          readOnly: true
+        atm:
+          type: integer
+        branch:
+          type: integer
+          readOnly: true
+        reported_by:
+          type: integer
+          readOnly: true
+        reviewed_by:
+          type: integer
+          readOnly: true
+          nullable: true
+    PatchedIncident:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        incident_id:
+          type: string
+          readOnly: true
+        atm_reference:
+          type: string
+          readOnly: true
+        branch_name:
+          type: string
+          readOnly: true
+        district_name:
+          type: string
+          readOnly: true
+        assigned_to_name:
+          type: string
+          readOnly: true
+        reported_by_name:
+          type: string
+          readOnly: true
+        branch_report_id:
+          type: string
+          readOnly: true
+        branch_report_number:
+          type: string
+          readOnly: true
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TroubleshootingAction'
+          readOnly: true
+        escalations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Escalation'
+          readOnly: true
+        resolution:
+          allOf:
+          - $ref: '#/components/schemas/Resolution'
+          readOnly: true
+        verification:
+          type: string
+          readOnly: true
+        duration_minutes:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        category:
+          type: string
+          maxLength: 60
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+        status:
+          allOf:
+          - $ref: '#/components/schemas/IncidentStatusEnum'
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        error_message:
+          type: string
+          maxLength: 255
+        service_impact:
+          type: string
+        final_result:
+          type: string
+          readOnly: true
+        escalation_status:
+          type: string
+          maxLength: 30
+        resolved_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        closed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        atm:
+          type: integer
+        reported_by:
+          type: integer
+          readOnly: true
+        assigned_to:
+          type: integer
+          nullable: true
+        branch_report:
+          type: integer
+          nullable: true
+    PatchedMaintenance:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        maintenance_id:
+          type: string
+          readOnly: true
+        atm_reference:
+          type: string
+          readOnly: true
+        branch_name:
+          type: string
+          readOnly: true
+        district_name:
+          type: string
+          readOnly: true
+        technician_name:
+          type: string
+          readOnly: true
+        requested_by_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        maintenance_type:
+          $ref: '#/components/schemas/MaintenanceTypeEnum'
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+        reason:
+          type: string
+        work_performed:
+          type: string
+        scheduled_date:
+          type: string
+          format: date-time
+          nullable: true
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+        result:
+          type: string
+        test_result:
+          oneOf:
+          - $ref: '#/components/schemas/TestResultEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        status:
+          $ref: '#/components/schemas/MaintenanceStatusEnum'
+        remarks:
+          type: string
+        atm:
+          type: integer
+        technician:
+          type: integer
+          nullable: true
+        requested_by:
+          type: integer
+          nullable: true
+        incident:
+          type: integer
+          nullable: true
+    PatchedUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        full_name:
+          type: string
+          maxLength: 160
+        phone:
+          type: string
+          maxLength: 32
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        district:
+          type: integer
+          readOnly: true
+          nullable: true
+        branch:
+          type: integer
+          nullable: true
+        district_name:
+          type: string
+          readOnly: true
+        branch_name:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+          title: Active
+          description: Designates whether this user should be treated as active. Unselect
+            this instead of deleting accounts.
+        password:
+          type: string
+          writeOnly: true
+          maxLength: 128
+    PriorityEnum:
+      enum:
+      - LOW
+      - MEDIUM
+      - HIGH
+      - CRITICAL
+      type: string
+      description: |-
+        * `LOW` - Low
+        * `MEDIUM` - Medium
+        * `HIGH` - High
+        * `CRITICAL` - Critical
+    ProblemTypeEnum:
+      enum:
+      - NETWORK_COMMUNICATION
+      - POWER
+      - DISPLAY
+      - CARD_READER
+      - CASH_DISPENSER
+      - RECEIPT_PRINTER
+      - SOFTWARE
+      - HARDWARE
+      - SECURITY
+      - GENERAL
+      - UNKNOWN
+      type: string
+      description: |-
+        * `NETWORK_COMMUNICATION` - Network / Communication
+        * `POWER` - Power
+        * `DISPLAY` - Display
+        * `CARD_READER` - Card Reader
+        * `CASH_DISPENSER` - Cash Dispenser
+        * `RECEIPT_PRINTER` - Receipt Printer
+        * `SOFTWARE` - Software / Application
+        * `HARDWARE` - Hardware
+        * `SECURITY` - Security-Related Technical Issue
+        * `GENERAL` - General ATM Error
+        * `UNKNOWN` - Unknown
+    Resolution:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        technician_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        description:
+          type: string
+        action_performed:
+          type: string
+        final_status:
+          type: string
+          maxLength: 100
+        resolved_at:
+          type: string
+          format: date-time
+        incident:
+          type: integer
+        technician:
+          type: integer
+      required:
+      - action_performed
+      - created_at
+      - description
+      - final_status
+      - id
+      - incident
+      - resolved_at
+      - technician
+      - technician_name
+      - updated_at
+    RoleEnum:
+      enum:
+      - DISTRICT_ADMIN
+      - OPERATIONS_OFFICER
+      - MAINTENANCE_SUPERVISOR
+      - TECHNICIAN
+      - BRANCH_MANAGER
+      - BRANCH_USER
+      - AUDITOR
+      - ADMINISTRATOR
+      - SUPERVISOR
+      - MONITORING_OFFICER
+      type: string
+      description: |-
+        * `DISTRICT_ADMIN` - District Admin
+        * `OPERATIONS_OFFICER` - Operations Officer
+        * `MAINTENANCE_SUPERVISOR` - Maintenance Supervisor
+        * `TECHNICIAN` - Technician
+        * `BRANCH_MANAGER` - Branch Manager
+        * `BRANCH_USER` - Branch User
+        * `AUDITOR` - Auditor
+        * `ADMINISTRATOR` - Administrator
+        * `SUPERVISOR` - Supervisor
+        * `MONITORING_OFFICER` - Monitoring Officer
+    TestResultEnum:
+      enum:
+      - PASSED
+      - FAILED
+      - PARTIAL
+      - PENDING
+      type: string
+      description: |-
+        * `PASSED` - Passed
+        * `FAILED` - Failed
+        * `PARTIAL` - Partial
+        * `PENDING` - Pending
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - access
+      - refresh
+    TroubleshootingAction:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        technician_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        action_type:
+          $ref: '#/components/schemas/ActionTypeEnum'
+        action:
+          type: string
+        observation:
+          type: string
+        result:
+          type: string
+        next_action:
+          type: string
+        remarks:
+          type: string
+        status:
+          type: string
+          maxLength: 30
+        incident:
+          type: integer
+        technician:
+          type: integer
+      required:
+      - action
+      - created_at
+      - id
+      - incident
+      - technician
+      - technician_name
+      - updated_at
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        full_name:
+          type: string
+          maxLength: 160
+        phone:
+          type: string
+          maxLength: 32
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        district:
+          type: integer
+          readOnly: true
+          nullable: true
+        branch:
+          type: integer
+          nullable: true
+        district_name:
+          type: string
+          readOnly: true
+        branch_name:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+          title: Active
+          description: Designates whether this user should be treated as active. Unselect
+            this instead of deleting accounts.
+        password:
+          type: string
+          writeOnly: true
+          maxLength: 128
+      required:
+      - branch_name
+      - district
+      - district_name
+      - id
+      - username
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

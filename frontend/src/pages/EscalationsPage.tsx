@@ -5,6 +5,7 @@ import { api } from '../lib/api';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { PriorityBadge } from '../components/ui/StatusBadge';
 import type { Incident } from '../types/api';
+import { useAuth, hasPermission, portalForUser } from '../context/AuthContext';
 
 function list<T>(path: string) {
   return api.get<T[] | { results: T[] }>(path).then((response) =>
@@ -13,6 +14,8 @@ function list<T>(path: string) {
 }
 
 export default function EscalationsPage() {
+  const { currentUser } = useAuth();
+  const portal = portalForUser(currentUser);
   const escalations = useQuery({
     queryKey: ['incidents', 'escalated'],
     queryFn: () => list<Incident>('/incidents/?status=ESCALATED&ordering=-created_at'),
@@ -27,9 +30,11 @@ export default function EscalationsPage() {
     <section className="page-content">
       <div className="page-header">
         <div>
-          <p className="page-kicker">Operations</p>
-          <h1>Escalations</h1>
-          <p className="page-copy">Incidents escalated by technicians and awaiting supervisory or specialist action.</p>
+<p className="page-kicker">
+  {portal === 'branch' ? 'Branch Operations' : portal === 'maintenance' ? 'MAINTENANCE OPERATIONS' : 'ATM Operations'}
+</p>
+<h1>Escalations</h1>
+<p className="page-copy">Incidents escalated by technicians and awaiting supervisory or specialist action.</p>
         </div>
       </div>
       <div className="kpi-grid compact">

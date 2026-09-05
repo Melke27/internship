@@ -52,12 +52,13 @@ interface AuthState {
 }
 
 function normalizeRole(role?: string | null) {
+  if (!role) return '';
   const mapping: Record<string, string> = {
     ADMINISTRATOR: 'DISTRICT_ADMIN',
-    SUPERVISOR: 'MAINTENANCE_SUPERVISOR',
+    SUPERVISOR: 'SUPERVISOR',
     MONITORING_OFFICER: 'OPERATIONS_OFFICER',
   };
-  return role ? mapping[role] || role : '';
+  return mapping[role] || role;
 }
 
 export function hasPermission(user: CurrentUser | null, permission: string) {
@@ -83,21 +84,25 @@ export function canManageUsers(user: CurrentUser | null) {
 
 export function isSupervisorUser(user: CurrentUser | null) {
   if (!user) return false;
-  return ['DISTRICT_ADMIN', 'ADMINISTRATOR', 'MAINTENANCE_SUPERVISOR', 'SUPERVISOR'].includes(
-    normalizeRole(user.role) || user.role,
-  );
+  const role = normalizeRole(user.role) || user.role;
+  return [
+    'DISTRICT_ADMIN',
+    'ADMINISTRATOR',
+    'MAINTENANCE_SUPERVISOR',
+    'SUPERVISOR',
+  ].includes(role);
 }
 
 export function isTechnicianUser(user: CurrentUser | null) {
   if (!user) return false;
-  return (
-    (normalizeRole(user.role) || user.role) === 'TECHNICIAN' || isSupervisorUser(user)
-  );
+  const role = normalizeRole(user.role) || user.role;
+  return role === 'TECHNICIAN' || isSupervisorUser(user);
 }
 
 export function isBranchUser(user: CurrentUser | null) {
   if (!user) return false;
-  return ['BRANCH_USER', 'BRANCH_MANAGER'].includes(normalizeRole(user.role) || user.role);
+  const role = normalizeRole(user.role) || user.role;
+  return ['BRANCH_USER', 'BRANCH_MANAGER'].includes(role);
 }
 
 export function isOperationsUser(user: CurrentUser | null) {

@@ -9,6 +9,7 @@ import {
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react';
+import { createPortal } from 'react-dom';
 
 import { X } from 'lucide-react';
 
@@ -179,7 +180,7 @@ export function Dialog({
     </>
   );
 
-  return (
+  const dialogElement = (
     <div className="dialog-backdrop" onClick={onClose}>
       {onSubmit ? (
         <form
@@ -207,6 +208,9 @@ export function Dialog({
       )}
     </div>
   );
+
+  if (typeof document === 'undefined') return null;
+  return createPortal(dialogElement, document.body);
 }
 
 interface DiffFooterProps {

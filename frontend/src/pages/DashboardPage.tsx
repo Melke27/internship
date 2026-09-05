@@ -16,8 +16,7 @@ import {
   Zap,
 } from 'lucide-react';
 
-import { hasPermission, useAuth } from '../context/AuthContext';
-import { FIXED_DISTRICT_NAME } from '../lib/navigation';
+import { hasPermission, useAuth, portalForUser, roleLabel, type CurrentUser } from '../context/AuthContext';
 import { api } from '../lib/api';
 import { formatDuration } from '../lib/utils';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
@@ -41,7 +40,10 @@ function greeting() {
   return 'Good evening';
 }
 
-function todayLabel() {
+function todayLabel(user: CurrentUser | null) {
+  const portal = portalForUser(user);
+  if (portal === 'branch') return 'Today';
+  const districtName = user?.district_name || 'Yeka District';
   return new Date().toLocaleDateString(undefined, {
     weekday: 'long',
     year: 'numeric',
@@ -62,6 +64,8 @@ function relativeTime(iso?: string, now = Date.now()) {
 export default function DashboardPage() {
   const { currentUser } = useAuth();
   const now = useNow(30_000);
+  const portal = portalForUser(currentUser);
+  const label = roleLabel(currentUser?.role || null);
   const [tick, setTick] = useState(0);
   const summary = useQuery({
     queryKey: ['dashboard-summary', tick],
@@ -145,12 +149,19 @@ export default function DashboardPage() {
     <section className="page-content">
       {/* Existing header, actions, KPIs */}
 
-      <div className="portal-hero">
+<div className="portal-hero">
         <div>
-          <p className="page-kicker">ATM District Operations · {todayLabel()}</p>
+          <p className="page-kicker">
+            {portal === 'branch'
+              ? 'Branch Operations'
+              : portal === 'maintenance'
+                ? 'MAINTENANCE OPERATIONS'
+                : 'ATM Operations'} ·
+            {todayLabel(currentUser)}
+          </p>
           <h1>{greeting()}, {currentUser?.full_name?.split(' ')[0] || 'Operator'}</h1>
           <p className="page-copy">
-            Live view of {FIXED_DISTRICT_NAME} — ATM availability, critical faults, incidents and maintenance.
+            Live view of {portal === 'branch' ? currentUser?.branch_name : currentUser?.district_name || 'Yeka District'} — ATM availability, critical faults, incidents and maintenance.
           </p>
           <span className="live-updated">
             <span className="live-dot" aria-hidden />
@@ -228,10 +239,18 @@ export default function DashboardPage() {
       )}
 
       <div className="quick-actions" aria-label="Quick actions">
-        <Link className="quick-action qa-incident" to="/incidents?new=1"><AlertTriangle size={14} /> Create Incident</Link>
-        <Link className="quick-action qa-review" to="/branch-reports?pending=1"><ClipboardList size={14} /> Review Reports</Link>
-        <Link className="quick-action qa-monitoring" to="/monitoring"><Activity size={14} /> Live Monitoring</Link>
-        <Link className="quick-action qa-critical" to="/active-faults?priority=CRITICAL"><ShieldAlert size={14} /> Critical Faults</Link>
+        {hasPermission(currentUser, 'incident.create') && (
+          <Link className="quick-action qa-incident" to="/incidents?new=1"><AlertTriangle size={14} /> Create Incident</Link>
+        )}
+        {hasPermission(currentUser, 'branch_report.view') && (
+          <Link className="quick-action qa-review" to="/branch-reports?pending=1"><ClipboardList size={14} /> Review Reports</Link>
+        )}
+        {hasPermission(currentUser, 'atm.view') && (
+          <Link className="quick-action qa-monitoring" to="/monitoring"><Activity size={14} /> Live Monitoring</Link>
+        )}
+        {hasPermission(currentUser, 'atm.view') && (
+          <Link className="quick-action qa-critical" to="/active-faults?priority=CRITICAL"><ShieldAlert size={14} /> Critical Faults</Link>
+        )}
       </div>
 
       {critical > 0 && (
@@ -444,7 +463,7 @@ export default function DashboardPage() {
 
       <Panel
         title="Branch Fleet & ATM Distribution"
-        subtitle="Live branch overview and ATM allocation per branch."
+        subtitle="Live branch overview and ATM allocation."
         action={<Link className="text-link" to="/branches">Manage branches</Link>}
       >
         {branchList.length === 0 ? (
@@ -582,7 +601,7 @@ export default function DashboardPage() {
 
       <Panel
         title="Live ATM Monitoring"
-        subtitle="Current district ATM fleet with technical status and active incidents."
+        subtitle="Current ATM fleet with technical status and active incidents."
         action={<Link className="text-link" to="/monitoring">Open live monitoring</Link>}
       >
         {atms.isLoading ? <LoadingState label="Loading ATM fleet..." /> : null}
@@ -674,7 +693,7 @@ export default function DashboardPage() {
         </Panel>
 
         {data.recent_status_changes.length > 0 ? (
-          <Panel title="Recent Status Changes" subtitle="Latest ATM status transitions across the district.">
+          <Panel title="Recent Status Changes" subtitle="Latest ATM status transitions.">
             <div className="list-stack">
               {data.recent_status_changes.slice(0, 6).map((row) => (
                 <div className="list-card" key={row.id}>

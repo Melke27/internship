@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useAuth, portalForUser } from '../context/AuthContext';
 
 import { api } from '../lib/api';
 import { mediaUrl } from '../lib/utils';
@@ -10,6 +11,9 @@ import { PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
 import type { BranchReport } from '../types/api';
 
 export default function BranchReportDetailPage() {
+  const { currentUser } = useAuth();
+  const portal = portalForUser(currentUser);
+  const label = currentUser?.role || null;
   const { id } = useParams();
   const [lightbox, setLightbox] = useState(false);
   const report = useQuery({
@@ -30,7 +34,9 @@ export default function BranchReportDetailPage() {
     <section className="page-content">
       <div className="page-header">
         <div>
-          <p className="page-kicker">Branch Report</p>
+          <p className="page-kicker">
+  {portalForUser(currentUser) === 'branch' ? 'Branch Operations' : portalForUser(currentUser) === 'maintenance' ? 'MAINTENANCE OPERATIONS' : 'ATM Operations'}
+</p>
           <h1>{data.report_id}</h1>
           <p className="page-copy">
             {data.atm_reference} · {data.problem_type.replaceAll('_', ' ')}

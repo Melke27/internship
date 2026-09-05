@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 import {
   Activity,
   AlertTriangle,
@@ -92,6 +93,13 @@ function SignalCard({
 export default function ATMDetailsPage() {
   const { id } = useParams();
   const { currentUser } = useAuth();
+  
+  // Validate ATM id - fallback to /atms list if invalid or missing
+  const idNum = Number(id);
+  if (isNaN(idNum) || idNum <= 0) {
+    return <div className="error-page"><h1>ATM not found</h1><p>The requested ATM could not be loaded. It may have been deactivated or removed.</p><Link className="button primary" to="/atms">Return to ATM List</Link></div>;
+  }
+  
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);

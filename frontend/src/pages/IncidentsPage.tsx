@@ -218,6 +218,11 @@ export default function IncidentsPage() {
               <AlertTriangle size={14} /> Create Incident
             </button>
           ) : null}
+          {hasPermission(currentUser, 'incident.view') && (
+            <button type="button" className="button ghost small" onClick={() => incidents.refetch()}>
+              <Filter size={14} /> Refresh
+            </button>
+          )}
         </div>
       </div>
 

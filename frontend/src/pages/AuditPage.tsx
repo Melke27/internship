@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
 
+import { useAuth, hasPermission, portalForUser, roleLabel } from '../context/AuthContext';
 import { api } from '../lib/api';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
+import { formatDuration } from '../lib/utils';
 
 interface AuditRow {
   id: number;
@@ -25,6 +27,9 @@ function list<T>(path: string) {
 const ENTITY_OPTIONS = ['ATM', 'Incident', 'User', 'Branch', 'Maintenance', 'BranchReport'];
 
 export default function AuditPage() {
+  const { currentUser } = useAuth();
+  const portal = portalForUser(currentUser);
+  const label = roleLabel(currentUser?.role || null);
   const [search, setSearch] = useState('');
   const [entity, setEntity] = useState('');
   const [action, setAction] = useState('');
@@ -56,8 +61,10 @@ export default function AuditPage() {
     <section className="page-content">
       <div className="page-header">
         <div>
-          <p className="page-kicker">System</p>
-          <h1>Audit Logs</h1>
+<p className="page-kicker">
+  {portal === 'branch' ? 'Branch Operations' : portal === 'maintenance' ? 'MAINTENANCE OPERATIONS' : 'ATM Operations'}
+</p>
+<h1>Audit Logs</h1>
           <p className="page-copy">Immutable record of who did what, to which ATM or incident, when, and with what result.</p>
         </div>
         <button type="button" className="button secondary" onClick={() => audit.refetch()}>Refresh</button>
@@ -92,7 +99,7 @@ export default function AuditPage() {
 
       <div className="panel">
         {audit.isLoading ? <LoadingState label="Loading audit trail..." /> : null}
-        {audit.isError ? <ErrorState message="You may not have permission to view audit logs." /> : null}
+        {audit.isError ? <ErrorState message="Unable to load audit logs. Please check your permissions." /> : null}
         {!audit.isLoading && !audit.isError && (audit.data || []).length === 0 ? (
           <EmptyState title="No audit records match your search." />
         ) : null}

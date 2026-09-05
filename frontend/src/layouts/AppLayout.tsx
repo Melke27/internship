@@ -1,12 +1,12 @@
 import type { PropsWithChildren } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, BellOff, LogOut, Menu, PanelLeftClose, PanelLeftOpen, RefreshCw, Search, ShieldCheck, Wifi } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Bell, BellOff, CheckCheck, Loader2, LogOut, Megaphone, Menu, PanelLeftClose, PanelLeftOpen, RefreshCw, Search, ShieldCheck, Wifi } from 'lucide-react';
 
 import { api } from '../lib/api';
 import { showToast } from '../lib/toast';
-import { hasPermission, portalForUser, roleLabel, useAuth } from '../context/AuthContext';
+import { canManageUsers, hasPermission, portalForUser, roleLabel, useAuth } from '../context/AuthContext';
 import { navForPortal, portalBrand, FIXED_DISTRICT_NAME, type NavItem } from '../lib/navigation';
 import type { DashboardSummary } from '../types/api';
 
@@ -144,8 +144,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const currentNav = useMemo(() => {
     const match = (item: NavItem) => {
       const [pathname, query = ''] = item.to.split('?');
-      if (location.pathname !== pathname) return false;
-      return query ? location.search === `?${query}` : !location.search;
+      const exactPathname = location.pathname === pathname;
+      const exactQuery = !query || location.search === `?${query}`;
+      if (!exactPathname) return false;
+      if (!exactQuery) return false;
+      return true;
     };
     for (const group of groups) {
       const found = group.items.find(match);
@@ -156,8 +159,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
 
   function isCurrentNavItem(item: NavItem) {
     const [pathname, query = ''] = item.to.split('?');
-    if (location.pathname !== pathname) return false;
-    return query ? location.search === `?${query}` : !location.search;
+    const atPathname = location.pathname === pathname;
+    const atQuery = !query || location.search === `?${query}`;
+    if (!atPathname) return false;
+    if (!atQuery) return false;
+    return true;
   }
 
   const handleLogout = useCallback(async () => {
@@ -173,6 +179,14 @@ export default function AppLayout({ children }: PropsWithChildren) {
     },
     [queryClient],
   );
+
+  const markAllRead = useMutation({
+    mutationFn: () => api.post('/notifications/mark_all_read/'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      showToast('All notifications marked as read');
+    },
+  });
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -368,6 +382,9 @@ export default function AppLayout({ children }: PropsWithChildren) {
           )}
 
           <div className="topbar-right">
+            <span className="role-pill" title={`Logged in as ${label}`}>
+              <ShieldCheck size={12} /> {label}
+            </span>
             {portal !== 'branch' && (
               <span
                 className={`health-pill ${critical > 0 ? 'danger' : 'ok'}`}
@@ -399,10 +416,27 @@ export default function AppLayout({ children }: PropsWithChildren) {
               <div className="notification-panel" role="dialog" aria-label="Notifications">
                 <div className="notification-panel-head">
                   <strong>Notifications</strong>
-                  <Link to="/notifications" onClick={() => setNotificationsOpen(false)}
-                    style={{ fontSize: 12, color: 'var(--brand)', fontWeight: 600 }}>
-                    View all
-                  </Link>
+                  <div className="notification-panel-actions">
+                    {(unread.data ?? 0) > 0 ? (
+                      <button
+                        type="button"
+                        className="text-button"
+                        style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        disabled={markAllRead.isPending}
+                        onClick={() => markAllRead.mutate()}
+                      >
+                        {markAllRead.isPending ? <Loader2 size={12} className="spin-icon" /> : <CheckCheck size={12} />}
+                        Mark all read
+                      </button>
+                    ) : null}
+                    <Link
+                      to="/notifications"
+                      onClick={() => setNotificationsOpen(false)}
+                      style={{ fontSize: 12, color: 'var(--brand)', fontWeight: 600 }}
+                    >
+                      View all
+                    </Link>
+                  </div>
                 </div>
                 {(notifications.data || []).length === 0 ? (
                   <div className="notification-panel-empty">

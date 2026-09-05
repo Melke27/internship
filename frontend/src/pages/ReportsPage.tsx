@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Download, Printer } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 import { api } from '../lib/api';
 import { showToast } from '../lib/toast';

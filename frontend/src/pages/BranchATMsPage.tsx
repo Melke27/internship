@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, CircleAlert, Landmark, Search, ShieldCheck, Wifi, Wrench } from 'lucide-react';
 

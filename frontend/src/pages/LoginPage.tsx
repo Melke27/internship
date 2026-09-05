@@ -5,6 +5,7 @@ import { isAxiosError } from 'axios';
 import { ArrowRight, BellRing, Cpu, ShieldCheck } from 'lucide-react';
 
 import { portalHome, useAuth } from '../context/AuthContext';
+import { showToast } from '../lib/toast';
 import CBELogo from '../components/branding/CBELogo';
 import HeadOfficeVisual from '../components/branding/HeadOfficeVisual';
 
@@ -23,6 +24,7 @@ export default function LoginPage() {
     setError('');
     try {
       const user = await login(username, password);
+      showToast(`Welcome back, ${user.full_name || user.username}`, 'success');
       navigate(portalHome(user));
     } catch (err) {
       setError(
@@ -32,6 +34,7 @@ export default function LoginPage() {
             : 'Sign-in was rejected by the server. Please check your connection and try again.'
           : 'Support API is unavailable. Start the backend and try again.',
       );
+      showToast('Login failed. Please try again.', 'error');
     } finally {
       setLoading(false);
     }

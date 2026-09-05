@@ -10,6 +10,8 @@ import { canManageUsers, hasPermission, portalForUser, roleLabel, useAuth } from
 import { navForPortal, portalBrand, FIXED_DISTRICT_NAME, type NavItem } from '../lib/navigation';
 import type { DashboardSummary } from '../types/api';
 
+
+
 type SearchResults = {
   atms: { id: number; reference: string; name: string; branch: string; status: string }[];
   incidents: {
@@ -167,9 +169,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
   }
 
   const handleLogout = useCallback(async () => {
-    await logout();
-    queryClient.clear();
-    if (location.pathname !== '/login') window.location.assign('/login');
+    if (window.confirm('Are you sure you want to log out?')) {
+      await logout();
+      queryClient.clear();
+      if (location.pathname !== '/login') window.location.assign('/login');
+    }
   }, [logout]);
 
   const markNotificationRead = useCallback(

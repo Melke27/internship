@@ -1,5 +1,6 @@
 import {useQuery} from '@tanstack/react-query'; import {useState} from 'react'; import {api} from '../lib/api'; import {LoadingState,ErrorState,EmptyState} from '../components/feedback/StateView'; import {StatusBadge} from '../components/ui/StatusBadge';
 
+import { useAuth } from '../context/AuthContext';
 interface District{id:number;name:string;code:string;status:string}
 interface Branch{id:number;name:string;code:string;status:string;district:number;district_name:string}
 interface ATM{id:number;reference:string;status:string;branch:number}

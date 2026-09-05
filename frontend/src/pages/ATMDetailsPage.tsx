@@ -1,31 +1,12 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
-import {
-  Activity,
-  AlertTriangle,
-  ArrowRight,
-  Building2,
-  CalendarClock,
-  CheckCircle2,
-  ClipboardList,
-  Cpu,
-  FileText,
-  Globe,
-  HardDrive,
-  History,
-  MapPin,
-  RefreshCw,
-  Server,
-  ShieldAlert,
-  TrendingUp,
-  Wrench,
-  Zap,
-} from 'lucide-react';
+import { BellRing, AlertTriangle, ArrowRight, Building2, CalendarClock, CheckCircle2, ClipboardList, Cpu, FileText, Globe, HardDrive, History, MapPin, RefreshCw, Server, ShieldAlert, TrendingUp, Wrench, Zap, Activity } from 'lucide-react';
 
 import { api } from '../lib/api';
 import { hasPermission, useAuth } from '../context/AuthContext';
+import { showToast } from '../lib/toast';
 import {
   formatDuration,
   formatIncidentDuration,
@@ -319,12 +300,20 @@ export default function ATMDetailsPage() {
       {/* ── Quick actions ─────────────────────────── */}
       <div className="atm-quick-actions">
         {hasPermission(currentUser, 'incident.create') && (
-          <Link className="atm-qaction" to={`/incidents?atm=${record.id}&new=1`}>
+          <Link
+            className="atm-qaction"
+            to={`/incidents?atm=${record.id}&new=1`}
+            onClick={() => showToast('Create Incident started', 'info')}
+          >
             <AlertTriangle size={14} /> Create Incident
           </Link>
         )}
         {hasPermission(currentUser, 'maintenance.create') && (
-          <Link className="atm-qaction" to={`/maintenance?atm=${record.id}`}>
+          <Link
+            className="atm-qaction"
+            to={`/maintenance?atm=${record.id}`}
+            onClick={() => showToast('Schedule Maintenance started', 'info')}
+          >
             <Wrench size={14} /> Schedule Maintenance
           </Link>
         )}
@@ -336,7 +325,10 @@ export default function ATMDetailsPage() {
         </Link>
         <button
           className="atm-qaction"
-          onClick={() => setStatusOpen(true)}
+          onClick={() => {
+            setStatusOpen(true);
+            showToast('Update Technical Status dialog opened', 'info');
+          }}
           style={{ border: 'none', cursor: 'pointer', font: 'inherit' }}
         >
           <Activity size={14} /> Update Technical Status
@@ -345,6 +337,17 @@ export default function ATMDetailsPage() {
           className="atm-qaction"
           onClick={refreshAll}
           disabled={refreshing}
+        >
+          <RefreshCw size={14} className={refreshing ? 'is-spinning' : ''} aria-hidden />
+          {refreshing ? 'Refreshing…' : 'Refresh'}
+        </button>
+        <button
+          className="atm-qaction"
+          onClick={() => {
+            refreshAll();
+            showToast('ATM data refreshed', 'success');
+          }}
+          style={{ border: 'none', cursor: 'pointer', font: 'inherit' }}
         >
           <RefreshCw size={14} className={refreshing ? 'is-spinning' : ''} aria-hidden />
           {refreshing ? 'Refreshing…' : 'Refresh'}

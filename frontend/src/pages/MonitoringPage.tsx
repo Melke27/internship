@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useQuery } from '@tanstack/react-query';
-import { CircleAlert, Landmark, RefreshCw, Search, ShieldCheck, Wifi, Wrench } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { CircleAlert, Landmark, RefreshCw, Search, ShieldCheck, Wifi, Wrench, Bell, CheckCheck } from 'lucide-react';
 
 import { api } from '../lib/api';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
 import { MetricCard } from '../components/ui/MetricCard';
+import { showToast } from '../lib/toast';
 import ATMFleetCard from '../components/atms/FleetCard';
 import type { ATM, DashboardSummary, Incident } from '../types/api';
 
@@ -31,8 +32,10 @@ const PAGE_FILTERS = [
 const CRITICAL_STATUSES = ['OFFLINE', 'FAULT', 'CRITICAL', 'COMMUNICATION_PROBLEM', 'ERROR', 'UNAVAILABLE'];
 
 export default function MonitoringPage() {
+  const { currentUser } = useAuth();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('');
+  const queryClient = useQueryClient();
 
   const summary = useQuery({
     queryKey: ['dashboard-summary'],
@@ -51,6 +54,14 @@ export default function MonitoringPage() {
   });
 
   const fleet = atms.data || [];
+
+  const handleMarkAllRead = useMutation({
+    mutationFn: () => api.post('/notifications/mark_all_read/'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      showToast('All notifications marked as read', 'success');
+    },
+  });
 
   const rows = useMemo(() => {
     let out = fleet;

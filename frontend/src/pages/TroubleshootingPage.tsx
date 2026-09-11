@@ -5,6 +5,7 @@ import { isAxiosError } from 'axios';
 import { CheckCircle2, Circle } from 'lucide-react';
 
 import { api } from '../lib/api';
+import { faultCategoryLabel } from '../lib/utils';
 import { hasPermission, useAuth } from '../context/AuthContext';
 import { showToast } from '../lib/toast';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
@@ -17,7 +18,7 @@ const CHECKLIST = [
   { key: 'CHECK_POWER', label: 'Check power', match: ['CHECK_POWER'] },
   { key: 'CHECK_CONNECTION', label: 'Check permitted connections', match: ['CHECK_CONNECTION', 'CHECK_NETWORK'] },
   { key: 'CHECK_COMMUNICATION', label: 'Check communication', match: ['CHECK_COMMUNICATION'] },
-  { key: 'CHECK_HARDWARE', label: 'Check relevant hardware', match: ['CHECK_HARDWARE', 'CHECK_DISPLAY', 'CHECK_CARD_READER', 'CHECK_CASH_DISPENSER', 'CHECK_RECEIPT_PRINTER'] },
+  { key: 'CHECK_HARDWARE', label: 'Check relevant hardware', match: ['CHECK_HARDWARE', 'CHECK_DISPLAY', 'CHECK_CARD_READER', 'CHECK_CARD_TRANSPORT', 'CHECK_CASH_DISPENSER', 'CHECK_CASH_CASSETTE', 'CHECK_REJECT_BIN', 'CHECK_RECEIPT_PRINTER'] },
   { key: 'PERFORM_AUTHORIZED_ACTION', label: 'Perform authorized action', match: ['PERFORM_AUTHORIZED_ACTION', 'RECORD_ERROR'] },
   { key: 'RETEST_ATM', label: 'Retest ATM', match: ['RETEST_ATM'] },
   { key: 'VERIFY_SERVICE', label: 'Verify service', match: ['VERIFY_SERVICE'] },
@@ -34,7 +35,10 @@ const ACTION_TYPES = [
   'CHECK_HARDWARE',
   'CHECK_DISPLAY',
   'CHECK_CARD_READER',
+  'CHECK_CARD_TRANSPORT',
   'CHECK_CASH_DISPENSER',
+  'CHECK_CASH_CASSETTE',
+  'CHECK_REJECT_BIN',
   'CHECK_RECEIPT_PRINTER',
   'CHECK_SOFTWARE_ERROR',
   'RECORD_OBSERVATION',
@@ -154,7 +158,7 @@ export default function TroubleshootingPage() {
                 >
                   <div>
                     <strong>{incident.incident_id}</strong>
-                    <small>{incident.atm_reference} · {incident.category}</small>
+                    <small>{incident.atm_reference} · {faultCategoryLabel(incident.category)}</small>
                     <small>{incident.assigned_to_name || 'Unassigned'}</small>
                   </div>
                   <div className="badge-group">

@@ -3,6 +3,7 @@ import { Download, Printer } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 import { api } from '../lib/api';
+import { faultCategoryLabel } from '../lib/utils';
 import { showToast } from '../lib/toast';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { MetricCard } from '../components/ui/MetricCard';
@@ -192,7 +193,7 @@ export default function ReportsPage() {
                     <td>{row.atms}</td>
                     <td>{row.incidents}</td>
                     <td>{row.resolved}</td>
-                    <td><small>{row.common_categories.map((category) => `${category.category} (${category.count})`).join(', ') || '—'}</small></td>
+                    <td><small>{row.common_categories.map((category) => `${faultCategoryLabel(category.category)} (${category.count})`).join(', ') || '—'}</small></td>
                   </tr>
                 ))}
               </tbody>

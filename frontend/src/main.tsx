@@ -27,6 +27,7 @@ const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const BranchesPage = lazy(() => import('./pages/BranchesPage'));
 const BranchDetailPage = lazy(() => import('./pages/BranchesPage').then(m => ({ default: m.BranchDetailPage })));
+const DepartmentDashboardPage = lazy(() => import('./pages/DepartmentDashboardPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
 const ActiveFaultsPage = lazy(() => import('./pages/ActiveFaultsPage'));
 const BranchReportsPage = lazy(() => import('./pages/BranchReportsPage'));
@@ -41,6 +42,7 @@ const BranchATMsPage = lazy(() => import('./pages/BranchATMsPage').then(m => ({ 
 
 import './modern.css';
 import './photo-overrides.css';
+import './tailwind.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -95,11 +97,12 @@ function App() {
                 <Route path="/maintenance" element={<PortalRoute portal={['district', 'maintenance']}><PermissionRoute permission="maintenance.view"><MaintenancePage /></PermissionRoute></PortalRoute>} />
                 <Route path="/monitoring" element={<PortalRoute portal="district"><PermissionRoute permission="atm.view"><MonitoringPage /></PermissionRoute></PortalRoute>} />
                 <Route path="/status-history" element={<PortalRoute portal="district"><PermissionRoute permission="atm.view"><StatusHistoryPage /></PermissionRoute></PortalRoute>} />
+                <Route path="/departments" element={<PortalRoute portal="district"><PermissionRoute permission="department.view"><DepartmentDashboardPage /></PermissionRoute></PortalRoute>} />
                 <Route path="/branches" element={<PortalRoute portal="district"><PermissionRoute permission="branch.view"><BranchesPage /></PermissionRoute></PortalRoute>} />
                 <Route path="/branches/:id" element={<PortalRoute portal="district"><PermissionRoute permission="branch.view"><BranchDetailPage /></PermissionRoute></PortalRoute>} />
                 <Route path="/reports" element={<PortalRoute portal={['district', 'maintenance']}><PermissionRoute permission="report.view"><ReportsPage /></PermissionRoute></PortalRoute>} />
-                <Route path="/notifications" element={<NotificationsPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/notifications" element={<PortalRoute portal={['district', 'maintenance', 'branch']}><NotificationsPage /></PortalRoute>} />
+                <Route path="/settings" element={<PortalRoute portal={['district', 'maintenance', 'branch']}><SettingsPage /></PortalRoute>} />
                 <Route path="/users" element={<PortalRoute portal="district"><PermissionRoute permission="user.view"><UsersPage /></PermissionRoute></PortalRoute>} />
                 <Route path="/audit-logs" element={<PortalRoute portal="district"><PermissionRoute permission="audit.view"><AuditPage /></PermissionRoute></PortalRoute>} />
                 <Route path="*" element={<NotFoundPage />} />

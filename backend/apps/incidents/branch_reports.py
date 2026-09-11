@@ -31,6 +31,28 @@ SEVERITY_TO_ATM_STATUS = {
 }
 
 
+PROBLEM_TYPE_TO_CATEGORY = {
+    # Hardware fault — a physical ATM component is not operating correctly.
+    BranchReport.ProblemType.CARD_READER: Incident.FaultCategory.HARDWARE,
+    BranchReport.ProblemType.CARD_JAM: Incident.FaultCategory.HARDWARE,
+    BranchReport.ProblemType.CASH_DISPENSER: Incident.FaultCategory.HARDWARE,
+    BranchReport.ProblemType.DISPLAY: Incident.FaultCategory.HARDWARE,
+    BranchReport.ProblemType.RECEIPT_PRINTER: Incident.FaultCategory.HARDWARE,
+    BranchReport.ProblemType.HARDWARE: Incident.FaultCategory.HARDWARE,
+    BranchReport.ProblemType.SECURITY: Incident.FaultCategory.HARDWARE,
+    # Cash-out fault — the ATM has a problem handling or dispensing banknotes.
+    BranchReport.ProblemType.REJECT_BIN_FULL: Incident.FaultCategory.CASH_OUT,
+    BranchReport.ProblemType.CASH_CASSETTE_EMPTY: Incident.FaultCategory.CASH_OUT,
+    # Lost communication fault — the ATM cannot communicate with the monitoring/banking system.
+    BranchReport.ProblemType.NETWORK_COMMUNICATION: Incident.FaultCategory.LOST_COMMUNICATION,
+    BranchReport.ProblemType.POWER: Incident.FaultCategory.LOST_COMMUNICATION,
+    # Other
+    BranchReport.ProblemType.SOFTWARE: Incident.FaultCategory.OTHER,
+    BranchReport.ProblemType.GENERAL: Incident.FaultCategory.OTHER,
+    BranchReport.ProblemType.UNKNOWN: Incident.FaultCategory.OTHER,
+}
+
+
 def district_ops_users(district_id):
     return User.objects.filter(is_active=True).filter(
         Q(district_id=district_id, role__in=[
@@ -233,7 +255,8 @@ class BranchReportViewSet(ScopedQuerysetMixin, viewsets.ModelViewSet):
 
         incident = Incident.objects.create(
             atm=report.atm,
-            category=report.problem_type,
+            category=PROBLEM_TYPE_TO_CATEGORY.get(report.problem_type, Incident.FaultCategory.OTHER),
+            category_detail=report.get_problem_type_display(),
             priority=confirmed_severity,
             status=Incident.Status.REPORTED,
             title=problem_title,

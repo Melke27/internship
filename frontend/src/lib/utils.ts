@@ -50,6 +50,17 @@ export function formatIncidentDuration(value: {
   return formatDuration(incidentDurationMinutes(value));
 }
 
+export function faultCategoryLabel(category?: string | null) {
+  if (!category) return '—';
+  const labels: Record<string, string> = {
+    HARDWARE: 'Hardware Fault',
+    CASH_OUT: 'Cash-out Fault',
+    LOST_COMMUNICATION: 'Lost Communication Fault',
+    OTHER: 'Other',
+  };
+  return labels[category] ?? category.replaceAll('_', ' ');
+}
+
 export function mediaUrl(path?: string | null) {
   if (!path) return null;
   if (path.startsWith('http') || path.startsWith('/')) return path;

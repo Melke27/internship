@@ -24,8 +24,17 @@ class Incident(TimeStamped):
         HIGH = "HIGH", "High"
         CRITICAL = "CRITICAL", "Critical"
 
+    class FaultCategory(models.TextChoices):
+        HARDWARE = "HARDWARE", "Hardware Fault"
+        CASH_OUT = "CASH_OUT", "Cash-out Fault"
+        LOST_COMMUNICATION = "LOST_COMMUNICATION", "Lost Communication Fault"
+        OTHER = "OTHER", "Other"
+
     atm = models.ForeignKey("assets.ATM", on_delete=models.PROTECT, related_name="incidents")
-    category = models.CharField(max_length=60)
+    category = models.CharField(max_length=40, choices=FaultCategory.choices, default=FaultCategory.OTHER)
+    category_detail = models.CharField(
+        max_length=80, blank=True, help_text="Specific fault type within the category (e.g. Card jam, Reject bin full)."
+    )
     priority = models.CharField(max_length=20, choices=Priority.choices, default=Priority.MEDIUM)
     status = models.CharField(max_length=30, choices=Status.choices, default=Status.REPORTED)
     title = models.CharField(max_length=200)
@@ -84,7 +93,10 @@ class BranchReport(TimeStamped):
         POWER = "POWER", "Power"
         DISPLAY = "DISPLAY", "Display"
         CARD_READER = "CARD_READER", "Card Reader"
+        CARD_JAM = "CARD_JAM", "Card Jam"
         CASH_DISPENSER = "CASH_DISPENSER", "Cash Dispenser"
+        REJECT_BIN_FULL = "REJECT_BIN_FULL", "Reject Bin Full"
+        CASH_CASSETTE_EMPTY = "CASH_CASSETTE_EMPTY", "Cash Cassette Empty"
         RECEIPT_PRINTER = "RECEIPT_PRINTER", "Receipt Printer"
         SOFTWARE = "SOFTWARE", "Software / Application"
         HARDWARE = "HARDWARE", "Hardware"
@@ -163,7 +175,10 @@ class TroubleshootingAction(TimeStamped):
         CHECK_HARDWARE = "CHECK_HARDWARE", "Check Hardware"
         CHECK_DISPLAY = "CHECK_DISPLAY", "Check Display"
         CHECK_CARD_READER = "CHECK_CARD_READER", "Check Card Reader"
+        CHECK_CARD_TRANSPORT = "CHECK_CARD_TRANSPORT", "Check Card Transport"
         CHECK_CASH_DISPENSER = "CHECK_CASH_DISPENSER", "Check Cash Dispenser"
+        CHECK_CASH_CASSETTE = "CHECK_CASH_CASSETTE", "Check Cash Cassette"
+        CHECK_REJECT_BIN = "CHECK_REJECT_BIN", "Check Reject Bin"
         CHECK_RECEIPT_PRINTER = "CHECK_RECEIPT_PRINTER", "Check Receipt Printer"
         CHECK_SOFTWARE_ERROR = "CHECK_SOFTWARE_ERROR", "Check Software Error"
         RECORD_OBSERVATION = "RECORD_OBSERVATION", "Record Observation"

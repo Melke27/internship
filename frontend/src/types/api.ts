@@ -52,6 +52,7 @@ export interface ActiveIncidentSummary {
   status: string;
   priority: string;
   category: string;
+  category_detail?: string;
   title: string;
 }
 
@@ -150,6 +151,7 @@ export interface Incident {
   assigned_to: number | null;
   assigned_to_name?: string | null;
   category: string;
+  category_detail?: string;
   priority: string;
   status: string;
   title: string;

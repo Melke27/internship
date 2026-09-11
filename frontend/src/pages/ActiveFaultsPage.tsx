@@ -5,7 +5,7 @@ import { AlertTriangle, CircleAlert, Clock, ShieldAlert, Wrench } from 'lucide-r
 
 import { api } from '../lib/api';
 import { hasPermission, useAuth } from '../context/AuthContext';
-import { formatDuration } from '../lib/utils';
+import { faultCategoryLabel, formatDuration } from '../lib/utils';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
 import { MetricCard } from '../components/ui/MetricCard';
@@ -152,7 +152,7 @@ export default function ActiveFaultsPage() {
                       </Link>
                     </td>
                     <td>{row.branch}</td>
-                    <td>{row.fault.replaceAll('_', ' ')}</td>
+                    <td>{faultCategoryLabel(row.fault)}</td>
                     <td>
                       <PriorityBadge value={row.priority} />
                     </td>

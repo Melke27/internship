@@ -24,3 +24,46 @@ class SystemSetting(TimeStamped):
         return f"{self.key}: {self.value}"
 
 
+class Department(TimeStamped):
+    class DepartmentType(models.TextChoices):
+        OPERATIONS = "OPERATIONS", "ATM Operations"
+        TECHNICAL = "TECHNICAL", "IT & Technical Support"
+        MAINTENANCE = "MAINTENANCE", "Maintenance & Engineering"
+        AUDIT = "AUDIT", "Audit & Compliance"
+        ADMINISTRATION = "ADMINISTRATION", "Administration & HR"
+
+    name = models.CharField(max_length=150)
+    code = models.CharField(max_length=30, unique=True)
+    district = models.ForeignKey(
+        District,
+        on_delete=models.PROTECT,
+        related_name="departments",
+        null=True,
+        blank=True,
+    )
+    head = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="managed_departments",
+    )
+    department_type = models.CharField(
+        max_length=30,
+        choices=DepartmentType.choices,
+        default=DepartmentType.OPERATIONS,
+    )
+    description = models.TextField(blank=True)
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=32, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[("ACTIVE", "Active"), ("INACTIVE", "Inactive")],
+        default="ACTIVE",
+    )
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+

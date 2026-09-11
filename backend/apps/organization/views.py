@@ -15,8 +15,8 @@ from apps.common.permissions import (
 from apps.incidents.models import BranchReport, Incident
 from apps.organization.yeka import YEKA_NAME, get_yeka_district
 
-from .models import Branch, District
-from .serializers import BranchSerializer, DistrictSerializer
+from .models import Branch, Department, District
+from .serializers import BranchSerializer, DepartmentSerializer, DistrictSerializer
 
 
 class DistrictViewSet(AuditMixin, ScopedQuerysetMixin, viewsets.ReadOnlyModelViewSet):
@@ -156,3 +156,103 @@ class BranchViewSet(AuditMixin, ScopedQuerysetMixin, viewsets.ModelViewSet):
                 ).count(),
             }
         )
+
+
+class DepartmentViewSet(AuditMixin, ScopedQuerysetMixin, viewsets.ModelViewSet):
+    queryset = Department.objects.select_related("district", "head").order_by("name")
+    serializer_class = DepartmentSerializer
+    search_fields = ["name", "code", "department_type", "description"]
+    filterset_fields = ["status", "department_type"]
+    entity_name = "Department"
+    permission_classes = [CanManageOrganization]
+
+    def get_queryset(self):
+        from apps.organization.yeka import ensure_default_departments
+        ensure_default_departments()
+        return super().get_queryset()
+
+    def scope_queryset(self, qs):
+        yeka = get_yeka_district()
+        u = self.request.user
+        qs = qs.filter(district_id=yeka.id)
+        if not u.is_authenticated:
+            return qs.none()
+        return qs
+
+    def perform_create(self, serializer):
+        require(can_manage_organization(self.request.user), "You are not authorized to create departments.")
+        serializer.save(district=get_yeka_district())
+
+    def perform_update(self, serializer):
+        require(can_manage_organization(self.request.user), "You are not authorized to edit departments.")
+        serializer.save(district=get_yeka_district())
+
+    def perform_destroy(self, instance):
+        raise MethodNotAllowed(
+            "DELETE",
+            detail="Departments must be deactivated, not deleted, to preserve historical records.",
+        )
+
+    @action(detail=True, methods=["post"])
+    def deactivate(self, request, pk=None):
+        require(can_manage_organization(request.user), "Only administrators may deactivate departments.")
+        department = self.get_object()
+        reason = (request.data.get("reason") or "").strip()
+        if not reason:
+            return Response({"reason": ["A reason is required."]}, status=status.HTTP_400_BAD_REQUEST)
+
+        previous = department.status
+        department.status = "INACTIVE"
+        department.save(update_fields=["status", "updated_at"])
+        self._audit(
+            "DEPARTMENT_DEACTIVATED",
+            department,
+            previous={
+                "status": previous,
+                "reason": reason,
+                "users_count": department.users.count(),
+                "district": YEKA_NAME,
+            },
+        )
+        return Response(
+            {
+                "department": DepartmentSerializer(department).data,
+                "warning": {
+                    "assigned_users": department.users.count(),
+                },
+            }
+        )
+
+    @action(detail=True, methods=["get"])
+    def summary(self, request, pk=None):
+        department = self.get_object()
+        users = department.users.all()
+        open_incidents = Incident.objects.filter(assigned_to__department=department).exclude(status="CLOSED")
+        active_maint = Maintenance.objects.filter(technician__department=department).exclude(
+            status__in=[Maintenance.Status.VERIFIED, Maintenance.Status.CANCELLED, Maintenance.Status.COMPLETED]
+        )
+
+        return Response(
+            {
+                "id": department.id,
+                "name": department.name,
+                "code": department.code,
+                "department_type": department.department_type,
+                "district": YEKA_NAME,
+                "status": department.status,
+                "head": department.head.full_name or department.head.username if department.head else None,
+                "total_users": users.count(),
+                "open_incidents": open_incidents.count(),
+                "active_maintenance": active_maint.count(),
+                "staff_members": [
+                    {
+                        "id": u.id,
+                        "name": u.full_name or u.username,
+                        "email": u.email,
+                        "role": u.role,
+                    }
+                    for u in users[:10]
+                ],
+            }
+        )
+

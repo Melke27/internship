@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.organization.yeka import YEKA_NAME, get_yeka_district
 
-from .models import Branch, District
+from .models import Branch, Department, District
 
 
 class DistrictSerializer(serializers.ModelSerializer):
@@ -52,3 +52,54 @@ class BranchSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         validated_data["district"] = get_yeka_district()
         return super().update(instance, validated_data)
+
+
+class DepartmentSerializer(serializers.ModelSerializer):
+    district_name = serializers.SerializerMethodField()
+    head_name = serializers.SerializerMethodField()
+    head_email = serializers.SerializerMethodField()
+    user_count = serializers.SerializerMethodField()
+    open_incidents_count = serializers.SerializerMethodField()
+    active_maintenance_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Department
+        fields = "__all__"
+        read_only_fields = ["district"]
+
+    def get_district_name(self, obj):
+        return YEKA_NAME
+
+    def get_head_name(self, obj):
+        if obj.head:
+            return obj.head.full_name or obj.head.username
+        return None
+
+    def get_head_email(self, obj):
+        if obj.head:
+            return obj.head.email
+        return None
+
+    def get_user_count(self, obj):
+        return obj.users.count()
+
+    def get_open_incidents_count(self, obj):
+        from apps.incidents.models import Incident
+        return Incident.objects.filter(
+            assigned_to__department=obj
+        ).exclude(status="CLOSED").count()
+
+    def get_active_maintenance_count(self, obj):
+        from apps.assets.models import Maintenance
+        return Maintenance.objects.filter(
+            technician__department=obj
+        ).exclude(status__in=["VERIFIED", "CANCELLED", "COMPLETED"]).count()
+
+    def create(self, validated_data):
+        validated_data["district"] = get_yeka_district()
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data["district"] = get_yeka_district()
+        return super().update(instance, validated_data)
+

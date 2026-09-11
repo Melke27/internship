@@ -54,5 +54,6 @@ class ATMSerializer(serializers.ModelSerializer):
             "status": active.status,
             "priority": active.priority,
             "category": active.category,
+            "category_detail": active.category_detail,
             "title": active.title,
         }

@@ -27,6 +27,20 @@ function extractError(error: unknown, fallback: string) {
   return fallback;
 }
 
+const FAULT_CATEGORIES = [
+  { value: 'HARDWARE', label: 'Hardware Fault', hint: 'Physical ATM component not operating correctly' },
+  { value: 'CASH_OUT', label: 'Cash-out Fault', hint: 'Problem handling or dispensing banknotes' },
+  { value: 'LOST_COMMUNICATION', label: 'Lost Communication Fault', hint: 'ATM cannot communicate with the system' },
+  { value: 'OTHER', label: 'Other' },
+];
+
+const FAULT_EXAMPLES: Record<string, string[]> = {
+  HARDWARE: ['CARD_READER_FAILURE', 'CARD_JAM', 'CASH_DISPENSER_FAULT', 'DISPLAY_FAULT', 'RECEIPT_PRINTER_FAULT'],
+  CASH_OUT: ['REJECT_BIN_FULL', 'CASH_CASSETTE_EMPTY'],
+  LOST_COMMUNICATION: ['NETWORK_CONNECTION_LOSS', 'POWER_INTERRUPTION'],
+  OTHER: [],
+};
+
 function CreateIncidentDialog({ initialAtmId, onClose }: { initialAtmId?: string | null; onClose: () => void }) {
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
@@ -34,6 +48,7 @@ function CreateIncidentDialog({ initialAtmId, onClose }: { initialAtmId?: string
   const atms = useQuery({ queryKey: ['incident-atms'], queryFn: () => list<ATM>('/atms/?ordering=reference') });
   const technicians = useQuery({ queryKey: ['incident-technicians'], queryFn: () => list<User>('/users/technicians/'), retry: false });
   const [atmId, setAtmId] = useState(initialAtmId || '');
+  const [category, setCategory] = useState('HARDWARE');
   const selectedATM = useMemo(() => (atms.data || []).find((atm) => String(atm.id) === String(atmId)), [atms.data, atmId]);
   const createIncident = useMutation({
     mutationFn: (payload: Record<string, unknown>) => api.post('/incidents/', payload).then((response) => response.data),
@@ -68,7 +83,8 @@ function CreateIncidentDialog({ initialAtmId, onClose }: { initialAtmId?: string
         setDuplicate(null);
         createIncident.mutate({
           atm: Number(value('atm')),
-          category: value('category'),
+          category: value('category') || 'HARDWARE',
+          category_detail: value('category_detail') || '',
           priority: value('priority'),
           title: value('title'),
           error_message: value('error_message'),
@@ -104,9 +120,9 @@ function CreateIncidentDialog({ initialAtmId, onClose }: { initialAtmId?: string
       </div>
       <FormGrid cols={2}>
         <Field label="Category" required>
-          <SelectInput name="category" required>
-            {['NETWORK / COMMUNICATION', 'POWER', 'HARDWARE', 'DISPLAY', 'CARD READER', 'CASH DISPENSER', 'RECEIPT PRINTER', 'GENERAL ATM ERROR', 'OTHER TECHNICAL ISSUE'].map((value) => (
-              <option key={value} value={value}>{value}</option>
+          <SelectInput name="category" value={category} onChange={(event) => setCategory(event.target.value)} required>
+            {FAULT_CATEGORIES.map((item) => (
+              <option key={item.value} value={item.value}>{item.label}</option>
             ))}
           </SelectInput>
         </Field>
@@ -116,6 +132,16 @@ function CreateIncidentDialog({ initialAtmId, onClose }: { initialAtmId?: string
           </SelectInput>
         </Field>
       </FormGrid>
+      {FAULT_EXAMPLES[category] && FAULT_EXAMPLES[category].length > 0 ? (
+        <Field label="Specific Fault" hint="Pick the most specific fault type observed.">
+          <SelectInput name="category_detail" defaultValue="">
+            <option value="">Not specified</option>
+            {FAULT_EXAMPLES[category].map((detail) => (
+              <option key={detail} value={detail}>{detail.replaceAll('_', ' ')}</option>
+            ))}
+          </SelectInput>
+        </Field>
+      ) : null}
       <Field label="Incident Title" required>
         <TextInput name="title" required placeholder="Brief technical summary" />
       </Field>

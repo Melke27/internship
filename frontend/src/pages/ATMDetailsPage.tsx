@@ -8,6 +8,7 @@ import { api } from '../lib/api';
 import { hasPermission, useAuth } from '../context/AuthContext';
 import { showToast } from '../lib/toast';
 import {
+  faultCategoryLabel,
   formatDuration,
   formatIncidentDuration,
   incidentDurationMinutes,
@@ -196,7 +197,7 @@ export default function ATMDetailsPage() {
           kind: 'incident',
           node: (
             <Link className="text-link" to={`/incidents/${i.id}`}>
-              {i.incident_id} — {i.title || i.category?.replaceAll('_', ' ') || 'Incident'}
+              {i.incident_id} — {i.title || faultCategoryLabel(i.category) || 'Incident'}
             </Link>
           ),
         });
@@ -707,7 +708,7 @@ export default function ATMDetailsPage() {
                         <small>{new Date(incident.created_at).toLocaleDateString()}</small>
                       </td>
                       <td style={{ textTransform: 'capitalize' }}>
-                        {incident.category?.replaceAll('_', ' ') || '—'}
+                        {faultCategoryLabel(incident.category) || '—'}
                       </td>
                       <td>
                         <PriorityBadge value={incident.priority} />

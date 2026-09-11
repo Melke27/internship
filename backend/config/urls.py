@@ -5,7 +5,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework_simplejwt.views import TokenRefreshView
-from apps.organization.views import DistrictViewSet, BranchViewSet
+from apps.organization.views import DistrictViewSet, BranchViewSet, DepartmentViewSet
 from apps.assets.views import ATMViewSet, MaintenanceViewSet
 from apps.incidents.views import IncidentViewSet
 from apps.incidents.branch_reports import BranchReportViewSet
@@ -14,13 +14,14 @@ from apps.accounts.auth_views import EmailOrUsernameTokenView
 from apps.audit.views import AuditLogViewSet
 from apps.notifications.views import NotificationViewSet
 from apps.reports.views import (
-    DashboardSummaryView, DistrictReportView, BranchReportView, TechnicianReportView,
+    DashboardSummaryView, DistrictReportView, DepartmentReportView, BranchReportView, TechnicianReportView,
     ATMReportView, GlobalSearchView, MaintenanceReportView, SLAMetricsReportView, SystemHealthView, SystemSettingsView,
 )
 
 router = DefaultRouter()
 router.register("districts", DistrictViewSet, basename="district")
 router.register("branches", BranchViewSet, basename="branch")
+router.register("departments", DepartmentViewSet, basename="department")
 router.register("atms", ATMViewSet, basename="atm")
 router.register("maintenance", MaintenanceViewSet, basename="maintenance")
 router.register("incidents", IncidentViewSet, basename="incident")
@@ -37,6 +38,7 @@ urlpatterns = [
     path("api/auth/change_password/", ChangePasswordView.as_view(), name="change_password"),
     path("api/reports/dashboard/", DashboardSummaryView.as_view(), name="dashboard-summary"),
     path("api/reports/districts/", DistrictReportView.as_view(), name="report-districts"),
+    path("api/reports/departments/", DepartmentReportView.as_view(), name="report-departments"),
     path("api/reports/branches/", BranchReportView.as_view(), name="report-branches"),
     path("api/reports/technicians/", TechnicianReportView.as_view(), name="report-technicians"),
     path("api/reports/maintenance/", MaintenanceReportView.as_view(), name="report-maintenance"),

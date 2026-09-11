@@ -33,6 +33,13 @@ class User(AbstractUser):
         on_delete=models.PROTECT,
         related_name="users",
     )
+    department = models.ForeignKey(
+        "organization.Department",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="users",
+    )
 
     def __str__(self):
         return self.full_name or self.username

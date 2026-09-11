@@ -59,6 +59,7 @@ export const DISTRICT_NAV: NavGroup[] = [
   {
     title: 'Organization',
     items: [
+      { to: '/departments', label: 'Departments', icon: Building2, permission: 'department.view' },
       { to: '/branches', label: 'Branches', icon: Building2, permission: 'branch.view' },
       { to: '/users', label: 'Users', icon: Users, permission: 'user.view' },
     ],

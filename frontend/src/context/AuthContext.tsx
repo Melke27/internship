@@ -39,7 +39,6 @@ interface AuthState {
   login: (username: string, password: string) => Promise<CurrentUser>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
-  getUserPermissions: (role: UserRole | string) => string[];
   userRole: string | null;
   hasPermission: (user: CurrentUser | null, permission: string) => boolean;
   canManageOrganization: (user: CurrentUser | null) => boolean;
@@ -197,10 +196,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCurrentUser(null);
   }
 
-  function getUserPermissions(_role: UserRole | string) {
-    return currentUser?.permissions || [];
-  }
-
   const value = useMemo(
     () => ({
       currentUser,
@@ -211,7 +206,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refresh: async () => {
         await fetchMe();
       },
-      getUserPermissions,
       userRole: currentUser?.role || null,
       hasPermission,
       canManageOrganization,

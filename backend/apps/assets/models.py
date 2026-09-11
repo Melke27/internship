@@ -102,7 +102,10 @@ class ATMComponent(TimeStamped):
     class ComponentType(models.TextChoices):
         DISPLAY = "DISPLAY", "Display"
         CARD_READER = "CARD_READER", "Card Reader"
+        CARD_TRANSPORT = "CARD_TRANSPORT", "Card Transport"
         CASH_DISPENSER = "CASH_DISPENSER", "Cash Dispenser"
+        CASH_CASSETTE = "CASH_CASSETTE", "Cash Cassette"
+        REJECT_BIN = "REJECT_BIN", "Reject Bin"
         RECEIPT_PRINTER = "RECEIPT_PRINTER", "Receipt Printer"
         NETWORK = "NETWORK", "Network"
         POWER = "POWER", "Power"

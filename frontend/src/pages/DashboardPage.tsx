@@ -17,8 +17,9 @@ import {
 } from 'lucide-react';
 
 import { hasPermission, useAuth, portalForUser, roleLabel, type CurrentUser } from '../context/AuthContext';
+import { FIXED_DISTRICT_NAME } from '../lib/navigation';
 import { api } from '../lib/api';
-import { formatDuration } from '../lib/utils';
+import { faultCategoryLabel, formatDuration } from '../lib/utils';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback/StateView';
 import { PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
 import { MetricCard } from '../components/ui/MetricCard';
@@ -43,7 +44,6 @@ function greeting() {
 function todayLabel(user: CurrentUser | null) {
   const portal = portalForUser(user);
   if (portal === 'branch') return 'Today';
-  const districtName = user?.district_name || 'Yeka District';
   return new Date().toLocaleDateString(undefined, {
     weekday: 'long',
     year: 'numeric',
@@ -161,7 +161,7 @@ export default function DashboardPage() {
           </p>
           <h1>{greeting()}, {currentUser?.full_name?.split(' ')[0] || 'Operator'}</h1>
           <p className="page-copy">
-            Live view of {portal === 'branch' ? currentUser?.branch_name : currentUser?.district_name || 'Yeka District'} — ATM availability, critical faults, incidents and maintenance.
+            Live view of {portal === 'branch' ? currentUser?.branch_name : currentUser?.district_name || FIXED_DISTRICT_NAME} — ATM availability, critical faults, incidents and maintenance.
           </p>
           <span className="live-updated">
             <span className="live-dot" aria-hidden />
@@ -219,7 +219,7 @@ export default function DashboardPage() {
             <div>
               <strong style={{ fontSize: '15px', color: 'var(--text)' }}>Clean System & Ready for Operation</strong>
               <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--text-2)' }}>
-                All demo data has been purged. Start by registering your first ATM or configuring branch structure.
+                No ATMs registered yet. Start by registering your first ATM or configuring the branch structure.
               </p>
             </div>
           </div>
@@ -558,7 +558,7 @@ export default function DashboardPage() {
                     <tr key={row.id}>
                       <td><Link to={`/atms/${row.id}`}><strong>{row.reference}</strong></Link></td>
                       <td>{row.branch}</td>
-                      <td style={{ textTransform: 'capitalize' }}>{row.fault.replaceAll('_', ' ')}</td>
+                      <td style={{ textTransform: 'capitalize' }}>{faultCategoryLabel(row.fault)}</td>
                       <td><PriorityBadge value={row.priority} /></td>
                       <td><StatusBadge value={row.status} /></td>
                       <td>{row.reported ? new Date(row.reported).toLocaleTimeString() : '—'}</td>

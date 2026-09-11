@@ -87,7 +87,7 @@ def test_branch_deactivate_requires_reason(headoffice):
 def test_atm_delete_blocked_when_incidents_exist(headoffice, org):
     manager = make_user("mgr", "MONITORING_OFFICER", district=org["district_a"], branch=org["branch_a1"])
     atm = ATM.objects.create(reference="ATM-A1-001", branch=org["branch_a1"])
-    Incident.objects.create(atm=atm, title="Broken", category="Hardware", reported_by=manager)
+    Incident.objects.create(atm=atm, title="Broken", category="HARDWARE", reported_by=manager)
     response = client_for(headoffice).delete(f"/api/atms/{atm.id}/")
     assert response.status_code == 400
     assert "Deactivate it instead" in str(response.data["detail"])
@@ -120,7 +120,7 @@ def test_deletion_is_audited(headoffice):
     atm_b = ATM.objects.create(reference="ATM-D1-002", branch=branch)
     # ensure only atm_a is deletable (no incidents); atm_b gets an incident
     manager = make_user("mgr2", "MONITORING_OFFICER", district=district, branch=branch)
-    Incident.objects.create(atm=atm_b, title="Broken", category="Hardware", reported_by=manager)
+    Incident.objects.create(atm=atm_b, title="Broken", category="HARDWARE", reported_by=manager)
     response = client_for(headoffice).delete(f"/api/atms/{atm_a.id}/")
     assert response.status_code == 204
     from apps.audit.models import AuditLog

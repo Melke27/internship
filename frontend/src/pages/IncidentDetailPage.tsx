@@ -138,7 +138,7 @@ function WorkflowDialog({ kind, incident, onClose }: { kind: Exclude<DialogKind,
         <>
           <Field label="Technical Action" required>
             <SelectInput name="action_type" required>
-              {['CHECK_ATM_STATUS', 'PHYSICAL_INSPECTION', 'CHECK_POWER', 'CHECK_CONNECTION', 'CHECK_NETWORK', 'CHECK_COMMUNICATION', 'CHECK_HARDWARE', 'CHECK_DISPLAY', 'CHECK_CARD_READER', 'CHECK_CASH_DISPENSER', 'CHECK_RECEIPT_PRINTER', 'RECORD_ERROR', 'PERFORM_AUTHORIZED_ACTION', 'VERIFY_SERVICE'].map((value) => (
+              {['CHECK_ATM_STATUS', 'PHYSICAL_INSPECTION', 'CHECK_POWER', 'CHECK_CONNECTION', 'CHECK_NETWORK', 'CHECK_COMMUNICATION', 'CHECK_HARDWARE', 'CHECK_DISPLAY', 'CHECK_CARD_READER', 'CHECK_CARD_TRANSPORT', 'CHECK_CASH_DISPENSER', 'CHECK_CASH_CASSETTE', 'CHECK_REJECT_BIN', 'CHECK_RECEIPT_PRINTER', 'RECORD_ERROR', 'PERFORM_AUTHORIZED_ACTION', 'VERIFY_SERVICE'].map((value) => (
                 <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>
               ))}
             </SelectInput>
@@ -328,7 +328,10 @@ export default function IncidentDetailPage() {
             <DetailField label="District" value={incident.district_name} />
             <DetailField label="Reported By" value={incident.reported_by_name || '—'} />
             <DetailField label="Assigned Technician" value={incident.assigned_to_name || 'Unassigned'} />
-            <DetailField label="Category" value={incident.category} />
+            <DetailField label="Category" value={incident.category.replaceAll('_', ' ')} />
+            {incident.category_detail ? (
+              <DetailField label="Specific Fault" value={incident.category_detail.replaceAll('_', ' ')} />
+            ) : null}
             <DetailField label="Priority" value={<PriorityBadge value={incident.priority} />} />
             <DetailField label="Status" value={<StatusBadge value={incident.status} />} />
             <DetailField label="Error Message" value={incident.error_message || '—'} />

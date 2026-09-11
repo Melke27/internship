@@ -17,6 +17,59 @@ ACTIVE_INCIDENT_STATUSES = [
 ]
 
 
+def resolve_fault_category(value):
+    """Map a user-supplied or legacy category string to the three fault categories
+    (Hardware, Cash-out, Lost Communication). Returns None for unknown values."""
+    key = str(value).strip().upper()
+    mapping = {
+        # Hardware fault
+        "HARDWARE": Incident.FaultCategory.HARDWARE,
+        "HARDWARE FAULT": Incident.FaultCategory.HARDWARE,
+        "CARD READER": Incident.FaultCategory.HARDWARE,
+        "CARD_READER": Incident.FaultCategory.HARDWARE,
+        "CARD JAM": Incident.FaultCategory.HARDWARE,
+        "CARD_JAM": Incident.FaultCategory.HARDWARE,
+        "CASH DISPENSER": Incident.FaultCategory.HARDWARE,
+        "CASH_DISPENSER": Incident.FaultCategory.HARDWARE,
+        "CASH DISPENSER FAULT": Incident.FaultCategory.HARDWARE,
+        "DISPLAY": Incident.FaultCategory.HARDWARE,
+        "RECEIPT PRINTER": Incident.FaultCategory.HARDWARE,
+        "RECEIPT_PRINTER": Incident.FaultCategory.HARDWARE,
+        "SECURITY": Incident.FaultCategory.HARDWARE,
+        # Cash-out fault
+        "CASH_OUT": Incident.FaultCategory.CASH_OUT,
+        "CASH-OUT": Incident.FaultCategory.CASH_OUT,
+        "CASH-OUT FAULT": Incident.FaultCategory.CASH_OUT,
+        "REJECT BIN FULL": Incident.FaultCategory.CASH_OUT,
+        "REJECT_BIN_FULL": Incident.FaultCategory.CASH_OUT,
+        "REJECT BIN": Incident.FaultCategory.CASH_OUT,
+        "CASH EMPTY": Incident.FaultCategory.CASH_OUT,
+        "CASH CASSETTE EMPTY": Incident.FaultCategory.CASH_OUT,
+        "CASH_CASSETTE_EMPTY": Incident.FaultCategory.CASH_OUT,
+        # Lost communication fault
+        "LOST_COMMUNICATION": Incident.FaultCategory.LOST_COMMUNICATION,
+        "LOST COMMUNICATION": Incident.FaultCategory.LOST_COMMUNICATION,
+        "LOST COMMUNICATION FAULT": Incident.FaultCategory.LOST_COMMUNICATION,
+        "NETWORK": Incident.FaultCategory.LOST_COMMUNICATION,
+        "NETWORK COMMUNICATION": Incident.FaultCategory.LOST_COMMUNICATION,
+        "NETWORK_COMMUNICATION": Incident.FaultCategory.LOST_COMMUNICATION,
+        "NETWORK / COMMUNICATION": Incident.FaultCategory.LOST_COMMUNICATION,
+        "CONNECTION": Incident.FaultCategory.LOST_COMMUNICATION,
+        "CONNECTION LOSS": Incident.FaultCategory.LOST_COMMUNICATION,
+        "COMMUNICATION": Incident.FaultCategory.LOST_COMMUNICATION,
+        "POWER": Incident.FaultCategory.LOST_COMMUNICATION,
+        # Other
+        "OTHER": Incident.FaultCategory.OTHER,
+        "GENERAL": Incident.FaultCategory.OTHER,
+        "GENERAL ATM ERROR": Incident.FaultCategory.OTHER,
+        "SOFTWARE": Incident.FaultCategory.OTHER,
+        "SOFTWARE / APPLICATION": Incident.FaultCategory.OTHER,
+        "UNKNOWN": Incident.FaultCategory.OTHER,
+        "OTHER TECHNICAL ISSUE": Incident.FaultCategory.OTHER,
+    }
+    return mapping.get(key)
+
+
 class TroubleshootingActionSerializer(serializers.ModelSerializer):
     technician_name = serializers.SerializerMethodField()
 
@@ -126,6 +179,7 @@ class BranchReportSerializer(serializers.ModelSerializer):
             "priority": existing.priority,
             "status": existing.status,
             "category": existing.category,
+            "category_detail": existing.category_detail,
         }
 
     def validate(self, attrs):
@@ -138,6 +192,7 @@ class BranchReportSerializer(serializers.ModelSerializer):
 
 class IncidentSerializer(serializers.ModelSerializer):
     incident_id = serializers.ReadOnlyField()
+    category = serializers.CharField(required=False)
     atm_reference = serializers.CharField(source="atm.reference", read_only=True)
     branch_name = serializers.CharField(source="atm.branch.name", read_only=True)
     district_name = serializers.CharField(source="atm.branch.district.name", read_only=True)
@@ -191,7 +246,20 @@ class IncidentSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         instance = getattr(self, "instance", None)
         atm = attrs.get("atm") or getattr(instance, "atm", None)
-        category = attrs.get("category") or getattr(instance, "category", None)
+        if attrs.get("category"):
+            resolved = resolve_fault_category(attrs["category"])
+            if resolved:
+                attrs["category"] = resolved
+            else:
+                raise serializers.ValidationError(
+                    {
+                        "category": (
+                            "Category must be one of the fault categories: "
+                            "HARDWARE (hardware fault), CASH_OUT (cash-out fault), "
+                            "LOST_COMMUNICATION (lost communication fault)."
+                        )
+                    }
+                )
         if not atm:
             return attrs
         qs = Incident.objects.filter(atm=atm, status__in=ACTIVE_INCIDENT_STATUSES)
@@ -212,6 +280,4 @@ class IncidentSerializer(serializers.ModelSerializer):
                     },
                 }
             )
-        if category and len(category) > 60:
-            raise serializers.ValidationError({"category": "Category is too long."})
         return attrs

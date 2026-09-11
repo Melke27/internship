@@ -8,6 +8,7 @@ import { api } from '../lib/api';
 import { showToast } from '../lib/toast';
 import { canManageUsers, hasPermission, portalForUser, roleLabel, useAuth } from '../context/AuthContext';
 import { navForPortal, portalBrand, FIXED_DISTRICT_NAME, type NavItem } from '../lib/navigation';
+import { PriorityBadge, StatusBadge } from '../components/ui/StatusBadge';
 import type { DashboardSummary } from '../types/api';
 
 
@@ -176,13 +177,15 @@ export default function AppLayout({ children }: PropsWithChildren) {
     }
   }, [logout]);
 
-  const markNotificationRead = useCallback(
-    async (id: number) => {
-      await api.post(`/notifications/${id}/mark_read/`);
+  const markRead = useMutation({
+    mutationFn: (id: number) => api.post(`/notifications/${id}/mark_read/`),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
-    [queryClient],
-  );
+    onError: () => {
+      showToast('Could not mark notification as read', 'error');
+    },
+  });
 
   const markAllRead = useMutation({
     mutationFn: () => api.post('/notifications/mark_all_read/'),
@@ -346,7 +349,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     >
                       <strong>{atm.reference}</strong>
                       <small>
-                        {atm.branch} · {atm.status.replaceAll('_', ' ')}
+                        {atm.branch} · <StatusBadge value={atm.status} showIcon={false} />
                       </small>
                     </Link>
                   ))}
@@ -359,7 +362,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     >
                       <strong>{incident.incident_number}</strong>
                       <small>
-                        {incident.atm_reference} · {incident.priority} · {incident.status}
+                        {incident.atm_reference} · <PriorityBadge value={incident.priority} /> · <StatusBadge value={incident.status} showIcon={false} />
                       </small>
                     </Link>
                   ))}
@@ -372,7 +375,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     >
                       <strong>{job.maintenance_id}</strong>
                       <small>
-                        {job.atm_reference} · {job.status}
+                        {job.atm_reference} · <StatusBadge value={job.status} showIcon={false} />
                       </small>
                     </Link>
                   ))}
@@ -464,8 +467,13 @@ export default function AppLayout({ children }: PropsWithChildren) {
                       </span>
                     </div>
                     {!notification.is_read && (
-                      <button className="text-button" style={{ flexShrink: 0 }} onClick={() => markNotificationRead(notification.id)}>
-                        Mark read
+                      <button
+                        className="text-button"
+                        style={{ flexShrink: 0 }}
+                        disabled={markRead.isPending}
+                        onClick={() => markRead.mutate(notification.id)}
+                      >
+                        {markRead.isPending ? 'Reading…' : 'Mark read'}
                       </button>
                     )}
                   </div>

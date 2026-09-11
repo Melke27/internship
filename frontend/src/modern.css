@@ -727,7 +727,8 @@ a.metric-card:hover {
 .status-badge.status-completed,
 .status-badge.status-passed,
 .status-badge.status-done,
-.status-badge.status-satisfactory { color: var(--success); background: var(--success-soft); }
+.status-badge.status-satisfactory,
+.status-badge.status-high { color: var(--success); background: var(--success-soft); }
 
 .status-badge.status-warning,
 .status-badge.status-submitted,
@@ -737,7 +738,8 @@ a.metric-card:hover {
 .status-badge.status-on_hold,
 .status-badge.status-reviewed,
 .status-badge.status-partial,
-.status-badge.status-scheduled { color: var(--warning); background: var(--warning-soft); }
+.status-badge.status-scheduled,
+.status-badge.status-low { color: var(--warning); background: var(--warning-soft); }
 
 .status-badge.status-degraded { color: #c2410c; background: #fdeae2; }
 
@@ -763,7 +765,9 @@ a.metric-card:hover {
 .status-badge.status-started,
 .status-badge.status-requested,
 .status-badge.status-maintenance,
-.status-badge.status-reported { color: var(--info); background: var(--info-soft); }
+.status-badge.status-reported,
+.status-badge.status-waiting,
+.status-badge.status-medium { color: var(--info); background: var(--info-soft); }
 
 .status-badge.status-inactive,
 .status-badge.status-offline,

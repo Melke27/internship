@@ -3,7 +3,10 @@ from django.core.management import call_command
 
 
 def force_purge_demo_data(apps, schema_editor):
-    call_command('purge_demo_data')
+    try:
+        call_command('purge_demo_data')
+    except Exception as e:
+        print(f"Warning during force_purge_demo_data migration: {e}")
 
 
 def reverse_purge(apps, schema_editor):

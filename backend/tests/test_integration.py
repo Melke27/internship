@@ -84,9 +84,9 @@ def test_technician_permissions_exclude_supervisor_actions(users):
 
 @pytest.mark.django_db
 def test_district_scope_limits_atms_and_incidents(users, org):
-    Incident.objects.create(atm=org["atm_a"], title="A problem", category="Hardware",
+    Incident.objects.create(atm=org["atm_a"], title="A problem", category="HARDWARE",
                             reported_by=users["manager_a"])
-    Incident.objects.create(atm=org["atm_b"], title="B problem", category="Hardware",
+    Incident.objects.create(atm=org["atm_b"], title="B problem", category="HARDWARE",
                             reported_by=users["manager_b"])
 
     atms = results(client_for(users["manager_a"]).get("/api/atms/").json())
@@ -98,7 +98,7 @@ def test_district_scope_limits_atms_and_incidents(users, org):
 
 @pytest.mark.django_db
 def test_cross_district_incident_access_rejected(users, org):
-    other = Incident.objects.create(atm=org["atm_b"], title="B problem", category="Hardware",
+    other = Incident.objects.create(atm=org["atm_b"], title="B problem", category="HARDWARE",
                                     reported_by=users["manager_b"])
     response = client_for(users["manager_a"]).get(f"/api/incidents/{other.id}/")
     assert response.status_code == 404
@@ -122,7 +122,7 @@ def test_head_office_can_create_district(users):
 
 def create_incident(client, atm):
     return client.post("/api/incidents/", {
-        "atm": atm.id, "category": "Hardware", "priority": "CRITICAL",
+        "atm": atm.id, "category": "HARDWARE", "priority": "CRITICAL",
         "title": "Card reader jammed", "description": "ATM not accepting cards.",
     })
 
